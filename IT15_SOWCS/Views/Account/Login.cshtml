@@ -16,10 +16,13 @@
         <h2 class="text-center">Welcome to Syncora</h2>
         <p class="text-center text-muted-small mb-4">Sign in to continue</p>
 
-        <button type="button" class="btn btn-google w-100 mb-4">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-            Continue with Google
-        </button>
+        <form asp-controller="Account" asp-action="ExternalLogin" method="post">
+            <input type="hidden" name="provider" value="Google" />
+            <button type="submit" class="btn btn-google w-100 mb-4">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+                Continue with Google
+            </button>
+        </form>
 
         <div class="divider">
             <span>OR</span>

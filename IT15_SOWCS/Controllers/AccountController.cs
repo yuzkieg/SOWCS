@@ -1,7 +1,8 @@
 ﻿using IT15_SOWCS.Models;
 using IT15_SOWCS.ViewModels;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 namespace IT15_SOWCS.Controllers
 {
     public class AccountController : Controller
@@ -140,6 +141,69 @@ namespace IT15_SOWCS.Controllers
         {
             await signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
-        } 
+        }
+        [HttpPost]
+        public IActionResult ExternalLogin(string provider, string returnUrl = null)
+        {
+            var redirectUrl = Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl });
+            var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            return Challenge(properties, provider);
+        }
+        public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
+        {
+            if (remoteError != null)
+            {
+                ModelState.AddModelError(string.Empty, $"Error from external provider: {remoteError}");
+                return View("Login");
+            }
+
+            var info = await signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            // Sign in the user with this external login provider if the user already has a login.
+            var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
+            if (result.Succeeded)
+            {
+                // Update any authentication tokens
+                await signInManager.UpdateExternalAuthenticationTokensAsync(info);
+                return LocalRedirect(returnUrl ?? "/");
+            }
+            else
+            {
+                // If the user does not have an account, create one
+                var email = info.Principal.FindFirstValue(System.Security.Claims.ClaimTypes.Email);
+                if (email != null)
+                {
+                    var user = await userManager.FindByEmailAsync(email);
+                    if (user == null)
+                    {
+                        user = new Users
+                        {
+                            UserName = email,
+                            Email = email
+                            // Add other properties if needed
+                        };
+                        var createResult = await userManager.CreateAsync(user);
+                        if (createResult.Succeeded)
+                        {
+                            await userManager.AddLoginAsync(user, info);
+                        }
+                        else
+                        {
+                            // Handle errors
+                            return View("Login");
+                        }
+                    }
+                    await signInManager.SignInAsync(user, isPersistent: false);
+                    await signInManager.UpdateExternalAuthenticationTokensAsync(info);
+                    return LocalRedirect(returnUrl ?? "/");
+                }
+                // If email claim is missing
+                return View("Login");
+            }
+        }
     }
 }
