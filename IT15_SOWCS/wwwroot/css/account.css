@@ -1,0 +1,155 @@
+﻿/* Container & Box Styling */
+.account-container {
+    min-height: 100vh;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.account-box {
+    background: #ffffff;
+    width: 100%;
+    max-width: 550px;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+/* Logo Styling */
+.logo-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.logo-circle {
+    width: 100px;
+    height: 100px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Soft glow from reference */
+}
+
+    .logo-circle img {
+        max-width: 70%;
+        height: auto;
+    }
+
+/* Custom Input Group Layout */
+.custom-input-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px !important; /* Matches reference curve */
+    overflow: hidden; /* Clips the inner corners */
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+    .custom-input-group .input-group-text {
+        background-color: #f1f5f9; /* The gray background for the icon */
+        border: none;
+        border-right: 1px solid #e2e8f0;
+        padding: 0 1rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+    }
+
+    .custom-input-group .form-control {
+        border: none;
+        background: transparent;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+        .custom-input-group .form-control:focus {
+            box-shadow: none;
+            background: #fff;
+        }
+
+    /* Focus state for the entire group */
+    .custom-input-group:focus-within {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+/* Google Button */
+.btn-google {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.7rem;
+    font-weight: 500;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+    .btn-google img {
+        width: 18px;
+    }
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+    color: #cbd5e1;
+}
+
+    .divider::before, .divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .divider span {
+        padding: 0 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+/* Buttons and Links */
+.btn-primary {
+    background: #0f172a;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem;
+    font-weight: 600;
+}
+
+.account-link {
+    text-decoration: none;
+    color: #475569;
+}
+
+    .account-link:hover {
+        text-decoration: underline;
+    }
+
+.text-muted-small {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.logo-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.logo-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

@@ -1,0 +1,37 @@
+﻿@using IT15_SOWCS.ViewModels;
+@model VerifyViewModel
+@{
+    ViewData["Title"] = "Verify Email";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="account-container">
+    <div class="account-box">
+        <h2 class="text-center">Reset your password</h2>
+        <p class="text-center text-muted-small mb-4">
+            Enter your email and we’ll send you a reset link
+        </p>
+
+        <form asp-action="VerifyEmail" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-4">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Send reset link</button>
+
+            <div class="text-center mt-3">
+                <a asp-action="Login" class="account-link">Back to sign in</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
+    }
+}

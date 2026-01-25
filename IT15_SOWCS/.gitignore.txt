@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# NuGet packages
+packages/
+*.nupkg
+
+# Secrets / Config files
+appsettings.Development.json
+appsettings.Production.json
+.env
+
+# Others
+*.vsmdi
+*.dbmdl
+*.bak
+*.backup
+*.log
+
+credentials.json
