@@ -4,3 +4,5 @@ obj/
 *.user
 *.suo
 credentials.json.vs/
+credentials.json
+credentials.json/

@@ -39,8 +39,8 @@ builder.Services.AddAuthentication(options =>
 .AddCookie()
 .AddGoogle(options =>
 {
-    options.ClientId = "784375843085-vhcjltaf4hkibllvmt4vlgovkp338scq.apps.googleusercontent.com";
-    options.ClientSecret = "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";
+    options.ClientId = builder.Configuration["GoogleKeys:ClientId"];
+    options.ClientSecret = builder.Configuration["GoogleKeys:ClientSecret"];
     options.CallbackPath = "/signin-google";
 });
 
@@ -60,22 +60,11 @@ if (!app.Environment.IsDevelopment())
     // other middleware...
 }
 
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.Run();
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapControllerRoute(
