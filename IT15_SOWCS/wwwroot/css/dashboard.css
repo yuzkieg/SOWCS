@@ -1,0 +1,125 @@
+﻿/* Dashboard Banner */
+.welcome-banner {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 1rem !important;
+}
+
+/* Stat Cards Base */
+.stat-card {
+    position: relative;
+    overflow: hidden;
+    height: 160px; /* Fixed height for uniform alignment */
+    transition: transform 0.2s ease-in-out;
+    border-radius: 1rem !important;
+}
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+/* The "Blob" Icon Box */
+/* This creates the large colored circle and centers the icon inside it */
+.icon-box {
+    position: absolute;
+    width: 130px;
+    height: 110px;
+    right: -25px; /* Bleeds off the right edge */
+    top: 30%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+    .icon-box i {
+        font-size: 2.2rem;
+        margin-left: -15px; /* Visual centering adjustment since the box is offset */
+    }
+
+/* Card Specific Colors (Background & Icon) */
+.card-active-projects .icon-box {
+    background-color: #f0f0ff;
+    color: #5d5fef;
+}
+
+.card-my-tasks .icon-box {
+    background-color: #e6f9ef;
+    color: #00ac69;
+}
+
+.card-documents .icon-box {
+    background-color: #fff4e6;
+    color: #f6941c;
+}
+
+.card-pending-leaves .icon-box {
+    background-color: #f6f0ff;
+    color: #a259ff;
+}
+
+/* Typography */
+.stat-label {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    color: #0f172a;
+    line-height: 1;
+}
+
+/* Recent Activity & Tasks Styling */
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1.1rem;
+}
+
+.blue-soft-bg {
+    background-color: #eef2ff;
+    color: #4f46e5;
+}
+
+.orange-soft-bg {
+    background-color: #fff7ed;
+    color: #f97316;
+}
+
+.badge-status {
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+    border-radius: 8px;
+    font-size: 0.75rem;
+}
+
+.badge-approved {
+    background-color: #e6f9f0;
+    color: #00ac69;
+}
+
+.badge-pending {
+    background-color: #fff9db;
+    color: #f59f00;
+}
+
+.badge-rejected {
+    background-color: #fff5f5;
+    color: #fa5252;
+}
+
+.extra-small {
+    font-size: 0.8rem;
+    color: #94a3b8 !important;
+}
+
+.date-text {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}

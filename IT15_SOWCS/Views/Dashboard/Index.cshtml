@@ -1,0 +1,122 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var user = await UserManager.GetUserAsync(User);
+    var fullName = user?.FullName ?? "User";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-banner p-5 text-white shadow-sm">
+                <p class="mb-1 opacity-75">Welcome back,</p>
+                <h1 class="fw-bold display-5 mb-2 text-uppercase">@fullName</h1>
+                <p class="mb-0 opacity-75">Stay on top of your tasks and projects.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm card-active-projects">
+                <div class="card-body p-4">
+                    <p class="stat-label fw-semibold mb-1">Active Projects</p>
+                    <h2 class="stat-value fw-bold mb-0">0</h2>
+                    <div class="icon-box"><i class="bi bi-folder-symlink-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm card-my-tasks">
+                <div class="card-body p-4">
+                    <p class="stat-label fw-semibold mb-1">My Tasks</p>
+                    <h2 class="stat-value fw-bold mb-0">0</h2>
+                    <small class="text-muted">0 completed</small>
+                    <div class="icon-box"><i class="bi bi-clipboard-check-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm card-documents">
+                <div class="card-body p-4">
+                    <p class="stat-label fw-semibold mb-1">Documents</p>
+                    <h2 class="stat-value fw-bold mb-0">3</h2>
+                    <div class="icon-box"><i class="bi bi-file-earmark-text-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm card-pending-leaves">
+                <div class="card-body p-4">
+                    <p class="stat-label fw-semibold mb-1">Pending Leaves</p>
+                    <h2 class="stat-value fw-bold mb-0">0</h2>
+                    <div class="icon-box"><i class="bi bi-calendar-event-fill"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">My Tasks</h5>
+                    <a href="#" class="text-muted text-decoration-none small">View All <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="mb-5">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small fw-semibold">Overall Progress</span>
+                        <span class="fw-bold small">0%</span>
+                    </div>
+                    <div class="progress" style="height: 8px; background-color: #eef2ff;">
+                        <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #cbd5e1;"></div>
+                    </div>
+                </div>
+                <div class="text-center py-5">
+                    <p class="text-muted opacity-50">No tasks assigned yet</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h5 class="fw-bold mb-4">Recent Activity</h5>
+                <div class="activity-list">
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="activity-icon blue-soft-bg me-3"><i class="bi bi-file-earmark-text"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-0 fw-bold small">IT10 Documentation</h6>
+                                    <p class="mb-0 text-muted extra-small">Uploaded by @fullName</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge badge-status badge-approved">Approved</span>
+                                    <div class="date-text mt-1">Jan 24</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="activity-icon orange-soft-bg me-3"><i class="bi bi-calendar-event"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-0 fw-bold small">Sick Leave Request</h6>
+                                    <p class="mb-0 text-muted extra-small">Jan 8 - Jan 13</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge badge-status badge-rejected">Rejected</span>
+                                    <div class="date-text mt-1">Jan 21</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

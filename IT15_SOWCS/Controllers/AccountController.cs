@@ -28,7 +28,7 @@ namespace IT15_SOWCS.Controllers
                 var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
                 if (result.Succeeded)
                 {
-                    return RedirectToAction("Index", "Home");
+                    return RedirectToAction("Index", "Dashboard");
                 }
                 else
                 {
@@ -169,7 +169,7 @@ namespace IT15_SOWCS.Controllers
             {
                 // Update any authentication tokens
                 await signInManager.UpdateExternalAuthenticationTokensAsync(info);
-                return LocalRedirect(returnUrl ?? "/");
+                return RedirectToAction("Index", "Dashboard");
             }
             else
             {
@@ -199,7 +199,7 @@ namespace IT15_SOWCS.Controllers
                     }
                     await signInManager.SignInAsync(user, isPersistent: false);
                     await signInManager.UpdateExternalAuthenticationTokensAsync(info);
-                    return LocalRedirect(returnUrl ?? "/");
+                    return RedirectToAction("Index", "Dashboard");
                 }
                 // If email claim is missing
                 return View("Login");

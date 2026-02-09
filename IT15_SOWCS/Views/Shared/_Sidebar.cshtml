@@ -1,0 +1,79 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var fullName = user?.FullName ?? "User";
+    var role = "Admin";
+}
+
+<div class="sidebar-container" id="sidebar">
+    <div class="brand-header">
+        <a asp-controller="Dashboard" asp-action="Index" class="brand-wrapper" id="brandSection">
+            <div class="brand-icon-box">
+                <img src="~/images/SOWCS.png" alt="SOWCS Logo" class="brand-logo-img" />
+            </div>
+            <span class="brand-name">Syncora</span>
+        </a>
+        <button class="btn-toggle" id="toggleSidebar">
+            <i class="bi bi-list fs-4 text-white"></i>
+        </button>
+    </div>
+
+    <ul class="sidebar-nav">
+        <li class="nav-item">
+            <a asp-controller="Dashboard" asp-action="Index" class="nav-link active" title="Dashboard">
+                <i class="bi bi-grid-fill"></i> <span class="nav-text">Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="Projects" asp-action="Index" class="nav-link" title="Projects">
+                <i class="bi bi-folder-fill"></i> <span class="nav-text">Projects</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="Tasks" asp-action="Index" class="nav-link" title="My Tasks">
+                <i class="bi bi-clipboard-check-fill"></i> <span class="nav-text">My Tasks</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="Documents" asp-action="Index" class="nav-link" title="Documents">
+                <i class="bi bi-file-earmark-text-fill"></i> <span class="nav-text">Documents</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="Leave" asp-action="Index" class="nav-link" title="Leave Requests">
+                <i class="bi bi-calendar-event-fill"></i> <span class="nav-text">Leave Requests</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="Approvals" asp-action="Index" class="nav-link" title="Approvals">
+                <i class="bi bi-shield-check"></i> <span class="nav-text">Approvals</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="Employees" asp-action="Index" class="nav-link" title="Employees">
+                <i class="bi bi-people"></i> <span class="nav-text">Employees</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="UserManagement" asp-action="Index" class="nav-link" title="User Management">
+                <i class="bi bi-person-gear"></i> <span class="nav-text">User Management</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="AuditLogs" asp-action="Index" class="nav-link" title="Audit Logs">
+                <i class="bi bi-file-earmark-bar-graph"></i> <span class="nav-text">Audit Logs</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="user-avatar">GK</div>
+            <div class="user-info text-truncate nav-text">
+                <span class="user-name">@fullName</span>
+                <span class="user-role">@role</span>
+            </div>
+        </div>
+    </div>
+</div>
