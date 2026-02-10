@@ -1,4 +1,15 @@
-﻿/* Container & Box Styling */
+﻿* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    background: #f8fafc; 
+}
+
 .account-container {
     min-height: 100vh;
     background: #f8fafc;
@@ -36,7 +47,7 @@
 }
 
     .logo-circle img {
-        max-width: 70%;
+        max-width: 100%;
         height: auto;
     }
 
@@ -99,14 +110,14 @@
 .divider {
     display: flex;
     align-items: center;
-    margin: 1.5rem 0;
+    margin: 2.5rem 0;
     color: #cbd5e1;
 }
 
     .divider::before, .divider::after {
         content: "";
         flex: 1;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 3px solid #e2e8f0;
     }
 
     .divider span {

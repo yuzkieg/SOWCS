@@ -1,0 +1,81 @@
+﻿@{
+    Layout = "_ApprovalsLayout";
+    ViewData["Title"] = "Approvals";
+}
+
+<div class="approvals-container">
+    <div class="approvals-header">
+        <h2>Approvals</h2>
+        <p>Review and approve pending requests</p>
+    </div>
+
+    <div class="approvals-tabs">
+        <button class="tab-btn active" id="btn-leave">
+            <i class="bi bi-calendar-event"></i> Leave Requests <span class="badge-count">1</span>
+        </button>
+        <button class="tab-btn" id="btn-docs">
+            <i class="bi bi-file-earmark-text"></i> Documents <span class="badge-count">1</span>
+        </button>
+    </div>
+
+    <div id="leave-section">
+        <div class="approval-card">
+            <div class="approval-info">
+                <div class="type-icon icon-leave">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div>
+                    <div class="requester-name"><i class="bi bi-person"></i> GERID KENT DEGARA</div>
+                    <div class="request-title">Sick Leave</div>
+                    <div class="request-meta">Feb 11, 2026 — Feb 9, 2026 (0 days)</div>
+                    <div class="request-comment">"Fever"</div>
+                </div>
+            </div>
+            <div class="action-group">
+                <button class="btn-reject"><i class="bi bi-x-circle"></i> Reject</button>
+                <button class="btn-approve"><i class="bi bi-check-circle"></i> Approve</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="doc-section" style="display: none;">
+        <div class="approval-card">
+            <div class="approval-info">
+                <div class="type-icon icon-doc">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div>
+                    <div class="requester-name"><i class="bi bi-person"></i> GERID KENT DEGARA</div>
+                    <div class="request-title">IT15_Documentation</div>
+                    <div class="request-meta">Folio.pdf • template</div>
+                    <div class="request-comment">Final Documentation</div>
+                </div>
+            </div>
+            <div class="action-group">
+                <button class="btn-view">View</button>
+                <button class="btn-reject"><i class="bi bi-x-circle"></i> Reject</button>
+                <button class="btn-approve"><i class="bi bi-check-circle"></i> Approve</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#btn-leave').click(function () {
+                $('.tab-btn').removeClass('active');
+                $(this).addClass('active');
+                $('#leave-section').show();
+                $('#doc-section').hide();
+            });
+
+            $('#btn-docs').click(function () {
+                $('.tab-btn').removeClass('active');
+                $(this).addClass('active');
+                $('#leave-section').hide();
+                $('#doc-section').show();
+            });
+        });
+    </script>
+}

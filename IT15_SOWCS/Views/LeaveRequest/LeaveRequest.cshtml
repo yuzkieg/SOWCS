@@ -1,5 +1,67 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@{
+    Layout = "_LeaveRequestLayout";
+    ViewData["Title"] = "Leave Requests";
 }
+
+<div class="leave-container">
+    <div class="leave-header-section">
+        <div class="leave-title">
+            <h2>Leave Requests</h2>
+            <p>Submit and track your leave requests</p>
+        </div>
+        <button class="btn-new-request">
+            <i class="bi bi-plus-lg"></i> New Request
+        </button>
+    </div>
+
+    <div class="leave-controls">
+        <select class="filter-dropdown">
+            <option>All Requests</option>
+            <option>Approved</option>
+            <option>Rejected</option>
+            <option>Pending</option>
+        </select>
+    </div>
+
+    <div class="leave-card">
+        <div class="leave-info-group">
+            <div class="status-icon approved">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="leave-details">
+                <div class="type-row">
+                    <span class="leave-type">Sick Leave</span>
+                    <span class="badge-status badge-approved">Approved</span>
+                </div>
+                <div class="leave-date">Jan 8, 2026 — Jan 13, 2026</div>
+                <div class="leave-note">Note: Pak u</div>
+            </div>
+        </div>
+        <div class="leave-meta">
+            <div class="day-count">6</div>
+            <span class="day-label">days</span>
+            <div class="submitted-date">Submitted Jan 21</div>
+        </div>
+    </div>
+
+    <div class="leave-card">
+        <div class="leave-info-group">
+            <div class="status-icon rejected">
+                <i class="bi bi-x-circle"></i>
+            </div>
+            <div class="leave-details">
+                <div class="type-row">
+                    <span class="leave-type">Sick Leave</span>
+                    <span class="badge-status badge-rejected">Rejected</span>
+                </div>
+                <div class="leave-date">Jan 8, 2026 — Jan 12, 2026</div>
+                <div class="leave-note">hehe<br />Note: paku</div>
+            </div>
+        </div>
+        <div class="leave-meta">
+            <div class="day-count">5</div>
+            <span class="day-label">days</span>
+            <div class="submitted-date">Submitted Jan 21</div>
+        </div>
+    </div>
+</div>

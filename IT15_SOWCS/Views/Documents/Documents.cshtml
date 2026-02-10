@@ -1,5 +1,58 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model IEnumerable<IT15_SOWCS.Controllers.DocumentViewModel>
 @{
+    Layout = "_DocumentsLayout";
+    ViewData["Title"] = "Documents";
 }
+
+<div class="docs-container">
+    <div class="docs-header">
+        <div class="docs-title">
+            <h2>Documents</h2>
+            <p>Upload and manage your documents</p>
+        </div>
+        <button class="btn btn-upload">
+            <i class="bi bi-upload me-2"></i> Upload Document
+        </button>
+    </div>
+
+    <div class="filter-bar">
+        <div class="col-md-9">
+            <div class="search-wrapper shadow-sm">
+                <i class="bi bi-search text-muted"></i>
+                <input type="text" placeholder="Search projects...">
+            </div>
+        </div>
+        <select class="form-select category-select">
+            <option>All Categories</option>
+            <option>Policy</option>
+            <option>Other</option>
+        </select>
+    </div>
+
+    <div class="doc-grid">
+        @foreach (var doc in Model)
+        {
+            <div class="doc-card">
+                <div class="d-flex align-items-start">
+                    <div class="doc-icon-box">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <div class="doc-info">
+                        <h3 class="doc-name">@doc.Title</h3>
+                        <span class="doc-filename">@doc.FileName</span>
+                        <div class="mt-2">
+                            <span class="badge-status @(doc.Status == "Approved" ? "status-approved" : "status-draft")">
+                                @doc.Status
+                            </span>
+                            <span class="badge-category">@doc.Category</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="doc-footer pt-3">
+                    <span>@doc.Size</span>
+                    <span>@doc.Date</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>

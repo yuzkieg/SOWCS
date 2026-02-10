@@ -137,11 +137,6 @@ namespace IT15_SOWCS.Controllers
                 return View(model);
             }
         }
-        public async Task<IActionResult> Logout()
-        {
-            await signInManager.SignOutAsync();
-            return RedirectToAction("Index", "Home");
-        }
         [HttpPost]
         public IActionResult ExternalLogin(string provider, string returnUrl = null)
         {
@@ -204,6 +199,14 @@ namespace IT15_SOWCS.Controllers
                 // If email claim is missing
                 return View("Login");
             }
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await signInManager.SignOutAsync();
+            // Redirecting to Login ensures a clean session end
+            return RedirectToAction("Login", "Account");
         }
     }
 }

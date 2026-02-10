@@ -1,0 +1,173 @@
+﻿/* Container and Header */
+.employees-container {
+    padding: 2rem;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.emp-header h2 {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.25rem;
+}
+
+.emp-header p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Controls */
+.emp-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-wrapper {
+    position: relative;
+    flex-grow: 1;
+}
+
+    .search-wrapper i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+
+.search-input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+}
+
+.dept-filter {
+    width: 200px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem;
+}
+
+/* Table Styling */
+.emp-table-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+    .table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 500;
+        font-size: 0.85rem;
+        border-top: none;
+        padding: 1rem;
+    }
+
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+/* User Identity Cell */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.user-meta .name {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.user-meta .email {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+/* Leave Balances */
+.leave-balance-row {
+    display: flex;
+    gap: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.lb-a {
+    color: #3b82f6;
+}
+
+.lb-s {
+    color: #f59e0b;
+}
+
+.lb-p {
+    color: #a855f7;
+}
+
+/* Modal Styling */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    padding: 0.5rem;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.edit-user-preview {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem;
+}
+
+.btn-save {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+}

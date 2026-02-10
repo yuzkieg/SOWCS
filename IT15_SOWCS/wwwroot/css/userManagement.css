@@ -1,0 +1,143 @@
+﻿/* Container and Layout */
+.um-container {
+    padding: 2rem;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.um-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.um-title h2 {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.25rem;
+}
+
+.um-title p {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+/* Stat Cards */
+.um-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.icon-blue {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.icon-purple {
+    background: #f5f3ff;
+    color: #8b5cf6;
+}
+
+.icon-green {
+    background: #f0fdf4;
+    color: #22c55e;
+}
+
+.stat-info .stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.stat-info .stat-label {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+/* Controls & Table */
+.um-controls {
+    margin-bottom: 1.5rem;
+}
+
+.um-search {
+    max-width: 400px;
+    position: relative;
+}
+
+    .um-search i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+
+    .um-search input {
+        width: 100%;
+        padding: 0.6rem 1rem 0.6rem 2.5rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+.btn-invite {
+    background-color: #0f172a;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 500;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Table Badges */
+.badge-role {
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-system-user {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.badge-system-admin {
+    background: #faf5ff;
+    color: #7e22ce;
+    border: 1px solid #f3e8ff;
+}
+
+.badge-emp-role {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #dbeafe;
+}

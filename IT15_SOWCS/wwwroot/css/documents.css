@@ -1,0 +1,161 @@
+﻿/* Layout & Header */
+.docs-container {
+    padding: 1.5rem;
+}
+
+.docs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.docs-title h2 {
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0.25rem;
+}
+
+.docs-title p {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.btn-upload {
+    background-color: #0f172a;
+    color: white;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    font-weight: 500;
+}
+
+    .btn-upload:hover {
+        background-color: #1e293b;
+        color: white;
+    }
+
+/* Filter Bar */
+.filter-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.search-wrapper {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+    .search-wrapper:focus-within {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .search-wrapper input {
+        border: none;
+        outline: none;
+        width: 100%;
+        margin-left: 10px;
+        font-size: 0.95rem;
+        color: #475569;
+    }
+
+.category-select {
+    width: 200px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.6rem;
+}
+
+/* Document Cards */
+.doc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.doc-card {
+    background: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 1.25rem;
+    position: relative;
+    transition: box-shadow 0.2s;
+}
+
+    .doc-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+.doc-icon-box {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 15px;
+    display: inline-block;
+    margin-right: 15px;
+}
+
+    .doc-icon-box i {
+        font-size: 1.5rem;
+        color: #475569;
+    }
+
+.doc-info {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.doc-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #1e293b;
+    margin: 0;
+}
+
+.doc-filename {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Badges */
+.badge-status {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.status-approved {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.status-draft {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.badge-category {
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+.doc-footer {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #f1f5f9;
+    pt: 1rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}

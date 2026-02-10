@@ -3,6 +3,17 @@
     padding: 1.5rem;
 }
 
+.projects-header h2 {
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0.25rem;
+}
+
+.projects-header p {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
 /* Search Bar Styling - Matches reference image_af2663.png */
 .search-wrapper {
     background-color: #ffffff;
@@ -33,13 +44,13 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 0.6rem;
-    color: #64748b;
+    color: #475569;
     font-size: 0.9rem;
     width: 100%;
     cursor: pointer;
 }
 
-/* Empty State Styling - Matches reference image_af2663.png */
+/* Empty State Styling */
 .empty-state-section {
     display: flex;
     flex-direction: column;

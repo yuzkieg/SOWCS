@@ -1,0 +1,97 @@
+﻿@{
+    Layout = "_UserManagementLayout";
+    ViewData["Title"] = "User Management";
+}
+
+<div class="um-container">
+    <div class="um-header">
+        <div class="um-title">
+            <h2>User Management</h2>
+            <p>Manage system users and access</p>
+        </div>
+        <button class="btn-invite">
+            <i class="bi bi-person-plus"></i> Invite User
+        </button>
+    </div>
+
+    <div class="um-stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon icon-blue">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">6</span>
+                <span class="stat-label">Total Users</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-purple">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">1</span>
+                <span class="stat-label">Admins</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-green">
+                <i class="bi bi-person-check"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">10</span>
+                <span class="stat-label">Active Employees</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-4 border p-1">
+        <div class="p-3">
+            <div class="um-search">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Search users...">
+            </div>
+        </div>
+
+        <table class="table align-middle mb-0">
+            <thead class="bg-light text-secondary">
+                <tr>
+                    <th class="ps-4" style="font-size: 0.85rem; font-weight: 500;">User</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;">System Role</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;">Employee Role</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;">Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items: center; gap: 12px;">
+                            <div class="avatar-circle" style="width:36px; height:36px; background:#8b5cf6; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">GK</div>
+                            <div>
+                                <div class="fw-bold" style="font-size: 0.9rem;">GERID KENT DEGARA</div>
+                                <div class="text-secondary" style="font-size: 0.8rem;">g.degara.547464@umindanao.edu.ph</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge-role badge-system-admin">admin</span></td>
+                    <td><span class="badge-role badge-emp-role">Employee</span></td>
+                    <td class="text-secondary" style="font-size: 0.9rem;">Jan 21, 2026</td>
+                </tr>
+
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items: center; gap: 12px;">
+                            <div class="avatar-circle" style="width:36px; height:36px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">AA</div>
+                            <div>
+                                <div class="fw-bold" style="font-size: 0.9rem;">Alex Andrew Beniga</div>
+                                <div class="text-secondary" style="font-size: 0.8rem;">benigadraex@gmail.com</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge-role badge-system-user">user</span></td>
+                    <td><span class="badge-role badge-emp-role">Employee</span></td>
+                    <td class="text-secondary" style="font-size: 0.9rem;">Jan 21, 2026</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

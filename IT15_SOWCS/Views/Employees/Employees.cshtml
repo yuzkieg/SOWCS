@@ -1,0 +1,132 @@
+﻿@{
+    Layout = "_EmployeesLayout";
+    ViewData["Title"] = "Employees";
+}
+
+<div class="employees-container">
+    <div class="emp-header">
+        <h2>Employees</h2>
+        <p>Manage employee records and information</p>
+    </div>
+
+    <div class="emp-controls">
+        <div class="search-wrapper">
+            <i class="bi bi-search"></i>
+            <input type="text" class="search-input" placeholder="Search employees...">
+        </div>
+        <select class="dept-filter">
+            <option>All Departments</option>
+            <option>Admin</option>
+            <option>HR</option>
+            <option>Engineering</option>
+        </select>
+    </div>
+
+    <div class="emp-table-card">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Role</th>
+                    <th>Leave Balance</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="avatar-circle">D</div>
+                            <div class="user-meta">
+                                <span class="name">degara03</span>
+                                <span class="email">degara03@gmail.com</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>Admin</td>
+                    <td>Manager</td>
+                    <td><span class="badge bg-light text-secondary border">Employee</span></td>
+                    <td>
+                        <div class="leave-balance-row">
+                            <span class="lb-a">12 A</span>
+                            <span class="lb-s">10 S</span>
+                            <span class="lb-p">5 P</span>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn btn-link text-dark" data-bs-toggle="modal" data-bs-target="#editModal">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Edit Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="edit-user-preview">
+                    <div class="avatar-circle" style="width: 48px; height: 48px;">D</div>
+                    <div class="user-meta">
+                        <span class="name">degara03</span>
+                        <span class="email">degara03@gmail.com</span>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="modal-label">Department</label>
+                        <select class="form-select">
+                            <option selected>Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="modal-label">Role</label>
+                        <select class="form-select">
+                            <option selected>Employee</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="modal-label">Position</label>
+                        <input type="text" class="form-control" value="Manager">
+                    </div>
+                    <div class="col-6">
+                        <label class="modal-label">Phone</label>
+                        <input type="text" class="form-control" value="09548498965">
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="modal-label d-block">Leave Balances</label>
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <small class="text-muted">Annual</small>
+                            <input type="number" class="form-control" value="12">
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Sick</small>
+                            <input type="number" class="form-control" value="10">
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Personal</small>
+                            <input type="number" class="form-control" value="5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-save">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>

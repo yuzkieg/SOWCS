@@ -1,0 +1,89 @@
+﻿@{
+    Layout = "_AuditLogsLayout";
+    ViewData["Title"] = "Audit Logs";
+}
+
+<div class="audit-container">
+    <div class="audit-header">
+        <h2>Audit Logs</h2>
+        <p>Track all system activities and changes</p>
+    </div>
+
+    <div class="audit-controls">
+        <div class="search-logs-wrapper">
+            <i class="bi bi-search"></i>
+            <input type="text" class="search-logs-input" placeholder="Search logs...">
+        </div>
+        <select class="action-filter">
+            <option>All Actions</option>
+            <option>Approve</option>
+            <option>Reject</option>
+        </select>
+    </div>
+
+    <div class="audit-table-card">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="timestamp-text">Jan 28, 2026 23:10</td>
+                    <td>
+                        <div class="log-user-info">
+                            <span class="log-user-name">GERID KENT DEGARA</span>
+                            <span class="log-user-email">g.degara.547464@umindanao.edu.ph</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge-action badge-approve">
+                            <i class="bi bi-check-circle"></i> approve
+                        </span>
+                    </td>
+                    <td>LeaveRequest</td>
+                    <td>Approved leave request</td>
+                </tr>
+
+                <tr>
+                    <td class="timestamp-text">Jan 21, 2026 13:39</td>
+                    <td>
+                        <div class="log-user-info">
+                            <span class="log-user-name">GERID KENT DEGARA</span>
+                            <span class="log-user-email">g.degara.547464@umindanao.edu.ph</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge-action badge-reject">
+                            <i class="bi bi-x-circle"></i> reject
+                        </span>
+                    </td>
+                    <td>Document</td>
+                    <td>Rejected document request</td>
+                </tr>
+
+                <tr>
+                    <td class="timestamp-text">Jan 24, 2026 19:17</td>
+                    <td>
+                        <div class="log-user-info">
+                            <span class="log-user-name">GERID KENT DEGARA</span>
+                            <span class="log-user-email">g.degara.547464@umindanao.edu.ph</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge-action badge-approve">
+                            <i class="bi bi-check-circle"></i> approve
+                        </span>
+                    </td>
+                    <td>Document</td>
+                    <td>Approved document request</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

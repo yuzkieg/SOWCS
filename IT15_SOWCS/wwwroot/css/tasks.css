@@ -4,10 +4,26 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Matching the padding of .projects-container */
+.tasks-container {
+    padding: 1.5rem;
+}
+
+.tasks-header h2 {
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0.25rem;
+}
+
+.tasks-title p {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
 .avatar-circle {
     width: 35px;
     height: 35px;
-    background-color: #7c4dff; /* Purple matching the image */
+    background-color: #7c4dff;
     color: white;
     border-radius: 50%;
     display: flex;
@@ -18,41 +34,82 @@ body {
     cursor: pointer;
 }
 
-/* Form Controls */
-.search-container .input-group-text {
-    border-color: #e9ecef;
+/* Form Controls - Matches .search-wrapper and .status-filter sizes */
+/* Search Bar Styling - Matches reference image_af2663.png */
+.search-wrapper {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    display: flex;
+    max-width:stretch;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-control, .form-select {
-    border-color: #e9ecef;
-    color: #495057;
-    padding: 0.6rem 1rem;
-}
-
-    .form-control:focus, .form-select:focus {
-        box-shadow: none;
-        border-color: #7c4dff;
+    .search-wrapper:focus-within {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
     }
 
-/* Empty State Styling */
+    .search-wrapper input {
+        border: none;
+        outline: none;
+        width: 100%;
+        margin-left: 10px;
+        font-size: 0.95rem;
+        color: #475569;
+    }
+
+.form-control, .form-select {
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    padding: 0.6rem 1rem; /* Matched padding */
+    border-radius: 10px; /* Matched rounded corners */
+    font-size: 0.95rem; /* Matched font size */
+}
+
+/* Specific adjustment for search input to align with the icon group */
+.search-container .form-control {
+    border-left: none;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #8b5cf6;
+    outline: none;
+}
+
+/* Empty State Styling - Matches .empty-state-section */
 .empty-state-wrapper {
-    margin-top: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px; /* Consistent vertical centering */
+    text-align: center;
 }
 
 .icon-circle {
     width: 80px;
     height: 80px;
-    background-color: #f8f9fa;
-    border-radius: 50%;
+    background-color: #f1f5f9; /* Matched background */
+    border-radius: 20px; /* Matched "squircle" radius from projects */
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: 1.5rem; /* Increased spacing */
+    color: #94a3b8;
 }
 
 .text-muted {
-    color: #6c757d !important;
+    color: #64748b !important; /* Matched slate gray */
+    max-width: 300px;
+    margin: 0 auto;
 }
 
 .fw-bold {
-    color: #1a1a1b;
+    color: #1e293b; /* Matched heading color */
+    font-weight: 700;
+    margin-bottom: 0.5rem;
 }
