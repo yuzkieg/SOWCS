@@ -1,0 +1,58 @@
+﻿/* Layout & Container */
+body {
+    background-color: #fcfcfc;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.avatar-circle {
+    width: 35px;
+    height: 35px;
+    background-color: #7c4dff; /* Purple matching the image */
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* Form Controls */
+.search-container .input-group-text {
+    border-color: #e9ecef;
+}
+
+.form-control, .form-select {
+    border-color: #e9ecef;
+    color: #495057;
+    padding: 0.6rem 1rem;
+}
+
+    .form-control:focus, .form-select:focus {
+        box-shadow: none;
+        border-color: #7c4dff;
+    }
+
+/* Empty State Styling */
+.empty-state-wrapper {
+    margin-top: 80px;
+}
+
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.fw-bold {
+    color: #1a1a1b;
+}

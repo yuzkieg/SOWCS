@@ -1,0 +1,73 @@
+﻿/* Projects Page Container */
+.projects-container {
+    padding: 1.5rem;
+}
+
+/* Search Bar Styling - Matches reference image_af2663.png */
+.search-wrapper {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+    .search-wrapper:focus-within {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .search-wrapper input {
+        border: none;
+        outline: none;
+        width: 100%;
+        margin-left: 10px;
+        font-size: 0.95rem;
+        color: #475569;
+    }
+
+/* Status Dropdown */
+.status-filter {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.6rem;
+    color: #64748b;
+    font-size: 0.9rem;
+    width: 100%;
+    cursor: pointer;
+}
+
+/* Empty State Styling - Matches reference image_af2663.png */
+.empty-state-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+}
+
+.empty-icon-box {
+    background-color: #f1f5f9;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    color: #94a3b8;
+}
+
+.empty-state-title {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+    color: #64748b;
+    max-width: 300px;
+}

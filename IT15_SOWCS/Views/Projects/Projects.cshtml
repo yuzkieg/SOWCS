@@ -1,0 +1,37 @@
+﻿@{
+    Layout = "_ProjectsLayout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/projects.css" asp-append-version="true" />
+}
+
+<div class="projects-container">
+    <div class="mb-4">
+        <h2 class="fw-bold text-dark">Projects</h2>
+        <p class="text-muted">Manage and track your team projects</p>
+    </div>
+
+    <div class="row g-3 mb-5">
+        <div class="col-md-9">
+            <div class="search-wrapper shadow-sm">
+                <i class="bi bi-search text-muted"></i>
+                <input type="text" placeholder="Search projects...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="status-filter shadow-sm">
+                <option selected>All Status</option>
+                <option>Active</option>
+                <option>Completed</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="empty-state-section">
+        <div class="empty-icon-box">
+            <i class="bi bi-folder2-open fs-1"></i>
+        </div>
+        <h4 class="empty-state-title">No projects found</h4>
+        <p class="empty-state-text">You haven't been assigned to any projects yet</p>
+    </div>
+</div>
