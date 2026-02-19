@@ -64,4 +64,69 @@
             <div class="submitted-date">Submitted Jan 21</div>
         </div>
     </div>
+    <div id="leaveModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Submit Leave Request</h3>
+                <button class="close-modal" id="closeModal">&times;</button>
+            </div>
+
+            <form id="leaveForm">
+                <div class="form-group">
+                    <label>Leave Type</label>
+                    <select class="form-control">
+                        <option>Annual Leave (0 days left)</option>
+                        <option>Sick Leave</option>
+                        <option>Unpaid Leave</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason (Optional)</label>
+                    <textarea class="form-control" rows="4" placeholder="Brief description of your leave reason"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn-submit">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script>
+    const modal = document.getElementById('leaveModal');
+    const openBtn = document.querySelector('.btn-new-request');
+    const closeBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    // Open Modal
+    openBtn.addEventListener('click', () => {
+        modal.style.display = 'flex';
+    });
+
+    // Close Modal functions
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    // Close if clicking outside the white box
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+</script>

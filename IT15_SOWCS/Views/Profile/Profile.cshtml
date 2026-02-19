@@ -1,0 +1,64 @@
+﻿@model IT15_SOWCS.Models.Users
+@{
+    Layout = "_ProfileLayout";
+    ViewData["Title"] = "User Profile";
+    // Get initials for avatar
+    var initials = !string.IsNullOrEmpty(Model.FullName)
+        ? string.Concat(Model.FullName.Split(' ').Select(x => x[0]))
+        : "GK";
+}
+
+<div class="profile-container">
+    <div class="card profile-header-card border-0 shadow-sm mb-4">
+        <div class="profile-banner"></div>
+        <div class="card-body profile-info-section">
+            <div class="profile-avatar-wrapper">
+                <div class="profile-main-avatar">@initials</div>
+            </div>
+            <div class="profile-text-details">
+                <h4 class="fw-bold mb-0">@Model.FullName.ToUpper()</h4>
+                <p class="text-muted mb-2">Team Member</p>
+                <div class="d-flex gap-2">
+                    <span class="badge badge-employee">Employee</span>
+                    <span class="badge badge-dept">No Department</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card contact-info-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4">Contact Information</h5>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">Full Name</label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-person"></i>
+                        <input type="text" class="form-control-plaintext" value="@Model.FullName" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">Email Address</label>
+                    <div class="input-group-custom">
+                        <input type="email" class="form-control-plaintext" value="@Model.Email" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">Phone Number</label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-telephone"></i>
+                        <input type="text" class="form-control" placeholder="Enter phone number">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">Department</label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-building"></i>
+                        <input type="text" class="form-control-plaintext" value="Not Assigned" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

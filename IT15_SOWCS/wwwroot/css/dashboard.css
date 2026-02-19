@@ -123,3 +123,13 @@
     font-size: 0.75rem;
     color: #94a3b8;
 }
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #6366f1;
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: #fff5f5;
+    color: #dc3545 !important;
+}

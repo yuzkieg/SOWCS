@@ -140,7 +140,12 @@ namespace IT15_SOWCS.Controllers
         [HttpPost]
         public IActionResult ExternalLogin(string provider, string returnUrl = null)
         {
-            var redirectUrl = Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl });
+            // Optional: validate returnUrl to prevent open-redirect attacks
+            if (string.IsNullOrEmpty(returnUrl))
+                returnUrl = Url.Action("Index", "Dashboard");  // fallback
+
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
+
             var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return Challenge(properties, provider);
         }
@@ -148,57 +153,81 @@ namespace IT15_SOWCS.Controllers
         {
             if (remoteError != null)
             {
-                ModelState.AddModelError(string.Empty, $"Error from external provider: {remoteError}");
-                return View("Login");
+                // Better error handling
+                TempData["Error"] = $"Error from external provider: {remoteError}";
+                return RedirectToAction(nameof(Login));
             }
 
             var info = await signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
+                TempData["Error"] = "Error loading external login information.";
                 return RedirectToAction(nameof(Login));
             }
 
-            // Sign in the user with this external login provider if the user already has a login.
-            var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
+            // Sign in with external login if user already linked
+            var result = await signInManager.ExternalLoginSignInAsync(
+                info.LoginProvider,
+                info.ProviderKey,
+                isPersistent: false);
+
             if (result.Succeeded)
             {
-                // Update any authentication tokens
                 await signInManager.UpdateExternalAuthenticationTokensAsync(info);
-                return RedirectToAction("Index", "Dashboard");
+
+                // Redirect to original page or fallback to dashboard
+                returnUrl = returnUrl ?? Url.Action("Index", "Dashboard");
+                return LocalRedirect(returnUrl);   // ← use LocalRedirect for safety
             }
-            else
+
+            // New user flow
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            if (email == null)
             {
-                // If the user does not have an account, create one
-                var email = info.Principal.FindFirstValue(System.Security.Claims.ClaimTypes.Email);
-                if (email != null)
-                {
-                    var user = await userManager.FindByEmailAsync(email);
-                    if (user == null)
-                    {
-                        user = new Users
-                        {
-                            UserName = email,
-                            Email = email
-                            // Add other properties if needed
-                        };
-                        var createResult = await userManager.CreateAsync(user);
-                        if (createResult.Succeeded)
-                        {
-                            await userManager.AddLoginAsync(user, info);
-                        }
-                        else
-                        {
-                            // Handle errors
-                            return View("Login");
-                        }
-                    }
-                    await signInManager.SignInAsync(user, isPersistent: false);
-                    await signInManager.UpdateExternalAuthenticationTokensAsync(info);
-                    return RedirectToAction("Index", "Dashboard");
-                }
-                // If email claim is missing
-                return View("Login");
+                TempData["Error"] = "Email not provided by Google.";
+                return RedirectToAction(nameof(Login));
             }
+
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                var givenName = info.Principal.FindFirstValue(ClaimTypes.GivenName);
+                var familyName = info.Principal.FindFirstValue(ClaimTypes.Surname);
+                var fullName = info.Principal.FindFirstValue(ClaimTypes.Name); // fallback - usually "First Last"
+
+                // Use whatever combination you prefer
+                var displayName = !string.IsNullOrEmpty(fullName)
+                    ? fullName
+                    : $"{givenName ?? ""} {familyName ?? ""}".Trim()
+                      ?? email.Split('@')[0];  // worst-case fallback to part before @
+
+                user = new Users
+                {
+                    UserName = email,
+                    Email = email,
+                    FullName = displayName,          // ← now set!
+                    EmailConfirmed = true                  // Google already verified email
+                };
+
+                var createResult = await userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    foreach (var err in createResult.Errors)
+                        ModelState.AddModelError("", err.Description);
+                    // Optionally log or TempData["Error"] = ...
+                    return View("Login");
+                }
+
+                await userManager.AddLoginAsync(user, info);
+            }
+
+            // Sign the new/existing user in
+            await signInManager.SignInAsync(user, isPersistent: false);
+            await signInManager.UpdateExternalAuthenticationTokensAsync(info);
+
+            // Redirect with returnUrl support
+            returnUrl = returnUrl ?? Url.Action("Index", "Dashboard");
+            return LocalRedirect(returnUrl);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -10,9 +10,17 @@
             <h2>Documents</h2>
             <p>Upload and manage your documents</p>
         </div>
-        <button class="btn btn-upload">
-            <i class="bi bi-upload me-2"></i> Upload Document
-        </button>
+        <form asp-action="Upload" asp-controller="Documents" method="post" enctype="multipart/form-data" class="d-inline">
+            <label for="fileUpload" class="btn btn-upload mb-0" style="cursor: pointer;">
+                <i class="bi bi-upload me-2"></i> Upload Document
+            </label>
+            <input type="file"
+                   id="fileUpload"
+                   name="uploadedFile"
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.png"
+                   hidden
+                   onchange="this.form.submit();" />
+        </form>
     </div>
 
     <div class="filter-bar">

@@ -3,7 +3,14 @@
     padding: 1.5rem;
 }
 
-.projects-header h2 {
+.projects-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.projects-title h2 {
     font-weight: 700;
     color: #1a1a1a;
     margin-bottom: 0.25rem;
@@ -14,6 +21,19 @@
     font-size: 0.95rem;
 }
 
+.btn-create {
+    background-color: #0f172a;
+    color: white;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    font-weight: 500;
+}
+
+    .btn-create:hover {
+        background-color: #1e293b;
+        color: white;
+    }
 /* Search Bar Styling - Matches reference image_af2663.png */
 .search-wrapper {
     background-color: #ffffff;
@@ -81,4 +101,54 @@
 .empty-state-text {
     color: #64748b;
     max-width: 300px;
+}
+/* Modal Styling */
+.modal-content {
+    border-radius: 12px;
+}
+
+.custom-input {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+    .custom-input:focus {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+/* Modal Buttons */
+.btn-save {
+    background-color: #0f172a; /* Dark navy from your ref */
+    color: white;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+    .btn-save:hover {
+        background-color: #1e293b;
+        color: white;
+    }
+
+.btn-cancel {
+    background-color: transparent;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+    .btn-cancel:hover {
+        background-color: #f8fafc;
+        color: #1e293b;
+    }
+
+/* Style for multi-select (optional) */
+select[multiple].custom-input {
+    height: auto;
+    min-height: 80px;
 }

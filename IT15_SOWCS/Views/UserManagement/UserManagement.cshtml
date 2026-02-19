@@ -9,9 +9,47 @@
             <h2>User Management</h2>
             <p>Manage system users and access</p>
         </div>
-        <button class="btn-invite">
+        <button class="btn-invite" data-bs-toggle="modal" data-bs-target="#inviteUserModal">
             <i class="bi bi-person-plus"></i> Invite User
         </button>
+
+<div class="modal fade" id="inviteUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;"> 
+        <div class="modal-content border-0 shadow-lg p-3" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" style="font-size: 1.25rem;">Invite User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <form id="inviteUserForm">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold mb-2">Email Address</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-envelope"></i>
+                            <input type="email" class="form-control" placeholder="user@company.com" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold mb-2">Role</label>
+                        <select class="form-select custom-select">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    
+                    <p class="text-secondary mb-4" style="font-size: 0.85rem;">
+                        Admins have full system access. You can set specific employee roles later.
+                    </p>
+                </form>
+            </div>
+            <div class="modal-footer border-0 d-flex justify-content-end gap-2 pb-3">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                <button type="submit" form="inviteUserForm" class="btn btn-save px-4 py-2">Send Invitation</button>
+            </div>
+        </div>
+    </div>
+</div>
     </div>
 
     <div class="um-stats-grid">

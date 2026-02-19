@@ -11,5 +11,7 @@ namespace IT15_SOWCS.Controllers
             ViewData["Title"] = "Projects";
             return View();
         }
+
     }
+
 }

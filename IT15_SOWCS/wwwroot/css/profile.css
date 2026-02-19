@@ -1,0 +1,78 @@
+﻿/* Container to match Dashboard scaling */
+.profile-page-wrapper {
+    max-width: 1400px; /* Adjust this to match your Dashboard's max-width */
+    margin: 0 auto;
+}
+
+.profile-header-card {
+    border-radius: 15px; /* Softer corners like the Dashboard cards */
+    overflow: hidden;
+}
+
+/* Matching the Dashboard header's dark tone */
+.profile-banner {
+    height: 140px; /* Slightly shorter to match Dashboard welcome section height */
+    background-color: #1a202c;
+}
+
+.profile-info-section {
+    position: relative;
+    padding: 1.5rem 1.5rem 1.5rem 160px; /* Aligns text next to avatar */
+}
+
+.profile-avatar-wrapper {
+    position: absolute;
+    top: -55px;
+    left: 30px;
+}
+
+.profile-main-avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c4dff, #448aff);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 600;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Badge Styling */
+.badge-employee {
+    background-color: #f0f2ff;
+    color: #5c67ff;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.badge-dept {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+/* Input boxes match the "clean" Dashboard look */
+.input-group-custom {
+    background-color: #f8f9fa;
+    border: 1px solid #f1f3f5;
+    border-radius: 8px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.input-group-custom i {
+    color: #adb5bd;
+    font-size: 1rem;
+}
+
+.input-group-custom input {
+    font-size: 0.95rem;
+    color: #334155;
+}
