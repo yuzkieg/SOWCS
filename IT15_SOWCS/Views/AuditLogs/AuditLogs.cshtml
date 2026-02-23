@@ -1,25 +1,35 @@
-﻿@{
+@model IT15_SOWCS.ViewModels.AuditLogsPageViewModel
+@{
     Layout = "_AuditLogsLayout";
     ViewData["Title"] = "Audit Logs";
 }
 
 <div class="audit-container">
-    <div class="audit-header">
-        <h2>Audit Logs</h2>
-        <p>Track all system activities and changes</p>
+    <div class="audit-header d-flex justify-content-between align-items-start">
+        <div>
+            <h2>Audit Logs</h2>
+            <p>Track all system activities and changes</p>
+        </div>
+        <form asp-action="ClearAll" method="post" onsubmit="return confirm('Archive all audit logs?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-warning btn-sm">Archive All</button>
+        </form>
     </div>
 
-    <div class="audit-controls">
-        <div class="search-logs-wrapper">
-            <i class="bi bi-search"></i>
-            <input type="text" class="search-logs-input" placeholder="Search logs...">
+    <form asp-action="AuditLogs" method="get" class="audit-controls module-filters">
+        <div class="search-wrapper shadow-sm">
+            <i class="bi bi-search text-muted"></i>
+            <input type="text" name="search" placeholder="Search logs..." value="@Model.Search">
         </div>
-        <select class="action-filter">
-            <option>All Actions</option>
-            <option>Approve</option>
-            <option>Reject</option>
+        <select class="form-select status-filter shadow-sm" name="action" onchange="this.form.submit()">
+            <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Action) || Model.Action == "All" ? "selected" : null)">All Actions</option>
+            <option value="approve" selected="@(Model.Action=="approve" ? "selected" : null)">Approve</option>
+            <option value="reject" selected="@(Model.Action=="reject" ? "selected" : null)">Reject</option>
+            <option value="upload" selected="@(Model.Action=="upload" ? "selected" : null)">Upload</option>
+            <option value="update" selected="@(Model.Action=="update" ? "selected" : null)">Update</option>
+            <option value="delete" selected="@(Model.Action=="delete" ? "selected" : null)">Delete</option>
         </select>
-    </div>
+    </form>
 
     <div class="audit-table-card">
         <table class="table mb-0">
@@ -30,59 +40,41 @@
                     <th>Action</th>
                     <th>Entity</th>
                     <th>Description</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="timestamp-text">Jan 28, 2026 23:10</td>
-                    <td>
-                        <div class="log-user-info">
-                            <span class="log-user-name">GERID KENT DEGARA</span>
-                            <span class="log-user-email">g.degara.547464@umindanao.edu.ph</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge-action badge-approve">
-                            <i class="bi bi-check-circle"></i> approve
-                        </span>
-                    </td>
-                    <td>LeaveRequest</td>
-                    <td>Approved leave request</td>
-                </tr>
-
-                <tr>
-                    <td class="timestamp-text">Jan 21, 2026 13:39</td>
-                    <td>
-                        <div class="log-user-info">
-                            <span class="log-user-name">GERID KENT DEGARA</span>
-                            <span class="log-user-email">g.degara.547464@umindanao.edu.ph</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge-action badge-reject">
-                            <i class="bi bi-x-circle"></i> reject
-                        </span>
-                    </td>
-                    <td>Document</td>
-                    <td>Rejected document request</td>
-                </tr>
-
-                <tr>
-                    <td class="timestamp-text">Jan 24, 2026 19:17</td>
-                    <td>
-                        <div class="log-user-info">
-                            <span class="log-user-name">GERID KENT DEGARA</span>
-                            <span class="log-user-email">g.degara.547464@umindanao.edu.ph</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge-action badge-approve">
-                            <i class="bi bi-check-circle"></i> approve
-                        </span>
-                    </td>
-                    <td>Document</td>
-                    <td>Approved document request</td>
-                </tr>
+                @if (Model.Logs.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">No logs found.</td></tr>
+                }
+                @foreach (var log in Model.Logs)
+                {
+                    var badgeClass = log.action == "approve" ? "badge-approve" : log.action == "reject" ? "badge-reject" : "badge-approve";
+                    <tr>
+                        <td class="timestamp-text">@log.timestamp.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                        <td>
+                            <div class="log-user-info">
+                                <span class="log-user-name">@log.user_name</span>
+                                <span class="log-user-email">@log.user_email</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge-action @badgeClass">
+                                <i class="bi @(log.action == "reject" ? "bi-x-circle" : "bi-check-circle")"></i> @log.action
+                            </span>
+                        </td>
+                        <td>@log.entity</td>
+                        <td>@log.description</td>
+                        <td class="text-end">
+                            <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Archive this audit log entry?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@log.audit_log_id" />
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>

@@ -1,4 +1,5 @@
-﻿@{
+@model IT15_SOWCS.ViewModels.ProjectsPageViewModel
+@{
     ViewData["Title"] = "Projects";
     Layout = "_ProjectsLayout";
 }
@@ -12,89 +13,178 @@
         <button class="btn btn-create" data-bs-toggle="modal" data-bs-target="#createProjectModal">
             <i class="bi bi-plus-lg me-2"></i> Create Project
         </button>
-
-        <div class="modal fade" id="createProjectModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold">Create Project</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body pt-3">
-                        <form id="createProjectForm">
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">Project Name</label>
-                                <input type="text" class="form-control custom-input" placeholder="e.g. Website Redesign">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">Description</label>
-                                <textarea class="form-control custom-input" rows="3" placeholder="Briefly describe the project goals..."></textarea>
-                            </div>
-
-                            <div class="row g-3 mb-3">
-                                <div class="col-6">
-                                    <label class="form-label small fw-bold text-muted">Status</label>
-                                    <select class="form-select custom-input">
-                                        <option selected>Planning</option>
-                                        <option>Active</option>
-                                        <option>On Hold</option>
-                                    </select>
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small fw-bold text-muted">Priority</label>
-                                    <select class="form-select custom-input">
-                                        <option>Low</option>
-                                        <option selected>Medium</option>
-                                        <option>High</option>
-                                        <option>Urgent</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="form-label small fw-bold text-muted">Team Members</label>
-                                <select class="form-select custom-input" multiple>
-                                    <option>John Doe</option>
-                                    <option>Jane Smith</option>
-                                    <option>Alex Rivera</option>
-                                    <option>Sarah Connor</option>
-                                </select>
-                                <div class="form-text mt-1" style="font-size: 0.75rem;">Hold Ctrl/Cmd to select multiple members.</div>
-                            </div>
-
-                            <div class="d-flex justify-content-end gap-2 mt-4">
-                                <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-save px-4">Create Project</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <div class="row g-3 mb-5">
-        <div class="col-md-9">
-            <div class="search-wrapper shadow-sm">
-                <i class="bi bi-search text-muted"></i>
-                <input type="text" placeholder="Search projects...">
+    @if (TempData["ProjectsError"] is string projectsError)
+    {
+        <div class="alert alert-danger">@projectsError</div>
+    }
+
+    <form asp-action="Projects" method="get" class="module-filters mb-4 d-flex gap-3">
+        <div class="search-wrapper shadow-sm flex-grow-1">
+            <i class="bi bi-search text-muted"></i>
+            <input type="text" name="search" placeholder="Search projects..." value="@Model.Search">
+        </div>
+        <select class="status-filter shadow-sm" name="status" onchange="this.form.submit()">
+            <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Status) || Model.Status == "All" ? "selected" : null)">All Status</option>
+            <option value="Planning" selected="@(Model.Status == "Planning" ? "selected" : null)">Planning</option>
+            <option value="Active" selected="@(Model.Status == "Active" ? "selected" : null)">Active</option>
+            <option value="On Hold" selected="@(Model.Status == "On Hold" ? "selected" : null)">On Hold</option>
+            <option value="Completed" selected="@(Model.Status == "Completed" ? "selected" : null)">Completed</option>
+        </select>
+    </form>
+
+    @if (Model.Projects.Count == 0)
+    {
+        <div class="empty-state-section">
+            <div class="empty-icon-box">
+                <i class="bi bi-folder2-open fs-1"></i>
+            </div>
+            <h4 class="empty-state-title">No projects found</h4>
+            <p class="empty-state-text">Create your first project to get started.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive bg-white border rounded-4 p-2">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Progress</th>
+                        <th>Team</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var project in Model.Projects)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-bold">@project.name</div>
+                                <div class="text-muted small">@project.description</div>
+                            </td>
+                            <td>@project.status</td>
+                            <td>@project.priority</td>
+                            <td>@project.progress%</td>
+                            <td class="small text-muted">@project.team_members</td>
+                            <td class="text-end">
+                                <details class="d-inline-block text-start">
+                                    <summary class="btn btn-sm btn-outline-secondary">Edit</summary>
+                                    <form asp-action="Update" method="post" class="border rounded-3 p-3 bg-light mt-2" style="min-width: 320px;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@project.project_id" />
+                                        <div class="mb-2">
+                                            <label class="form-label small">Name</label>
+                                            <input type="text" class="form-control form-control-sm" name="name" value="@project.name" required />
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small">Description</label>
+                                            <textarea class="form-control form-control-sm" name="description" rows="2">@project.description</textarea>
+                                        </div>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-4">
+                                                <label class="form-label small">Status</label>
+                                                <select class="form-select form-select-sm" name="status">
+                                                    <option selected="@(project.status=="Planning" ? "selected" : null)">Planning</option>
+                                                    <option selected="@(project.status=="Active" ? "selected" : null)">Active</option>
+                                                    <option selected="@(project.status=="On Hold" ? "selected" : null)">On Hold</option>
+                                                    <option selected="@(project.status=="Completed" ? "selected" : null)">Completed</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
+                                                <label class="form-label small">Priority</label>
+                                                <select class="form-select form-select-sm" name="priority">
+                                                    <option selected="@(project.priority=="Low" ? "selected" : null)">Low</option>
+                                                    <option selected="@(project.priority=="Medium" ? "selected" : null)">Medium</option>
+                                                    <option selected="@(project.priority=="High" ? "selected" : null)">High</option>
+                                                    <option selected="@(project.priority=="Urgent" ? "selected" : null)">Urgent</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
+                                                <label class="form-label small">Progress</label>
+                                                <input type="number" class="form-control form-control-sm" name="progress" min="0" max="100" value="@project.progress" />
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                        </div>
+                                    </form>
+                                </details>
+                                <form asp-action="Delete" method="post" class="d-inline-block ms-1" onsubmit="return confirm('Archive this project?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="projectId" value="@project.project_id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="createProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Create Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <form asp-action="Create" method="post" id="createProjectForm">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Project Name</label>
+                        <input type="text" name="name" class="form-control custom-input" placeholder="e.g. Website Redesign" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Description</label>
+                        <textarea name="description" class="form-control custom-input" rows="3" placeholder="Briefly describe the project goals..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Status</label>
+                            <select class="form-select custom-input" name="status">
+                                <option selected>Planning</option>
+                                <option>Active</option>
+                                <option>On Hold</option>
+                                <option>Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Priority</label>
+                            <select class="form-select custom-input" name="priority">
+                                <option>Low</option>
+                                <option selected>Medium</option>
+                                <option>High</option>
+                                <option>Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted">Team Members</label>
+                        <select class="form-select custom-input" name="teamMembers" multiple>
+                            @foreach (var employee in Model.Employees)
+                            {
+                                <option value="@employee.full_name">@employee.full_name</option>
+                            }
+                        </select>
+                        <div class="form-text mt-1" style="font-size: 0.75rem;">Hold Ctrl/Cmd to select multiple members.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-save px-4">Create Project</button>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="col-md-3">
-            <select class="status-filter shadow-sm">
-                <option selected>All Status</option>
-                <option>Active</option>
-                <option>Completed</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="empty-state-section">
-        <div class="empty-icon-box">
-            <i class="bi bi-folder2-open fs-1"></i>
-        </div>
-        <h4 class="empty-state-title">No projects found</h4>
-        <p class="empty-state-text">You haven't been assigned to any projects yet</p>
     </div>
 </div>

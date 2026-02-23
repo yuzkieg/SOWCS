@@ -22,34 +22,6 @@
     margin-bottom: 1.5rem;
 }
 
-.search-wrapper {
-    position: relative;
-    flex-grow: 1;
-}
-
-    .search-wrapper i {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-    }
-
-.search-input {
-    width: 100%;
-    padding: 0.6rem 1rem 0.6rem 2.5rem;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: white;
-}
-
-.dept-filter {
-    width: 200px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    padding: 0.6rem;
-}
-
 .emp-table-card {
     background: white;
     border-radius: 12px;
@@ -233,4 +205,24 @@
 .form-control:focus, .form-select:focus {
     border-color: #dee2e6;
     box-shadow: none;
+}
+
+@media (max-width: 992px) {
+    .emp-controls {
+        flex-direction: column;
+    }
+
+    .emp-table-card {
+        overflow-x: auto;
+    }
+
+    .emp-table-card .table {
+        min-width: 760px;
+    }
+}
+
+@media (max-width: 768px) {
+    .employees-container {
+        padding: 1rem;
+    }
 }

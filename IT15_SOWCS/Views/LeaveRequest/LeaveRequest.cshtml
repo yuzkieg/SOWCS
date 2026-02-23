@@ -1,4 +1,5 @@
-﻿@{
+@model IT15_SOWCS.ViewModels.LeaveRequestsPageViewModel
+@{
     Layout = "_LeaveRequestLayout";
     ViewData["Title"] = "Leave Requests";
 }
@@ -14,56 +15,86 @@
         </button>
     </div>
 
-    <div class="leave-controls">
-        <select class="filter-dropdown">
-            <option>All Requests</option>
-            <option>Approved</option>
-            <option>Rejected</option>
-            <option>Pending</option>
+    @if (TempData["LeaveError"] is string leaveError)
+    {
+        <div class="alert alert-danger">@leaveError</div>
+    }
+
+    <form asp-action="LeaveRequest" method="get" class="leave-controls">
+        <select class="form-select status-filter shadow-sm" name="status" onchange="this.form.submit()">
+            <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Status) || Model.Status == "All" ? "selected" : null)">All Requests</option>
+            <option value="Approved" selected="@(Model.Status=="Approved" ? "selected" : null)">Approved</option>
+            <option value="Rejected" selected="@(Model.Status=="Rejected" ? "selected" : null)">Rejected</option>
+            <option value="Pending" selected="@(Model.Status=="Pending" ? "selected" : null)">Pending</option>
         </select>
-    </div>
+    </form>
 
-    <div class="leave-card">
-        <div class="leave-info-group">
-            <div class="status-icon approved">
-                <i class="bi bi-check-circle"></i>
-            </div>
-            <div class="leave-details">
-                <div class="type-row">
-                    <span class="leave-type">Sick Leave</span>
-                    <span class="badge-status badge-approved">Approved</span>
+    @if (Model.Requests.Count == 0)
+    {
+        <div class="empty-state-section text-center py-5 bg-white rounded-4 border">
+            <h5 class="mb-2">No leave requests yet</h5>
+            <p class="text-muted mb-0">Create your first leave request.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var request in Model.Requests)
+        {
+            var statusClass = request.status == "Approved" ? "approved" : request.status == "Rejected" ? "rejected" : "approved";
+            var badgeClass = request.status == "Approved" ? "badge-approved" : request.status == "Rejected" ? "badge-rejected" : "badge-approved";
+            <div class="leave-card">
+                <div class="leave-info-group">
+                    <div class="status-icon @statusClass">
+                        <i class="bi @(request.status == "Rejected" ? "bi-x-circle" : "bi-check-circle")"></i>
+                    </div>
+                    <div class="leave-details">
+                        <div class="type-row">
+                            <span class="leave-type">@request.leave_type</span>
+                            <span class="badge-status @badgeClass">@request.status</span>
+                        </div>
+                        <div class="leave-date">@request.start_date.ToString("MMM d, yyyy") - @request.end_date.ToString("MMM d, yyyy")</div>
+                        <div class="leave-note">Note: @request.reason</div>
+                    </div>
                 </div>
-                <div class="leave-date">Jan 8, 2026 — Jan 13, 2026</div>
-                <div class="leave-note">Note: Pak u</div>
+                <div class="leave-meta">
+                    <div class="day-count">@request.days_count</div>
+                    <span class="day-label">days</span>
+                    <div class="submitted-date">Submitted @request.start_date.ToString("MMM d")</div>
+                    <div class="mt-2 d-flex gap-2 justify-content-end">
+                        @if (request.status == "Pending")
+                        {
+                            <details class="d-inline-block text-start">
+                                <summary class="btn btn-sm btn-outline-secondary">Edit</summary>
+                                <form asp-action="Update" method="post" class="border rounded-3 p-2 bg-light mt-1" style="min-width: 280px;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="leaveRequestId" value="@request.LR_id" />
+                                    <div class="mb-2">
+                                        <label class="form-label small">Start</label>
+                                        <input type="date" class="form-control form-control-sm" name="startDate" value="@request.start_date.ToString("yyyy-MM-dd")" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">End</label>
+                                        <input type="date" class="form-control form-control-sm" name="endDate" value="@request.end_date.ToString("yyyy-MM-dd")" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Reason</label>
+                                        <textarea class="form-control form-control-sm" name="reason" rows="2">@request.reason</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">Save</button>
+                                </form>
+                            </details>
+                        }
+                        <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this leave request?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="leaveRequestId" value="@request.LR_id" />
+                            <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="leave-meta">
-            <div class="day-count">6</div>
-            <span class="day-label">days</span>
-            <div class="submitted-date">Submitted Jan 21</div>
-        </div>
-    </div>
+        }
+    }
 
-    <div class="leave-card">
-        <div class="leave-info-group">
-            <div class="status-icon rejected">
-                <i class="bi bi-x-circle"></i>
-            </div>
-            <div class="leave-details">
-                <div class="type-row">
-                    <span class="leave-type">Sick Leave</span>
-                    <span class="badge-status badge-rejected">Rejected</span>
-                </div>
-                <div class="leave-date">Jan 8, 2026 — Jan 12, 2026</div>
-                <div class="leave-note">hehe<br />Note: paku</div>
-            </div>
-        </div>
-        <div class="leave-meta">
-            <div class="day-count">5</div>
-            <span class="day-label">days</span>
-            <div class="submitted-date">Submitted Jan 21</div>
-        </div>
-    </div>
     <div id="leaveModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -71,30 +102,32 @@
                 <button class="close-modal" id="closeModal">&times;</button>
             </div>
 
-            <form id="leaveForm">
+            <form asp-action="Create" method="post" id="leaveForm">
+                @Html.AntiForgeryToken()
                 <div class="form-group">
                     <label>Leave Type</label>
-                    <select class="form-control">
-                        <option>Annual Leave (0 days left)</option>
+                    <select class="form-control" name="leaveType">
+                        <option>Annual Leave</option>
                         <option>Sick Leave</option>
                         <option>Unpaid Leave</option>
+                        <option>Personal Leave</option>
                     </select>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Start Date</label>
-                        <input type="date" class="form-control">
+                        <input type="date" class="form-control" name="startDate" required>
                     </div>
                     <div class="form-group">
                         <label>End Date</label>
-                        <input type="date" class="form-control">
+                        <input type="date" class="form-control" name="endDate" required>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Reason (Optional)</label>
-                    <textarea class="form-control" rows="4" placeholder="Brief description of your leave reason"></textarea>
+                    <textarea class="form-control" rows="4" name="reason" placeholder="Brief description of your leave reason"></textarea>
                 </div>
 
                 <div class="modal-footer">
@@ -127,3 +160,5 @@
         if (e.target === modal) closeModal();
     });
 </script>
+
+

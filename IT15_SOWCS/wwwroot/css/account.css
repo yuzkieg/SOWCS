@@ -10,6 +10,21 @@ html, body {
     background: #f8fafc; 
 }
 
+:root {
+    --account-zoom-scale: 0.75;
+}
+
+@media (min-width: 1200px) {
+    body.account-zoom-67 {
+        zoom: var(--account-zoom-scale);
+    }
+
+    body.account-zoom-67 .container-fluid.min-vh-100,
+    body.account-zoom-67 .account-container {
+        min-height: calc(100vh / var(--account-zoom-scale));
+    }
+}
+
 .account-container {
     min-height: 100vh;
     background: #f8fafc;

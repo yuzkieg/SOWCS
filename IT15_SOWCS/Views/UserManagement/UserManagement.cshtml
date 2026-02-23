@@ -1,4 +1,5 @@
-﻿@{
+@model IT15_SOWCS.ViewModels.UserManagementPageViewModel
+@{
     Layout = "_UserManagementLayout";
     ViewData["Title"] = "User Management";
 }
@@ -12,34 +13,137 @@
         <button class="btn-invite" data-bs-toggle="modal" data-bs-target="#inviteUserModal">
             <i class="bi bi-person-plus"></i> Invite User
         </button>
+    </div>
+
+    @if (TempData["UserManagementError"] is string userManagementError)
+    {
+        <div class="alert alert-danger">@userManagementError</div>
+    }
+
+    <div class="um-stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon icon-blue">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">@Model.Users.Count</span>
+                <span class="stat-label">Total Users</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-purple">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">@Model.AdminCount</span>
+                <span class="stat-label">Admins</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-green">
+                <i class="bi bi-person-check"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">@Model.ActiveEmployeeCount</span>
+                <span class="stat-label">Active Employees</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-4 border p-1">
+        <form asp-action="UserManagement" method="get" class="p-3">
+            <div class="search-wrapper shadow-sm">
+                <i class="bi bi-search text-muted"></i>
+                <input type="text" name="search" placeholder="Search users..." value="@Model.Search">
+            </div>
+        </form>
+
+        <table class="table align-middle mb-0">
+            <thead class="bg-light text-secondary">
+                <tr>
+                    <th class="ps-4" style="font-size: 0.85rem; font-weight: 500;">User</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;">System Role</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;">Employee Role</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;">Joined</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;" class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Users.Count == 0)
+                {
+                    <tr>
+                        <td class="ps-4 py-4 text-muted" colspan="5">No users found.</td>
+                    </tr>
+                }
+                @foreach (var user in Model.Users)
+                {
+                    var initials = string.Concat((user.FullName ?? user.Email ?? "U").Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0])).Take(2));
+                    var employeeRole = (user.Email != null && Model.EmployeeRolesByEmail.TryGetValue(user.Email, out var role)) ? role : "N/A";
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-circle" style="width:36px; height:36px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">@initials</div>
+                                <div>
+                                    <div class="fw-bold" style="font-size: 0.9rem;">@(string.IsNullOrWhiteSpace(user.FullName) ? user.Email : user.FullName)</div>
+                                    <div class="text-secondary" style="font-size: 0.8rem;">@user.Email</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <form asp-action="UpdateRole" method="post" class="d-flex align-items-center gap-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@user.Id" />
+                                <select class="form-select form-select-sm" name="role" style="max-width: 120px;">
+                                    <option value="user" selected="@(user.Role == "user" ? "selected" : null)">user</option>
+                                    <option value="admin" selected="@(user.Role == "admin" ? "selected" : null)">admin</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+                            </form>
+                        </td>
+                        <td><span class="badge-role badge-emp-role">@employeeRole</span></td>
+                        <td class="text-secondary" style="font-size: 0.9rem;">@user.CreatedDate.ToString("MMM d, yyyy")</td>
+                        <td class="text-end pe-4">
+                            <form asp-action="DeleteUser" method="post" class="d-inline-block" onsubmit="return confirm('Archive this user account?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@user.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <div class="modal fade" id="inviteUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;"> 
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
         <div class="modal-content border-0 shadow-lg p-3" style="border-radius: 12px;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold" style="font-size: 1.25rem;">Invite User</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-3">
-                <form id="inviteUserForm">
+                <form asp-action="InviteUser" method="post" id="inviteUserForm">
+                    @Html.AntiForgeryToken()
                     <div class="mb-4">
                         <label class="form-label fw-semibold mb-2">Email Address</label>
                         <div class="input-group-custom">
                             <i class="bi bi-envelope"></i>
-                            <input type="email" class="form-control" placeholder="user@company.com" required>
+                            <input type="email" class="form-control" name="email" placeholder="user@company.com" required>
                         </div>
                     </div>
 
                     <div class="mb-2">
                         <label class="form-label fw-semibold mb-2">Role</label>
-                        <select class="form-select custom-select">
+                        <select class="form-select custom-select" name="role">
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                         </select>
                     </div>
-                    
+
                     <p class="text-secondary mb-4" style="font-size: 0.85rem;">
-                        Admins have full system access. You can set specific employee roles later.
+                        The user is created with a temporary password: <strong>TempPass123!</strong>.
                     </p>
                 </form>
             </div>
@@ -50,86 +154,4 @@
         </div>
     </div>
 </div>
-    </div>
 
-    <div class="um-stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon icon-blue">
-                <i class="bi bi-people"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-value">6</span>
-                <span class="stat-label">Total Users</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon icon-purple">
-                <i class="bi bi-shield-lock"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-value">1</span>
-                <span class="stat-label">Admins</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon icon-green">
-                <i class="bi bi-person-check"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-value">10</span>
-                <span class="stat-label">Active Employees</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-4 border p-1">
-        <div class="p-3">
-            <div class="um-search">
-                <i class="bi bi-search"></i>
-                <input type="text" placeholder="Search users...">
-            </div>
-        </div>
-
-        <table class="table align-middle mb-0">
-            <thead class="bg-light text-secondary">
-                <tr>
-                    <th class="ps-4" style="font-size: 0.85rem; font-weight: 500;">User</th>
-                    <th style="font-size: 0.85rem; font-weight: 500;">System Role</th>
-                    <th style="font-size: 0.85rem; font-weight: 500;">Employee Role</th>
-                    <th style="font-size: 0.85rem; font-weight: 500;">Joined</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="ps-4">
-                        <div class="d-flex align-items: center; gap: 12px;">
-                            <div class="avatar-circle" style="width:36px; height:36px; background:#8b5cf6; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">GK</div>
-                            <div>
-                                <div class="fw-bold" style="font-size: 0.9rem;">GERID KENT DEGARA</div>
-                                <div class="text-secondary" style="font-size: 0.8rem;">g.degara.547464@umindanao.edu.ph</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge-role badge-system-admin">admin</span></td>
-                    <td><span class="badge-role badge-emp-role">Employee</span></td>
-                    <td class="text-secondary" style="font-size: 0.9rem;">Jan 21, 2026</td>
-                </tr>
-
-                <tr>
-                    <td class="ps-4">
-                        <div class="d-flex align-items: center; gap: 12px;">
-                            <div class="avatar-circle" style="width:36px; height:36px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">AA</div>
-                            <div>
-                                <div class="fw-bold" style="font-size: 0.9rem;">Alex Andrew Beniga</div>
-                                <div class="text-secondary" style="font-size: 0.8rem;">benigadraex@gmail.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge-role badge-system-user">user</span></td>
-                    <td><span class="badge-role badge-emp-role">Employee</span></td>
-                    <td class="text-secondary" style="font-size: 0.9rem;">Jan 21, 2026</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>

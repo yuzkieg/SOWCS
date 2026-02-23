@@ -1,30 +1,203 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using IT15_SOWCS.Data;
+using IT15_SOWCS.Models;
 using IT15_SOWCS.ViewModels;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace IT15_SOWCS.Controllers
 {
     public class ArchiveController : Controller
     {
-        public IActionResult Archive()
+        private readonly AppDbContext _context;
+        private readonly UserManager<Users> _userManager;
+
+        public ArchiveController(AppDbContext context, UserManager<Users> userManager)
+        {
+            _context = context;
+            _userManager = userManager;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Archive(string? search, string? type)
         {
             ViewData["Title"] = "Archive";
 
-            var items = new List<ArchiveItemModel>
+            var query = _context.ArchiveItems
+                .Where(item => !item.is_restored)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
             {
-                new ArchiveItemModel { Id = 1, Title = "Security Audit Q4 2025", Type = "Task", ArchivedBy = "Security Team", DateArchived = new System.DateTime(2026, 2, 23), Reason = "Audit completed, archived for compliance records" },
-                new ArchiveItemModel { Id = 2, Title = "Legacy Website Redesign", Type = "Project", ArchivedBy = "John Manager", DateArchived = new System.DateTime(2026, 2, 23), Reason = "Project completed and no longer needed" },
-                new ArchiveItemModel { Id = 3, Title = "Update API Documentation", Type = "Task", ArchivedBy = "Sarah Developer", DateArchived = new System.DateTime(2026, 2, 23), Reason = "Task completed and archived for record keeping" },
-                new ArchiveItemModel { Id = 4, Title = "Old HR Policy 2024", Type = "Document", ArchivedBy = "HR Admin", DateArchived = new System.DateTime(2026, 2, 23), Reason = "Replaced by 2025 policy version" }
-            };
+                query = query.Where(item =>
+                    item.title.Contains(search) ||
+                    item.reason.Contains(search));
+            }
+
+            if (!string.IsNullOrWhiteSpace(type) && !type.Equals("All", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(item => item.type == type);
+            }
+
+            var items = await query
+                .OrderByDescending(item => item.date_archived)
+                .Select(item => new ArchiveItemModel
+                {
+                    Id = item.archive_item_id,
+                    Title = item.title,
+                    Type = item.type,
+                    ArchivedBy = item.archived_by,
+                    DateArchived = item.date_archived,
+                    Reason = item.reason
+                })
+                .ToListAsync();
 
             return View(items);
         }
 
         [HttpPost]
-        public IActionResult Restore(int id) => RedirectToAction(nameof(Archive));
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Restore(int id)
+        {
+            var item = await _context.ArchiveItems.FindAsync(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            if (string.IsNullOrWhiteSpace(item.serialized_data))
+            {
+                TempData["ArchiveError"] = "Archived item has no snapshot data and cannot be restored.";
+                return RedirectToAction(nameof(Archive));
+            }
+
+            try
+            {
+                switch (item.source_type)
+                {
+                    case "Project":
+                        var project = JsonSerializer.Deserialize<Projects>(item.serialized_data);
+                        if (project != null)
+                        {
+                            project.project_id = 0;
+                            _context.Projects.Add(project);
+                        }
+                        break;
+                    case "Task":
+                        var task = JsonSerializer.Deserialize<WorkTask>(item.serialized_data);
+                        if (task != null)
+                        {
+                            task.task_id = 0;
+                            _context.Tasks.Add(task);
+                        }
+                        break;
+                    case "LeaveRequest":
+                        var leave = JsonSerializer.Deserialize<LeaveRequest>(item.serialized_data);
+                        if (leave != null)
+                        {
+                            leave.LR_id = 0;
+                            _context.LeaveRequests.Add(leave);
+                        }
+                        break;
+                    case "Employee":
+                        var employee = JsonSerializer.Deserialize<Employee>(item.serialized_data);
+                        if (employee != null)
+                        {
+                            employee.employee_id = 0;
+                            _context.Employees.Add(employee);
+                        }
+                        break;
+                    case "Document":
+                        var document = JsonSerializer.Deserialize<DocumentRecord>(item.serialized_data);
+                        if (document != null)
+                        {
+                            document.document_id = 0;
+                            _context.Documents.Add(document);
+                        }
+                        break;
+                    case "AuditLog":
+                        if (item.title == "Audit Logs Batch")
+                        {
+                            var logs = JsonSerializer.Deserialize<List<AuditLogEntry>>(item.serialized_data);
+                            if (logs != null)
+                            {
+                                foreach (var log in logs)
+                                {
+                                    log.audit_log_id = 0;
+                                }
+                                _context.AuditLogs.AddRange(logs);
+                            }
+                        }
+                        else
+                        {
+                            var log = JsonSerializer.Deserialize<AuditLogEntry>(item.serialized_data);
+                            if (log != null)
+                            {
+                                log.audit_log_id = 0;
+                                _context.AuditLogs.Add(log);
+                            }
+                        }
+                        break;
+                    case "User":
+                        var userData = JsonSerializer.Deserialize<ArchivedUserData>(item.serialized_data);
+                        if (userData != null && !string.IsNullOrWhiteSpace(userData.Email))
+                        {
+                            var existingUser = await _userManager.FindByEmailAsync(userData.Email);
+                            if (existingUser == null)
+                            {
+                                var restoredUser = new Users
+                                {
+                                    UserName = userData.Email,
+                                    Email = userData.Email,
+                                    FullName = userData.FullName ?? userData.Email,
+                                    Role = userData.Role ?? "user",
+                                    EmailConfirmed = true,
+                                    CreatedDate = DateTime.UtcNow,
+                                    UpdatedDate = DateTime.UtcNow
+                                };
+                                var result = await _userManager.CreateAsync(restoredUser, "TempPass123!");
+                                if (!result.Succeeded)
+                                {
+                                    TempData["ArchiveError"] = string.Join(" ", result.Errors.Select(error => error.Description));
+                                    return RedirectToAction(nameof(Archive));
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+            catch
+            {
+                TempData["ArchiveError"] = "Restore failed due to invalid archived snapshot.";
+                return RedirectToAction(nameof(Archive));
+            }
+
+            item.is_restored = true;
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Archive));
+        }
 
         [HttpPost]
-        public IActionResult Delete(int id) => RedirectToAction(nameof(Archive));
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var item = await _context.ArchiveItems.FindAsync(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            _context.ArchiveItems.Remove(item);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Archive));
+        }
+    }
+
+    public class ArchivedUserData
+    {
+        public string? Email { get; set; }
+        public string? FullName { get; set; }
+        public string? Role { get; set; }
     }
 }

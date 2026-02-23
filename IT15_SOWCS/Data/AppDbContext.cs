@@ -14,6 +14,9 @@ namespace IT15_SOWCS.Data
         public DbSet<Projects> Projects => Set<Projects>();
         public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
         public DbSet<WorkTask> Tasks => Set<WorkTask>();
+        public DbSet<DocumentRecord> Documents => Set<DocumentRecord>();
+        public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
+        public DbSet<ArchiveItem> ArchiveItems => Set<ArchiveItem>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -28,6 +31,9 @@ namespace IT15_SOWCS.Data
             builder.Entity<Projects>().ToTable("Project");
             builder.Entity<LeaveRequest>().ToTable("LeaveRequest");
             builder.Entity<WorkTask>().ToTable("Task");
+            builder.Entity<DocumentRecord>().ToTable("Document");
+            builder.Entity<AuditLogEntry>().ToTable("AuditLog");
+            builder.Entity<ArchiveItem>().ToTable("ArchiveItem");
 
             builder.Entity<Employee>()
                 .Property(employee => employee.annual_leave_balance)

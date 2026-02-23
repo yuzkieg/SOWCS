@@ -1,7 +1,18 @@
-﻿@model IEnumerable<IT15_SOWCS.Controllers.DocumentViewModel>
+@model IT15_SOWCS.ViewModels.DocumentsPageViewModel
 @{
     Layout = "_DocumentsLayout";
     ViewData["Title"] = "Documents";
+}
+
+@functions {
+    private static string FormatSize(long sizeBytes)
+    {
+        const double kb = 1024;
+        const double mb = kb * 1024;
+        if (sizeBytes >= mb) return $"{sizeBytes / mb:0.0} MB";
+        if (sizeBytes >= kb) return $"{sizeBytes / kb:0.0} KB";
+        return $"{sizeBytes} B";
+    }
 }
 
 <div class="docs-container">
@@ -11,6 +22,7 @@
             <p>Upload and manage your documents</p>
         </div>
         <form asp-action="Upload" asp-controller="Documents" method="post" enctype="multipart/form-data" class="d-inline">
+            @Html.AntiForgeryToken()
             <label for="fileUpload" class="btn btn-upload mb-0" style="cursor: pointer;">
                 <i class="bi bi-upload me-2"></i> Upload Document
             </label>
@@ -23,44 +35,79 @@
         </form>
     </div>
 
-    <div class="filter-bar">
-        <div class="col-md-9">
-            <div class="search-wrapper shadow-sm">
-                <i class="bi bi-search text-muted"></i>
-                <input type="text" placeholder="Search projects...">
-            </div>
-        </div>
-        <select class="form-select category-select">
-            <option>All Categories</option>
-            <option>Policy</option>
-            <option>Other</option>
-        </select>
-    </div>
+    @if (TempData["DocumentsError"] is string documentsError)
+    {
+        <div class="alert alert-danger">@documentsError</div>
+    }
 
-    <div class="doc-grid">
-        @foreach (var doc in Model)
-        {
-            <div class="doc-card">
-                <div class="d-flex align-items-start">
-                    <div class="doc-icon-box">
-                        <i class="bi bi-file-earmark-text"></i>
-                    </div>
-                    <div class="doc-info">
-                        <h3 class="doc-name">@doc.Title</h3>
-                        <span class="doc-filename">@doc.FileName</span>
-                        <div class="mt-2">
-                            <span class="badge-status @(doc.Status == "Approved" ? "status-approved" : "status-draft")">
-                                @doc.Status
-                            </span>
-                            <span class="badge-category">@doc.Category</span>
+    <form asp-action="Documents" method="get" class="filter-bar module-filters">
+        <div class="search-wrapper shadow-sm">
+            <i class="bi bi-search text-muted"></i>
+            <input type="text" name="search" placeholder="Search documents..." value="@Model.Search">
+        </div>
+        <select class="form-select status-filter shadow-sm" name="category" onchange="this.form.submit()">
+            <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Category) || Model.Category == "All" ? "selected" : null)">All Categories</option>
+            <option value="Policy" selected="@(Model.Category == "Policy" ? "selected" : null)">Policy</option>
+            <option value="Other" selected="@(Model.Category == "Other" ? "selected" : null)">Other</option>
+            <option value="Template" selected="@(Model.Category == "Template" ? "selected" : null)">Template</option>
+        </select>
+    </form>
+
+    @if (Model.Documents.Count == 0)
+    {
+        <div class="empty-state-section text-center py-5 bg-white rounded-4 border">
+            <h5 class="mb-2">No documents found</h5>
+            <p class="text-muted mb-0">Upload a document to start.</p>
+        </div>
+    }
+    else
+    {
+        <div class="doc-grid">
+            @foreach (var doc in Model.Documents)
+            {
+                var statusClass = doc.status == "Approved" ? "status-approved" : doc.status == "Rejected" ? "status-rejected" : "status-draft";
+                <div class="doc-card">
+                    <div class="d-flex align-items-start">
+                        <div class="doc-icon-box">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="doc-info">
+                            <h3 class="doc-name">@doc.title</h3>
+                            <span class="doc-filename">@doc.file_name</span>
+                            <div class="mt-2">
+                                <span class="badge-status @statusClass">@doc.status</span>
+                                <span class="badge-category">@doc.category</span>
+                            </div>
                         </div>
                     </div>
+                    <div class="doc-footer pt-3">
+                        <span>@FormatSize(doc.file_size_bytes)</span>
+                        <span>@doc.uploaded_date.ToString("MMM d, yyyy")</span>
+                    </div>
+                    <div class="mt-2 d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-secondary" href="@doc.file_path" target="_blank">View</a>
+                        <details class="d-inline-block">
+                            <summary class="btn btn-sm btn-outline-primary">Edit</summary>
+                            <form asp-action="Update" method="post" class="mt-2 border rounded-3 p-2 bg-light">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="documentId" value="@doc.document_id" />
+                                <input class="form-control form-control-sm mb-2" name="title" value="@doc.title" />
+                                <select class="form-select form-select-sm mb-2" name="category">
+                                    <option value="Policy" selected="@(doc.category=="Policy" ? "selected" : null)">Policy</option>
+                                    <option value="Other" selected="@(doc.category=="Other" ? "selected" : null)">Other</option>
+                                    <option value="Template" selected="@(doc.category=="Template" ? "selected" : null)">Template</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary w-100">Save</button>
+                            </form>
+                        </details>
+                        <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Archive this document?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="documentId" value="@doc.document_id" />
+                            <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
+                        </form>
+                    </div>
                 </div>
-                <div class="doc-footer pt-3">
-                    <span>@doc.Size</span>
-                    <span>@doc.Date</span>
-                </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 </div>

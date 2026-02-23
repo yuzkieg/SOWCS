@@ -39,6 +39,7 @@
     border-radius: 10px;
     display: flex;
     align-items: center;
+    min-height: 42px;
     padding: 0.5rem 1rem;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -63,7 +64,9 @@
     padding: 0.6rem;
     color: #475569;
     font-size: 0.9rem;
-    width: 100%;
+    width: 170px;
+    min-width: 170px;
+    min-height: 42px;
     cursor: pointer;
 }
 
@@ -98,8 +101,44 @@
     color: #64748b;
     max-width: 300px;
 }
-.modal-content {
-    border-radius: 12px;
+#createProjectModal .modal-dialog {
+    max-width: 560px;
+}
+
+#createProjectModal .modal-content {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18) !important;
+}
+
+#createProjectModal .modal-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+}
+
+#createProjectModal .modal-title {
+    font-size: 1.75rem;
+    font-weight: 600 !important;
+    color: #111827;
+}
+
+#createProjectModal .modal-body {
+    padding: 0.75rem 1.25rem 1.25rem;
+}
+
+.modal-backdrop.show {
+    background-color: #0f172a;
+    opacity: 0.38;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+@media (min-width: 1200px) {
+    body.bg-light.modal-open .modal-backdrop.show {
+        width: calc(100vw / var(--module-ui-scale)) !important;
+        height: calc(100vh / var(--module-ui-scale)) !important;
+    }
 }
 
 .custom-input {
@@ -111,8 +150,8 @@
 }
 
     .custom-input:focus {
-        border-color: #8b5cf6;
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        border-color: #0f172a;
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
     }
 
 .btn-save {
@@ -144,4 +183,22 @@
 select[multiple].custom-input {
     height: auto;
     min-height: 80px;
+}
+
+@media (max-width: 992px) {
+    .projects-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .projects-container {
+        padding: 1rem;
+    }
+
+    .btn-create {
+        width: 100%;
+        justify-content: center;
+    }
 }
