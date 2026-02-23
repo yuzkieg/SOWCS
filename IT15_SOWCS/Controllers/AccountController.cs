@@ -140,7 +140,6 @@ namespace IT15_SOWCS.Controllers
         [HttpPost]
         public IActionResult ExternalLogin(string provider, string returnUrl = null)
         {
-            // Optional: validate returnUrl to prevent open-redirect attacks
             if (string.IsNullOrEmpty(returnUrl))
                 returnUrl = Url.Action("Index", "Dashboard");  // fallback
 
@@ -153,7 +152,6 @@ namespace IT15_SOWCS.Controllers
         {
             if (remoteError != null)
             {
-                // Better error handling
                 TempData["Error"] = $"Error from external provider: {remoteError}";
                 return RedirectToAction(nameof(Login));
             }
@@ -165,7 +163,6 @@ namespace IT15_SOWCS.Controllers
                 return RedirectToAction(nameof(Login));
             }
 
-            // Sign in with external login if user already linked
             var result = await signInManager.ExternalLoginSignInAsync(
                 info.LoginProvider,
                 info.ProviderKey,
@@ -175,12 +172,10 @@ namespace IT15_SOWCS.Controllers
             {
                 await signInManager.UpdateExternalAuthenticationTokensAsync(info);
 
-                // Redirect to original page or fallback to dashboard
                 returnUrl = returnUrl ?? Url.Action("Index", "Dashboard");
-                return LocalRedirect(returnUrl);   // ← use LocalRedirect for safety
+                return LocalRedirect(returnUrl);   
             }
 
-            // New user flow
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
             if (email == null)
             {
@@ -193,20 +188,19 @@ namespace IT15_SOWCS.Controllers
             {
                 var givenName = info.Principal.FindFirstValue(ClaimTypes.GivenName);
                 var familyName = info.Principal.FindFirstValue(ClaimTypes.Surname);
-                var fullName = info.Principal.FindFirstValue(ClaimTypes.Name); // fallback - usually "First Last"
+                var fullName = info.Principal.FindFirstValue(ClaimTypes.Name); 
 
-                // Use whatever combination you prefer
                 var displayName = !string.IsNullOrEmpty(fullName)
                     ? fullName
                     : $"{givenName ?? ""} {familyName ?? ""}".Trim()
-                      ?? email.Split('@')[0];  // worst-case fallback to part before @
+                      ?? email.Split('@')[0];  
 
                 user = new Users
                 {
                     UserName = email,
                     Email = email,
-                    FullName = displayName,          // ← now set!
-                    EmailConfirmed = true                  // Google already verified email
+                    FullName = displayName,         
+                    EmailConfirmed = true                 
                 };
 
                 var createResult = await userManager.CreateAsync(user);
@@ -214,18 +208,15 @@ namespace IT15_SOWCS.Controllers
                 {
                     foreach (var err in createResult.Errors)
                         ModelState.AddModelError("", err.Description);
-                    // Optionally log or TempData["Error"] = ...
                     return View("Login");
                 }
 
                 await userManager.AddLoginAsync(user, info);
             }
 
-            // Sign the new/existing user in
             await signInManager.SignInAsync(user, isPersistent: false);
             await signInManager.UpdateExternalAuthenticationTokensAsync(info);
 
-            // Redirect with returnUrl support
             returnUrl = returnUrl ?? Url.Action("Index", "Dashboard");
             return LocalRedirect(returnUrl);
         }
@@ -234,7 +225,6 @@ namespace IT15_SOWCS.Controllers
         public async Task<IActionResult> Logout()
         {
             await signInManager.SignOutAsync();
-            // Redirecting to Login ensures a clean session end
             return RedirectToAction("Login", "Account");
         }
     }

@@ -79,12 +79,10 @@
         toggleBtn.addEventListener('click', function() {
             sidebar.classList.toggle('collapsed');
 
-            // Optional: Save state to localStorage to remember preference
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebar-collapsed', isCollapsed);
         });
 
-        // Check for saved preference on load
         if (localStorage.getItem('sidebar-collapsed') === 'true') {
             sidebar.classList.add('collapsed');
         }

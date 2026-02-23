@@ -1,0 +1,80 @@
+@model IEnumerable<IT15_SOWCS.ViewModels.ArchiveItemModel>
+@{
+    ViewData["Title"] = "Archive";
+    Layout = "_ArchiveLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+            <div class="archive-header mb-3">
+                <h2>Archive</h2>
+                <p>View and restore archived items</p>
+            </div>
+            <div class="row g-2 align-items-center mb-4">
+                <div class="col-12 col-md-8">
+                    <div class="search-input-group">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="form-control search-input" placeholder="Search archived items..." />
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <select class="form-select filter-select w-100">
+                        <option>All Types</option>
+                        <option>Task</option>
+                        <option>Project</option>
+                        <option>Document</option>
+                    </select>
+                </div>
+            </div>
+            <div class="archive-list">
+                @foreach (var item in Model)
+                {
+                    var iconClass = item.Type switch
+                    {
+                        "Task" => "bi-clipboard-check",
+                        "Project" => "bi-folder2-open",
+                        "Document" => "bi-file-earmark-text",
+                        _ => "bi-archive"
+                    };
+                    var badgeClass = item.Type switch
+                    {
+                        "Task" => "badge-task",
+                        "Project" => "badge-project",
+                        "Document" => "badge-document",
+                        _ => "badge-task"
+                    };
+                    <div class="archive-item-card d-flex flex-column flex-md-row align-items-md-center">
+                        <div class="type-icon-wrapper mb-2 mb-md-0">
+                            <i class="bi @iconClass fs-5"></i>
+                        </div>
+                        <div class="item-main-info flex-grow-1">
+                            <div class="item-title-badge">
+                                <h6>@item.Title</h6>
+                                <span class="badge-soft @badgeClass">@item.Type</span>
+                            </div>
+                            <div class="item-subtext">
+                                Archived by @item.ArchivedBy &bull; @item.DateArchived.ToString("MMM dd, yyyy")
+                            </div>
+                            <div class="item-reason-text">
+                                Reason: @item.Reason
+                            </div>
+                        </div>
+                        <div class="archive-actions d-flex flex-row flex-md-column gap-2 ms-md-3 mt-2 mt-md-0">
+                            <form asp-action="Restore" asp-route-id="@item.Id" method="post">
+                                <button type="submit" class="btn btn-archive-action btn-restore-outline w-100">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                </button>
+                            </form>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post">
+                                <button type="submit" class="btn btn-archive-action btn-delete-outline w-100">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

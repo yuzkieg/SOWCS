@@ -1,5 +1,4 @@
-﻿/* Projects Page Container */
-.projects-container {
+﻿.projects-container {
     padding: 1.5rem;
 }
 
@@ -34,7 +33,6 @@
         background-color: #1e293b;
         color: white;
     }
-/* Search Bar Styling - Matches reference image_af2663.png */
 .search-wrapper {
     background-color: #ffffff;
     border: 1px solid #e2e8f0;
@@ -59,7 +57,6 @@
         color: #475569;
     }
 
-/* Status Dropdown */
 .status-filter {
     border: 1px solid #e2e8f0;
     border-radius: 10px;
@@ -70,7 +67,6 @@
     cursor: pointer;
 }
 
-/* Empty State Styling */
 .empty-state-section {
     display: flex;
     flex-direction: column;
@@ -102,7 +98,6 @@
     color: #64748b;
     max-width: 300px;
 }
-/* Modal Styling */
 .modal-content {
     border-radius: 12px;
 }
@@ -120,9 +115,8 @@
         box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
     }
 
-/* Modal Buttons */
 .btn-save {
-    background-color: #0f172a; /* Dark navy from your ref */
+    background-color: #0f172a;
     color: white;
     border-radius: 8px;
     font-weight: 500;
@@ -147,7 +141,6 @@
         color: #1e293b;
     }
 
-/* Style for multi-select (optional) */
 select[multiple].custom-input {
     height: auto;
     min-height: 80px;

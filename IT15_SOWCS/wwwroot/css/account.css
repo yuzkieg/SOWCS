@@ -26,9 +26,9 @@ html, body {
     padding: 2.5rem;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+
 }
 
-/* Logo Styling */
 .logo-wrapper {
     display: flex;
     justify-content: center;
@@ -43,7 +43,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Soft glow from reference */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
 }
 
     .logo-circle img {
@@ -51,17 +51,16 @@ html, body {
         height: auto;
     }
 
-/* Custom Input Group Layout */
 .custom-input-group {
     border: 1px solid #e2e8f0;
-    border-radius: 12px !important; /* Matches reference curve */
-    overflow: hidden; /* Clips the inner corners */
+    border-radius: 12px !important; 
+    overflow: hidden; 
     background: #fff;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
     .custom-input-group .input-group-text {
-        background-color: #f1f5f9; /* The gray background for the icon */
+        background-color: #f1f5f9; 
         border: none;
         border-right: 1px solid #e2e8f0;
         padding: 0 1rem;
@@ -82,13 +81,11 @@ html, body {
             background: #fff;
         }
 
-    /* Focus state for the entire group */
     .custom-input-group:focus-within {
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
-/* Google Button */
 .btn-google {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -106,7 +103,6 @@ html, body {
         width: 18px;
     }
 
-/* Divider */
 .divider {
     display: flex;
     align-items: center;
@@ -126,7 +122,6 @@ html, body {
         font-weight: 700;
     }
 
-/* Buttons and Links */
 .btn-primary {
     background: #0f172a;
     border: none;

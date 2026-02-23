@@ -7,7 +7,6 @@ namespace IT15_SOWCS.Controllers
     {
         public IActionResult Documents()
         {
-            // Mock data matching your image
             var docs = new List<DocumentViewModel>
             {
                 new DocumentViewModel { Title = "IT10 Documentation", FileName = "IT10_DOCUMENTATION.pdf", Status = "Approved", Category = "Other", Size = "10.4 MB", Date = "Jan 24, 2026" },
@@ -23,7 +22,7 @@ namespace IT15_SOWCS.Controllers
     {
         public string Title { get; set; }
         public string FileName { get; set; }
-        public string Status { get; set; } // Approved, Draft
+        public string Status { get; set; } 
         public string Category { get; set; }
         public string Size { get; set; }
         public string Date { get; set; }

@@ -1,5 +1,4 @@
-﻿/* Container & Headers */
-.approvals-container {
+﻿.approvals-container {
     padding: 2rem;
     background-color: #f8fafc;
     min-height: 100vh;
@@ -17,7 +16,6 @@
     margin-bottom: 1.5rem;
 }
 
-/* Tabs Styling */
 .approvals-tabs {
     display: flex;
     gap: 12px;
@@ -55,7 +53,6 @@
     border-radius: 12px;
 }
 
-/* Card Styling */
 .approval-card {
     background: white;
     border-radius: 12px;
@@ -83,7 +80,6 @@
     font-size: 1.25rem;
 }
 
-/* Specific Icon Colors */
 .icon-leave {
     background-color: #fef3c7;
     color: #d97706;
@@ -122,7 +118,6 @@
     margin-top: 4px;
 }
 
-/* Action Buttons */
 .action-group {
     display: flex;
     gap: 10px;

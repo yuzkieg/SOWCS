@@ -1,5 +1,4 @@
-﻿/* Layout & Header */
-.docs-container {
+﻿.docs-container {
     padding: 1.5rem;
 }
 
@@ -35,7 +34,6 @@
         color: white;
     }
 
-/* Filter Bar */
 .filter-bar {
     display: flex;
     gap: 1rem;
@@ -73,7 +71,6 @@
     padding: 0.6rem;
 }
 
-/* Document Cards */
 .doc-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -125,7 +122,6 @@
     display: block;
 }
 
-/* Badges */
 .badge-status {
     padding: 4px 12px;
     border-radius: 6px;

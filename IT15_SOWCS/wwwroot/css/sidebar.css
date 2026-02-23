@@ -1,7 +1,6 @@
-﻿/* Sidebar Main Container */
-.sidebar-container {
+﻿.sidebar-container {
     background-color: #0f172a;
-    width: 280px; /* Full width */
+    width: 280px; 
     height: 100vh;
     position: sticky;
     top: 0;
@@ -13,13 +12,11 @@
     overflow: hidden;
 }
 
-    /* Collapsed State Width */
     .sidebar-container.collapsed {
         width: 80px;
         padding: 1.5rem 0.5rem;
     }
 
-/* Header & Toggle Button */
 .brand-header {
     display: flex;
     align-items: center;
@@ -42,7 +39,6 @@
     justify-content: center;
 }
 
-/* Branding Section */
 .brand-wrapper {
     display: flex;
     align-items: center;
@@ -51,7 +47,6 @@
     transition: opacity 0.2s;
 }
 
-/* Hide Branding when collapsed */
 .sidebar-container.collapsed .brand-wrapper {
     display: none;
 }
@@ -80,7 +75,6 @@
     white-space: nowrap;
 }
 
-/* Navigation Links */
 .sidebar-nav {
     list-style: none;
     padding: 0;
@@ -111,7 +105,6 @@
     text-align: center;
 }
 
-/* Hide text when collapsed */
 .nav-text {
     margin-left: 12px;
     transition: opacity 0.2s;
@@ -131,7 +124,6 @@
     color: white;
 }
 
-/* Footer Section */
 .sidebar-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 1.5rem;

@@ -2,7 +2,6 @@
 @{
     Layout = "_ProfileLayout";
     ViewData["Title"] = "User Profile";
-    // Get initials for avatar
     var initials = !string.IsNullOrEmpty(Model.FullName)
         ? string.Concat(Model.FullName.Split(' ').Select(x => x[0]))
         : "GK";

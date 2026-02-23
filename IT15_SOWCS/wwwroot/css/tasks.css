@@ -1,10 +1,8 @@
-﻿/* Layout & Container */
-body {
+﻿body {
     background-color: #fcfcfc;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Matching the padding of .projects-container */
 .tasks-container {
     padding: 1.5rem;
 }
@@ -34,8 +32,6 @@ body {
     cursor: pointer;
 }
 
-/* Form Controls - Matches .search-wrapper and .status-filter sizes */
-/* Search Bar Styling - Matches reference image_af2663.png */
 .search-wrapper {
     background-color: #ffffff;
     border: 1px solid #e2e8f0;
@@ -64,12 +60,11 @@ body {
 .form-control, .form-select {
     border: 1px solid #e2e8f0;
     color: #475569;
-    padding: 0.6rem 1rem; /* Matched padding */
-    border-radius: 10px; /* Matched rounded corners */
-    font-size: 0.95rem; /* Matched font size */
+    padding: 0.6rem 1rem; 
+    border-radius: 10px;
+    font-size: 0.95rem;
 }
 
-/* Specific adjustment for search input to align with the icon group */
 .search-container .form-control {
     border-left: none;
 }
@@ -80,36 +75,35 @@ body {
     outline: none;
 }
 
-/* Empty State Styling - Matches .empty-state-section */
 .empty-state-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 400px; /* Consistent vertical centering */
+    min-height: 400px; 
     text-align: center;
 }
 
 .icon-circle {
     width: 80px;
     height: 80px;
-    background-color: #f1f5f9; /* Matched background */
-    border-radius: 20px; /* Matched "squircle" radius from projects */
+    background-color: #f1f5f9; 
+    border-radius: 20px; 
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1.5rem; /* Increased spacing */
+    margin-bottom: 1.5rem;
     color: #94a3b8;
 }
 
 .text-muted {
-    color: #64748b !important; /* Matched slate gray */
+    color: #64748b !important; 
     max-width: 300px;
     margin: 0 auto;
 }
 
 .fw-bold {
-    color: #1e293b; /* Matched heading color */
+    color: #1e293b; 
     font-weight: 700;
     margin-bottom: 0.5rem;
 }

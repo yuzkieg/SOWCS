@@ -1,5 +1,4 @@
-﻿/* Container and Layout */
-.um-container {
+﻿.um-container {
     padding: 2rem;
     background-color: #f8fafc;
     min-height: 100vh;
@@ -23,7 +22,6 @@
     font-size: 0.95rem;
 }
 
-/* Stat Cards */
 .um-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -79,7 +77,6 @@
     color: #64748b;
 }
 
-/* Controls & Table */
 .um-controls {
     margin-bottom: 1.5rem;
 }
@@ -116,7 +113,6 @@
     gap: 8px;
 }
 
-/* Table Badges */
 .badge-role {
     padding: 4px 12px;
     border-radius: 8px;
@@ -142,7 +138,6 @@
     border: 1px solid #dbeafe;
 }
 
-/* Custom Input with Icon */
 .input-group-custom {
     position: relative;
     display: flex;
@@ -160,7 +155,7 @@
         padding-left: 40px;
         height: 48px;
         border-radius: 8px;
-        border: 1px solid #334155; /* Darker border like in the reference */
+        border: 1px solid #334155; 
         color: #64748b;
     }
 
@@ -168,7 +163,6 @@
             color: #94a3b8;
         }
 
-/* Custom Select Styling */
 .custom-select {
     height: 48px;
     border-radius: 8px;
@@ -177,7 +171,6 @@
     font-size: 0.95rem;
 }
 
-/* Modal Buttons */
 .modal-footer .btn-save {
     background-color: #0f172a;
     color: white;
@@ -191,27 +184,24 @@
         color: white;
     }
 
-/* Specific button in reference image has slightly different radius */
 #inviteUserModal .btn {
     border-radius: 8px !important;
 }
 
-/* Custom width for the Invite Modal */
 #inviteUserModal .modal-dialog {
-    max-width: 500px; /* Increased from 440px */
+    max-width: 500px; 
 }
 
-/* Ensure inputs and selects feel substantial in the wider modal */
 .input-group-custom .form-control,
 .custom-select {
-    height: 52px; /* Slightly taller to match the increased width */
+    height: 52px;
     font-size: 1rem;
     border: 1px solid #d1d5db;
     border-radius: 8px;
 }
 
 .input-group-custom i {
-    left: 15px; /* Adjust icon position for the larger input */
+    left: 15px; 
     color: #94a3b8;
 }
 
@@ -219,7 +209,6 @@
     padding-left: 45px;
 }
 
-/* Updated button style to match the dark navy in reference */
 .btn-save {
     background-color: #0f172a;
     color: white;
@@ -235,9 +224,9 @@
     }
 
 #inviteUserModal .modal-body {
-    padding: 1.25rem 1.25rem 0.75rem; /* top/left/right/bottom */
+    padding: 1.25rem 1.25rem 0.75rem; 
 }
 
     #inviteUserModal .modal-body p.text-secondary {
-        margin-bottom: 1rem; /* ← adjust this value down to 0.5rem–0.75rem */
+        margin-bottom: 1rem; 
     }

@@ -112,12 +112,10 @@
     const closeBtn = document.getElementById('closeModal');
     const cancelBtn = document.getElementById('cancelBtn');
 
-    // Open Modal
     openBtn.addEventListener('click', () => {
         modal.style.display = 'flex';
     });
 
-    // Close Modal functions
     const closeModal = () => {
         modal.style.display = 'none';
     };
@@ -125,7 +123,6 @@
     closeBtn.addEventListener('click', closeModal);
     cancelBtn.addEventListener('click', closeModal);
 
-    // Close if clicking outside the white box
     window.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });

@@ -1,5 +1,4 @@
-﻿/* Container Styling */
-.audit-container {
+﻿.audit-container {
     padding: 2rem;
     background-color: #f8fafc;
     min-height: 100vh;
@@ -17,7 +16,6 @@
     margin-bottom: 2rem;
 }
 
-/* Filter Controls */
 .audit-controls {
     display: flex;
     gap: 1rem;
@@ -52,7 +50,6 @@
     padding: 0.6rem;
 }
 
-/* Table Design */
 .audit-table-card {
     background: white;
     border-radius: 12px;
@@ -76,7 +73,6 @@
     font-size: 0.9rem;
 }
 
-/* User Identity column in Logs */
 .log-user-info .log-user-name {
     display: block;
     font-weight: 700;
@@ -89,7 +85,6 @@
     color: #64748b;
 }
 
-/* Action Badges */
 .badge-action {
     display: inline-flex;
     align-items: center;

@@ -6,7 +6,6 @@ namespace IT15_SOWCS.Controllers
     {
         public IActionResult LeaveRequest()
         {
-            // You would typically fetch data from a database here
             return View();
         }
     }

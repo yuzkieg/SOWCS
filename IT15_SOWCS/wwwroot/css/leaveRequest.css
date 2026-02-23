@@ -1,5 +1,4 @@
-﻿/* Container and Header */
-.leave-container {
+﻿.leave-container {
     padding: 2rem;
     background-color: #f8fafc;
     min-height: 100vh;
@@ -23,7 +22,6 @@
     font-size: 0.95rem;
 }
 
-/* Controls */
 .leave-controls {
     margin-bottom: 1.5rem;
 }
@@ -54,7 +52,6 @@
         color: white;
     }
 
-/* Leave Cards */
 .leave-card {
     background: white;
     border-radius: 12px;
@@ -137,7 +134,6 @@
     font-style: italic;
 }
 
-/* Right Side Stats */
 .leave-meta {
     text-align: right;
 }
@@ -161,9 +157,8 @@
     font-size: 0.75rem;
 }
 
-/* Modal Styles */
 .modal-overlay {
-    display: none; /* Hidden by default */
+    display: none; 
     position: fixed;
     top: 0;
     left: 0;
@@ -206,7 +201,6 @@
     color: #64748b;
 }
 
-/* Form Styling */
 .form-group {
     margin-bottom: 1.25rem;
 }
@@ -238,7 +232,6 @@
         border-color: #0f172a;
     }
 
-/* Modal Footer Buttons */
 .modal-footer {
     display: flex;
     justify-content: flex-end;
