@@ -79,3 +79,20 @@ body {
     min-width: 0;
   }
 }
+
+.ellipsis-action-btn {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #475569;
+  padding: 0.25rem 0.4rem;
+}
+
+.ellipsis-action-btn:hover,
+.ellipsis-action-btn:focus,
+.ellipsis-action-btn:active {
+  border: none !important;
+  background: #f1f5f9 !important;
+  box-shadow: none !important;
+  color: #0f172a;
+}

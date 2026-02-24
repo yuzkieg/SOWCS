@@ -182,6 +182,10 @@
     border: none;
 }
 
+.modal[id^="editEmployeeModal-"] .modal-dialog {
+    max-width: 640px;
+}
+
 .btn-save {
     background-color: #0d1117; 
     color: white;
@@ -205,6 +209,36 @@
 .form-control:focus, .form-select:focus {
     border-color: #dee2e6;
     box-shadow: none;
+}
+
+.edit-employee-modal {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+    padding: 0.25rem;
+}
+
+.edit-employee-modal .modal-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.edit-employee-modal .modal-body {
+    padding-top: 0.25rem;
+}
+
+.edit-employee-modal .form-control,
+.edit-employee-modal .form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    min-height: 42px;
+}
+
+.edit-employee-modal .form-control:focus,
+.edit-employee-modal .form-select:focus {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
 }
 
 @media (max-width: 992px) {

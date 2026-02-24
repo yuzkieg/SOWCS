@@ -2,17 +2,19 @@
 @{
     ViewData["Title"] = "My Tasks";
     Layout = "_TasksLayout";
+
+    var todoTasks = Model.Tasks.Where(task => task.status == "Pending").ToList();
+    var inProgressTasks = Model.Tasks.Where(task => task.status == "In Progress").ToList();
+    var reviewTasks = Model.Tasks.Where(task => task.status == "Review").ToList();
+    var completedTasks = Model.Tasks.Where(task => task.status == "Completed").ToList();
 }
 
 <div class="tasks-container">
-    <div class="tasks-header d-flex justify-content-between align-items-start">
+    <div class="tasks-header">
         <div class="tasks-title">
             <h2>My Tasks</h2>
             <p>Track and manage your assigned tasks</p>
         </div>
-        <button class="btn btn-create" data-bs-toggle="modal" data-bs-target="#createTaskModal">
-            <i class="bi bi-plus-lg me-2"></i> New Task
-        </button>
     </div>
 
     @if (TempData["TasksError"] is string tasksError)
@@ -20,15 +22,16 @@
         <div class="alert alert-danger">@tasksError</div>
     }
 
-    <form asp-action="Tasks" method="get" class="tasks-filters module-filters mb-4 d-flex gap-3">
+    <form asp-action="Tasks" method="get" class="tasks-filters module-filters">
         <div class="search-wrapper shadow-sm flex-grow-1">
             <i class="bi bi-search text-muted"></i>
-            <input type="text" name="search" placeholder="Search tasks..." value="@Model.Search">
+            <input type="text" name="search" placeholder="Search tasks..." value="@Model.Search" />
         </div>
         <select class="form-select status-filter shadow-sm" name="status" onchange="this.form.submit()">
             <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Status) || Model.Status == "All" ? "selected" : null)">All Status</option>
-            <option value="Pending" selected="@(Model.Status=="Pending" ? "selected" : null)">Pending</option>
+            <option value="Pending" selected="@(Model.Status=="Pending" ? "selected" : null)">To Do</option>
             <option value="In Progress" selected="@(Model.Status=="In Progress" ? "selected" : null)">In Progress</option>
+            <option value="Review" selected="@(Model.Status=="Review" ? "selected" : null)">Review</option>
             <option value="Completed" selected="@(Model.Status=="Completed" ? "selected" : null)">Completed</option>
         </select>
         <select class="form-select status-filter shadow-sm" name="priority" onchange="this.form.submit()">
@@ -51,150 +54,365 @@
     }
     else
     {
-        <div class="table-responsive bg-white border rounded-4 p-2">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Task</th>
-                        <th>Project</th>
-                        <th>Assigned To</th>
-                        <th>Status</th>
-                        <th>Priority</th>
-                        <th>Due</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var task in Model.Tasks)
-                    {
-                        <tr>
-                            <td>
-                                <div class="fw-bold">@task.title</div>
-                                <div class="text-muted small">@task.description</div>
-                            </td>
-                            <td>@(task.Project?.name ?? task.project_name)</td>
-                            <td>@task.assigned_name</td>
-                            <td>@task.status</td>
-                            <td>@task.priority</td>
-                            <td>@task.due_date.ToString("MMM d, yyyy")</td>
-                            <td class="text-end">
-                                <details class="d-inline-block text-start">
-                                    <summary class="btn btn-sm btn-outline-secondary">Edit</summary>
-                                    <form asp-action="Update" method="post" class="border rounded-3 p-3 bg-light mt-2" style="min-width: 320px;">
+        <div class="tasks-board">
+            <section class="task-column">
+                <div class="lane-title">
+                    <span class="lane-pill lane-todo">To Do</span>
+                    <span>(@todoTasks.Count)</span>
+                </div>
+                @foreach (var task in todoTasks)
+                {
+                    <article class="task-card">
+                        <div class="dropdown task-card-menu">
+                            <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <form asp-action="Move" method="post">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
-                                        <div class="mb-2">
-                                            <label class="form-label small">Title</label>
-                                            <input class="form-control form-control-sm" name="title" value="@task.title" required />
-                                        </div>
-                                        <div class="mb-2">
-                                            <label class="form-label small">Description</label>
-                                            <textarea class="form-control form-control-sm" name="description" rows="2">@task.description</textarea>
-                                        </div>
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-4">
-                                                <label class="form-label small">Status</label>
-                                                <select class="form-select form-select-sm" name="status">
-                                                    <option selected="@(task.status=="Pending" ? "selected" : null)">Pending</option>
-                                                    <option selected="@(task.status=="In Progress" ? "selected" : null)">In Progress</option>
-                                                    <option selected="@(task.status=="Completed" ? "selected" : null)">Completed</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-4">
-                                                <label class="form-label small">Priority</label>
-                                                <select class="form-select form-select-sm" name="priority">
-                                                    <option selected="@(task.priority=="Low" ? "selected" : null)">Low</option>
-                                                    <option selected="@(task.priority=="Medium" ? "selected" : null)">Medium</option>
-                                                    <option selected="@(task.priority=="High" ? "selected" : null)">High</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-4">
-                                                <label class="form-label small">Due Date</label>
-                                                <input type="date" class="form-control form-control-sm" name="dueDate" value="@task.due_date.ToString("yyyy-MM-dd")" />
-                                            </div>
-                                        </div>
-                                        <div class="text-end">
-                                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                        </div>
+                                        <input type="hidden" name="status" value="In Progress" />
+                                        <button type="submit" class="dropdown-item">Move to In Progress</button>
                                     </form>
-                                </details>
-                                <form asp-action="Delete" method="post" class="d-inline-block ms-1" onsubmit="return confirm('Archive this task?');">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="taskId" value="@task.task_id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Review" />
+                                        <button type="submit" class="dropdown-item">Move to Review</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Completed" />
+                                        <button type="submit" class="dropdown-item">Mark Complete</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item open-edit-task-modal"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editTaskModal"
+                                            data-task-id="@task.task_id"
+                                            data-title="@task.title"
+                                            data-description="@task.description"
+                                            data-employee-id="@task.employee_id"
+                                            data-priority="@task.priority"
+                                            data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
+                                            data-status="@task.status">Edit</button>
+                                </li>
+                                <li>
+                                    <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        <h6 class="task-card-title">@task.title</h6>
+                        <p class="task-card-description">@task.description</p>
+                        <div class="task-project-line">
+                            <i class="bi bi-folder2"></i>
+                            <span>@(task.Project?.name ?? task.project_name)</span>
+                        </div>
+                        <div class="task-card-footer">
+                            <span class="priority-pill @(
+                                task.priority == "High" ? "priority-high" :
+                                task.priority == "Medium" ? "priority-medium" :
+                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                            )">@task.priority</span>
+                            <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
+                        </div>
+                    </article>
+                }
+            </section>
+
+            <section class="task-column">
+                <div class="lane-title">
+                    <span class="lane-pill lane-inprogress">In Progress</span>
+                    <span>(@inProgressTasks.Count)</span>
+                </div>
+                @foreach (var task in inProgressTasks)
+                {
+                    <article class="task-card">
+                        <div class="dropdown task-card-menu">
+                            <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Pending" />
+                                        <button type="submit" class="dropdown-item">Move to To Do</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Review" />
+                                        <button type="submit" class="dropdown-item">Move to Review</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Completed" />
+                                        <button type="submit" class="dropdown-item">Mark Complete</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item open-edit-task-modal"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editTaskModal"
+                                            data-task-id="@task.task_id"
+                                            data-title="@task.title"
+                                            data-description="@task.description"
+                                            data-employee-id="@task.employee_id"
+                                            data-priority="@task.priority"
+                                            data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
+                                            data-status="@task.status">Edit</button>
+                                </li>
+                                <li>
+                                    <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        <h6 class="task-card-title">@task.title</h6>
+                        <p class="task-card-description">@task.description</p>
+                        <div class="task-project-line">
+                            <i class="bi bi-folder2"></i>
+                            <span>@(task.Project?.name ?? task.project_name)</span>
+                        </div>
+                        <div class="task-card-footer">
+                            <span class="priority-pill @(
+                                task.priority == "High" ? "priority-high" :
+                                task.priority == "Medium" ? "priority-medium" :
+                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                            )">@task.priority</span>
+                            <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
+                        </div>
+                    </article>
+                }
+            </section>
+
+            <section class="task-column">
+                <div class="lane-title">
+                    <span class="lane-pill lane-review">Review</span>
+                    <span>(@reviewTasks.Count)</span>
+                </div>
+                @foreach (var task in reviewTasks)
+                {
+                    <article class="task-card">
+                        <div class="dropdown task-card-menu">
+                            <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Pending" />
+                                        <button type="submit" class="dropdown-item">Move to To Do</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="In Progress" />
+                                        <button type="submit" class="dropdown-item">Move to In Progress</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Completed" />
+                                        <button type="submit" class="dropdown-item">Mark Complete</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item open-edit-task-modal"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editTaskModal"
+                                            data-task-id="@task.task_id"
+                                            data-title="@task.title"
+                                            data-description="@task.description"
+                                            data-employee-id="@task.employee_id"
+                                            data-priority="@task.priority"
+                                            data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
+                                            data-status="@task.status">Edit</button>
+                                </li>
+                                <li>
+                                    <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        <h6 class="task-card-title">@task.title</h6>
+                        <p class="task-card-description">@task.description</p>
+                        <div class="task-project-line">
+                            <i class="bi bi-folder2"></i>
+                            <span>@(task.Project?.name ?? task.project_name)</span>
+                        </div>
+                        <div class="task-card-footer">
+                            <span class="priority-pill @(
+                                task.priority == "High" ? "priority-high" :
+                                task.priority == "Medium" ? "priority-medium" :
+                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                            )">@task.priority</span>
+                            <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
+                        </div>
+                    </article>
+                }
+            </section>
+
+            <section class="task-column">
+                <div class="lane-title">
+                    <span class="lane-pill lane-completed">Completed</span>
+                    <span>(@completedTasks.Count)</span>
+                </div>
+                @foreach (var task in completedTasks)
+                {
+                    <article class="task-card">
+                        <div class="dropdown task-card-menu">
+                            <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Pending" />
+                                        <button type="submit" class="dropdown-item">Move to To Do</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="In Progress" />
+                                        <button type="submit" class="dropdown-item">Move to In Progress</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-action="Move" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <input type="hidden" name="status" value="Review" />
+                                        <button type="submit" class="dropdown-item">Move to Review</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item open-edit-task-modal"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editTaskModal"
+                                            data-task-id="@task.task_id"
+                                            data-title="@task.title"
+                                            data-description="@task.description"
+                                            data-employee-id="@task.employee_id"
+                                            data-priority="@task.priority"
+                                            data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
+                                            data-status="@task.status">Edit</button>
+                                </li>
+                                <li>
+                                    <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="taskId" value="@task.task_id" />
+                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        <h6 class="task-card-title">@task.title</h6>
+                        <p class="task-card-description">@task.description</p>
+                        <div class="task-project-line">
+                            <i class="bi bi-folder2"></i>
+                            <span>@(task.Project?.name ?? task.project_name)</span>
+                        </div>
+                        <div class="task-card-footer">
+                            <span class="priority-pill @(
+                                task.priority == "High" ? "priority-high" :
+                                task.priority == "Medium" ? "priority-medium" :
+                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                            )">@task.priority</span>
+                            <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
+                        </div>
+                    </article>
+                }
+            </section>
         </div>
     }
 </div>
 
-<div class="modal fade" id="createTaskModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Create Task</h5>
+                <h5 class="modal-title fw-bold">Edit Task</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body pt-3">
-                <form asp-action="Create" method="post">
+                <form asp-action="Update" method="post">
                     @Html.AntiForgeryToken()
+                    <input type="hidden" name="taskId" id="editTaskId" />
+                    <input type="hidden" name="status" id="editTaskStatus" />
+
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Task Title</label>
-                        <input name="title" class="form-control custom-input" required />
+                        <label class="form-label fw-semibold">Task Title</label>
+                        <input name="title" id="editTaskTitle" class="form-control custom-input" required />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Description</label>
-                        <textarea name="description" class="form-control custom-input" rows="2"></textarea>
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea name="description" id="editTaskDescription" class="form-control custom-input" rows="3"></textarea>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">Project</label>
-                            <select name="projectId" class="form-select custom-input" required>
-                                @foreach (var project in Model.Projects)
-                                {
-                                    <option value="@project.project_id">@project.name</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">Assign To</label>
-                            <select name="employeeId" class="form-select custom-input" required>
+                            <label class="form-label fw-semibold">Assign To</label>
+                            <select name="employeeId" id="editTaskEmployeeId" class="form-select custom-input" required>
                                 @foreach (var employee in Model.Employees)
                                 {
                                     <option value="@employee.employee_id">@employee.full_name</option>
                                 }
                             </select>
                         </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-4">
-                            <label class="form-label small fw-bold text-muted">Status</label>
-                            <select name="status" class="form-select custom-input">
-                                <option>Pending</option>
-                                <option>In Progress</option>
-                                <option>Completed</option>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Priority</label>
+                            <select name="priority" id="editTaskPriority" class="form-select custom-input" required>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
                             </select>
                         </div>
-                        <div class="col-4">
-                            <label class="form-label small fw-bold text-muted">Priority</label>
-                            <select name="priority" class="form-select custom-input">
-                                <option>Low</option>
-                                <option selected>Medium</option>
-                                <option>High</option>
-                            </select>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label small fw-bold text-muted">Due Date</label>
-                            <input type="date" name="dueDate" class="form-control custom-input" required />
-                        </div>
                     </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Due Date</label>
+                        <input type="date" name="dueDate" id="editTaskDueDate" class="form-control custom-input" required />
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
                         <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-save px-4">Create Task</button>
+                        <button type="submit" class="btn btn-save px-4">Save</button>
                     </div>
                 </form>
             </div>
@@ -202,3 +420,16 @@
     </div>
 </div>
 
+<script>
+    document.querySelectorAll('.open-edit-task-modal').forEach(function (button) {
+        button.addEventListener('click', function () {
+            document.getElementById('editTaskId').value = button.getAttribute('data-task-id') || '';
+            document.getElementById('editTaskTitle').value = button.getAttribute('data-title') || '';
+            document.getElementById('editTaskDescription').value = button.getAttribute('data-description') || '';
+            document.getElementById('editTaskEmployeeId').value = button.getAttribute('data-employee-id') || '';
+            document.getElementById('editTaskPriority').value = button.getAttribute('data-priority') || 'Medium';
+            document.getElementById('editTaskDueDate').value = button.getAttribute('data-due-date') || '';
+            document.getElementById('editTaskStatus').value = button.getAttribute('data-status') || 'Pending';
+        });
+    });
+</script>

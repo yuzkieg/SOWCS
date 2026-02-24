@@ -43,7 +43,7 @@
                     <th>Position</th>
                     <th>Role</th>
                     <th>Leave Balance</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-end"></th>
                 </tr>
             </thead>
             <tbody>
@@ -69,68 +69,116 @@
                         <td><span class="badge bg-light text-secondary border">@employee.employee_role</span></td>
                         <td>
                             <div class="leave-balance-row">
-                                <span class="lb-a">@employee.annual_leave_balance A</span>
-                                <span class="lb-s">@employee.sick_leave_balance S</span>
-                                <span class="lb-p">@employee.personal_leave_balance P</span>
+                                <span class="lb-a">@employee.annual_leave_balance.ToString("0") A</span>
+                                <span class="lb-s">@employee.sick_leave_balance.ToString("0") S</span>
+                                <span class="lb-p">@employee.personal_leave_balance.ToString("0") P</span>
                             </div>
                         </td>
                         <td class="text-end">
-                            <details class="d-inline-block text-start">
-                                <summary class="btn btn-sm btn-outline-secondary">Edit</summary>
-                                <form asp-action="Update" method="post" class="border rounded-3 p-3 bg-light mt-2" style="min-width: 340px;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="employeeId" value="@employee.employee_id" />
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">Department</label>
-                                            <input class="form-control form-control-sm" name="department" value="@employee.department" />
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Role</label>
-                                            <input class="form-control form-control-sm" name="employeeRole" value="@employee.employee_role" />
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Position</label>
-                                            <input class="form-control form-control-sm" name="position" value="@employee.position" />
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Phone</label>
-                                            <input class="form-control form-control-sm" name="contactNumber" value="@employee.contact_number" />
-                                        </div>
-                                        <div class="col-4">
-                                            <label class="form-label small">Annual</label>
-                                            <input class="form-control form-control-sm" type="number" step="0.5" name="annualLeave" value="@employee.annual_leave_balance" />
-                                        </div>
-                                        <div class="col-4">
-                                            <label class="form-label small">Sick</label>
-                                            <input class="form-control form-control-sm" type="number" step="0.5" name="sickLeave" value="@employee.sick_leave_balance" />
-                                        </div>
-                                        <div class="col-4">
-                                            <label class="form-label small">Personal</label>
-                                            <input class="form-control form-control-sm" type="number" step="0.5" name="personalLeave" value="@employee.personal_leave_balance" />
-                                        </div>
-                                    </div>
-                                    <div class="form-check mt-2">
-                                        <input class="form-check-input" type="checkbox" name="isActive" value="true" checked="@(employee.is_active ? "checked" : null)" />
-                                        <label class="form-check-label">Active</label>
-                                    </div>
-                                    <div class="text-end mt-2">
-                                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                    </div>
-                                </form>
-                            </details>
-                            <form asp-action="Delete" method="post" class="d-inline-block ms-1" onsubmit="return confirm('Archive this employee record?');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="employeeId" value="@employee.employee_id" />
-                                <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
-                            </form>
+                            <div class="dropdown d-inline-block ms-1 align-top">
+                                <button class="btn btn-sm ellipsis-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editEmployeeModal-@employee.employee_id">Edit</button>
+                                    </li>
+                                    <li>
+                                        <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this employee record?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="employeeId" value="@employee.employee_id" />
+                                            <button type="submit" class="dropdown-item text-warning">Archive</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
                         </td>
                     </tr>
+
                 }
             </tbody>
         </table>
     </div>
 </div>
+
+@foreach (var employee in Model.Employees)
+{
+    var initials = string.Concat(employee.full_name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0])).Take(2));
+    <div class="modal fade" id="editEmployeeModal-@employee.employee_id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content edit-employee-modal">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title">Edit Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form asp-action="Update" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="employeeId" value="@employee.employee_id" />
+                        <div class="edit-user-preview mb-3">
+                            <div class="avatar-circle">@initials</div>
+                            <div class="user-meta">
+                                <span class="name">@employee.full_name</span>
+                                <span class="email">@employee.User?.Email</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="modal-label">Department</label>
+                                <select class="form-select" name="department">
+                                    @foreach (var dept in Model.Employees.Select(e => e.department).Distinct().OrderBy(d => d))
+                                    {
+                                        <option value="@dept" selected="@(employee.department == dept ? "selected" : null)">@dept</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="modal-label">Role</label>
+                                <select class="form-select" name="employeeRole">
+                                    <option value="Employee" selected="@(employee.employee_role == "Employee" ? "selected" : null)">Employee</option>
+                                    <option value="Admin" selected="@(employee.employee_role == "Admin" ? "selected" : null)">Admin</option>
+                                    <option value="Manager" selected="@(employee.employee_role == "Manager" ? "selected" : null)">Manager</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="modal-label">Position</label>
+                                <input class="form-control" name="position" value="@employee.position" />
+                            </div>
+                            <div class="col-6">
+                                <label class="modal-label">Phone</label>
+                                <input class="form-control" name="contactNumber" value="@employee.contact_number" />
+                            </div>
+                        </div>
+
+                        <hr class="my-3" />
+                        <label class="modal-label d-block mb-2">Leave Balances</label>
+                        <div class="row g-3">
+                            <div class="col-4">
+                                <span class="text-muted-small">Annual</span>
+                                <input class="form-control" type="number" step="1" min="0" name="annualLeave" value="@employee.annual_leave_balance.ToString("0")" />
+                            </div>
+                            <div class="col-4">
+                                <span class="text-muted-small">Sick</span>
+                                <input class="form-control" type="number" step="1" min="0" name="sickLeave" value="@employee.sick_leave_balance.ToString("0")" />
+                            </div>
+                            <div class="col-4">
+                                <span class="text-muted-small">Personal</span>
+                                <input class="form-control" type="number" step="1" min="0" name="personalLeave" value="@employee.personal_leave_balance.ToString("0")" />
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="isActive" value="@(employee.is_active ? "true" : "false")" />
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-save px-4">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <div class="modal fade" id="createEmployeeModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">

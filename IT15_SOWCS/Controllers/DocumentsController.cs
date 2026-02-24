@@ -47,7 +47,7 @@ namespace IT15_SOWCS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upload(IFormFile uploadedFile, string? category)
+        public async Task<IActionResult> Upload(IFormFile uploadedFile, string? category, string? title, string? description, bool visibleToAllEmployees = false)
         {
             if (uploadedFile == null || uploadedFile.Length == 0)
             {
@@ -68,7 +68,7 @@ namespace IT15_SOWCS.Controllers
 
             var document = new DocumentRecord
             {
-                title = Path.GetFileNameWithoutExtension(uploadedFile.FileName),
+                title = string.IsNullOrWhiteSpace(title) ? Path.GetFileNameWithoutExtension(uploadedFile.FileName) : title.Trim(),
                 file_name = uploadedFile.FileName,
                 file_path = $"/uploads/{safeFileName}",
                 category = string.IsNullOrWhiteSpace(category) ? "Other" : category,
@@ -80,8 +80,6 @@ namespace IT15_SOWCS.Controllers
 
             _context.Documents.Add(document);
             await _context.SaveChangesAsync();
-
-            await AddAuditLog("upload", "Document", $"Uploaded document: {document.file_name}");
 
             return RedirectToAction(nameof(Documents));
         }
@@ -100,7 +98,6 @@ namespace IT15_SOWCS.Controllers
             document.category = category.Trim();
 
             await _context.SaveChangesAsync();
-            await AddAuditLog("update", "Document", $"Updated document: {document.file_name}");
 
             return RedirectToAction(nameof(Documents));
         }
@@ -130,24 +127,7 @@ namespace IT15_SOWCS.Controllers
             _context.Documents.Remove(document);
             await _context.SaveChangesAsync();
 
-            await AddAuditLog("archive", "Document", $"Archived document: {document.file_name}");
-
             return RedirectToAction(nameof(Documents));
-        }
-
-        private async Task AddAuditLog(string action, string entity, string description)
-        {
-            var email = User.Identity?.Name ?? "system@local";
-            _context.AuditLogs.Add(new AuditLogEntry
-            {
-                action = action,
-                entity = entity,
-                description = description,
-                user_email = email,
-                user_name = email
-            });
-
-            await _context.SaveChangesAsync();
         }
     }
 }

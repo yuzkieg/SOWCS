@@ -49,7 +49,6 @@ namespace IT15_SOWCS.Controllers
             leave.reviewed_date = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            await AddAuditLog(status.ToLowerInvariant(), "LeaveRequest", $"{status} leave request #{leave.LR_id}");
 
             return RedirectToAction(nameof(Approvals));
         }
@@ -70,23 +69,8 @@ namespace IT15_SOWCS.Controllers
             document.reviewed_date = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            await AddAuditLog(status.ToLowerInvariant(), "Document", $"{status} document #{document.document_id}");
 
             return RedirectToAction(nameof(Approvals));
-        }
-
-        private async Task AddAuditLog(string action, string entity, string description)
-        {
-            var email = User.Identity?.Name ?? "system@local";
-            _context.AuditLogs.Add(new AuditLogEntry
-            {
-                action = action,
-                entity = entity,
-                description = description,
-                user_email = email,
-                user_name = email
-            });
-            await _context.SaveChangesAsync();
         }
     }
 }

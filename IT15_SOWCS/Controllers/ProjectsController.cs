@@ -33,16 +33,73 @@ namespace IT15_SOWCS.Controllers
                 query = query.Where(project => project.status == status);
             }
 
+            var projects = await query.OrderByDescending(project => project.project_id).ToListAsync();
+            var projectIds = projects.Select(project => project.project_id).ToList();
+
+            var taskStats = await _context.Tasks
+                .Where(task => projectIds.Contains(task.project_id))
+                .GroupBy(task => task.project_id)
+                .Select(group => new
+                {
+                    ProjectId = group.Key,
+                    TotalCount = group.Count(),
+                    CompletedCount = group.Count(task => task.status == "Completed")
+                })
+                .ToListAsync();
+
+            var progressByProjectId = taskStats.ToDictionary(
+                item => item.ProjectId,
+                item => item.TotalCount == 0
+                    ? 0
+                    : (int)Math.Round((item.CompletedCount * 100.0) / item.TotalCount));
+
             var model = new ProjectsPageViewModel
             {
-                Projects = await query.OrderByDescending(project => project.project_id).ToListAsync(),
+                Projects = projects,
                 Employees = await _context.Employees.OrderBy(employee => employee.full_name).ToListAsync(),
+                ProgressByProjectId = progressByProjectId,
                 Search = search,
                 Status = status
             };
 
             ViewData["Title"] = "Projects";
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Detail(int id)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            var teamNames = (project.team_members ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(member => member.Trim())
+                .Where(member => !string.IsNullOrWhiteSpace(member))
+                .ToList();
+
+            var teamMembers = await _context.Employees
+                .Where(employee => teamNames.Contains(employee.full_name))
+                .OrderBy(employee => employee.full_name)
+                .ToListAsync();
+
+            var tasks = await _context.Tasks
+                .Where(task => task.project_id == id)
+                .OrderByDescending(task => task.task_id)
+                .ToListAsync();
+
+            var model = new ProjectDetailViewModel
+            {
+                Project = project,
+                TeamMembers = teamMembers,
+                Tasks = tasks
+            };
+
+            ViewData["Title"] = "Project Detail";
+            return View("ProjectDetail", model);
         }
 
         [HttpPost]

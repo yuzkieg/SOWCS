@@ -96,6 +96,12 @@
     transition: box-shadow 0.2s;
 }
 
+.doc-actions-dropdown {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+}
+
     .doc-card:hover {
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
@@ -114,8 +120,14 @@
     }
 
 .doc-info {
-    display: inline-block;
+    display: block;
     vertical-align: top;
+    flex: 1;
+    min-width: 0;
+}
+
+.doc-main-row {
+    padding-right: 2rem;
 }
 
 .doc-name {
@@ -123,6 +135,10 @@
     font-size: 1.1rem;
     color: #1e293b;
     margin: 0;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .doc-filename {
@@ -130,6 +146,9 @@
     color: #94a3b8;
     margin-bottom: 10px;
     display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .badge-status {
@@ -164,4 +183,56 @@
     padding-top: 1rem;
     color: #94a3b8;
     font-size: 0.85rem;
+}
+
+.upload-modal {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+}
+
+#uploadDocumentModal .modal-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+#uploadDocumentModal .modal-body {
+    padding-top: 0.25rem;
+}
+
+#uploadDocumentModal .form-label {
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.45rem;
+}
+
+#uploadDocumentModal .form-control,
+#uploadDocumentModal .form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    min-height: 44px;
+}
+
+#uploadDocumentModal textarea.form-control {
+    min-height: auto;
+}
+
+#uploadDocumentModal .form-control:focus,
+#uploadDocumentModal .form-select:focus {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+.btn-upload-submit {
+    background: #0f172a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+}
+
+.btn-upload-submit:hover {
+    background: #1e293b;
+    color: #fff;
 }

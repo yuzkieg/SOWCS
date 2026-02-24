@@ -1,4 +1,5 @@
 using IT15_SOWCS.Data;
+using IT15_SOWCS.Filters;
 using IT15_SOWCS.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -6,7 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<UserActionAuditFilter>();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.AddService<UserActionAuditFilter>();
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));

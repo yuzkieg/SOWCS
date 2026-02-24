@@ -63,7 +63,8 @@ namespace IT15_SOWCS.Controllers
             string? description,
             string status,
             string priority,
-            DateTime dueDate)
+            DateTime dueDate,
+            int? redirectProjectId)
         {
             var employee = await _context.Employees.Include(item => item.User).FirstOrDefaultAsync(item => item.employee_id == employeeId);
             var project = await _context.Projects.FirstOrDefaultAsync(item => item.project_id == projectId);
@@ -90,6 +91,12 @@ namespace IT15_SOWCS.Controllers
 
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
+
+            if (redirectProjectId.HasValue)
+            {
+                return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
+            }
+
             return RedirectToAction(nameof(Tasks));
         }
 
@@ -101,7 +108,9 @@ namespace IT15_SOWCS.Controllers
             string? description,
             string status,
             string priority,
-            DateTime dueDate)
+            DateTime dueDate,
+            int? employeeId,
+            int? redirectProjectId)
         {
             var task = await _context.Tasks.FindAsync(taskId);
             if (task == null)
@@ -116,13 +125,56 @@ namespace IT15_SOWCS.Controllers
             task.due_date = dueDate;
             task.completed_date = status == "Completed" ? DateTime.UtcNow : null;
 
+            if (employeeId.HasValue)
+            {
+                var employee = await _context.Employees
+                    .Include(item => item.User)
+                    .FirstOrDefaultAsync(item => item.employee_id == employeeId.Value);
+
+                if (employee != null)
+                {
+                    task.employee_id = employee.employee_id;
+                    task.assigned_name = employee.full_name;
+                    task.assigned_to = employee.User?.Email ?? string.Empty;
+                }
+            }
+
             await _context.SaveChangesAsync();
+
+            if (redirectProjectId.HasValue)
+            {
+                return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
+            }
+
             return RedirectToAction(nameof(Tasks));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int taskId)
+        public async Task<IActionResult> Move(int taskId, string status, int? redirectProjectId)
+        {
+            var task = await _context.Tasks.FindAsync(taskId);
+            if (task == null)
+            {
+                return NotFound();
+            }
+
+            task.status = status;
+            task.completed_date = status == "Completed" ? DateTime.UtcNow : null;
+
+            await _context.SaveChangesAsync();
+
+            if (redirectProjectId.HasValue)
+            {
+                return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
+            }
+
+            return RedirectToAction(nameof(Tasks));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int taskId, int? redirectProjectId)
         {
             var task = await _context.Tasks.FindAsync(taskId);
             if (task == null)
@@ -144,6 +196,12 @@ namespace IT15_SOWCS.Controllers
 
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
+
+            if (redirectProjectId.HasValue)
+            {
+                return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
+            }
+
             return RedirectToAction(nameof(Tasks));
         }
     }

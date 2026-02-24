@@ -91,9 +91,9 @@ namespace IT15_SOWCS.Controllers
             string position,
             string contactNumber,
             string employeeRole,
-            decimal annualLeave,
-            decimal sickLeave,
-            decimal personalLeave,
+            int annualLeave,
+            int sickLeave,
+            int personalLeave,
             bool isActive)
         {
             var employee = await _context.Employees.FindAsync(employeeId);

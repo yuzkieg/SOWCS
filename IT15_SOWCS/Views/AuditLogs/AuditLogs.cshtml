@@ -10,10 +10,6 @@
             <h2>Audit Logs</h2>
             <p>Track all system activities and changes</p>
         </div>
-        <form asp-action="ClearAll" method="post" onsubmit="return confirm('Archive all audit logs?');">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-outline-warning btn-sm">Archive All</button>
-        </form>
     </div>
 
     <form asp-action="AuditLogs" method="get" class="audit-controls module-filters">
@@ -23,11 +19,14 @@
         </div>
         <select class="form-select status-filter shadow-sm" name="action" onchange="this.form.submit()">
             <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Action) || Model.Action == "All" ? "selected" : null)">All Actions</option>
-            <option value="approve" selected="@(Model.Action=="approve" ? "selected" : null)">Approve</option>
-            <option value="reject" selected="@(Model.Action=="reject" ? "selected" : null)">Reject</option>
+            <option value="approved" selected="@(Model.Action=="approved" || Model.Action=="approve" ? "selected" : null)">Approve</option>
+            <option value="rejected" selected="@(Model.Action=="rejected" || Model.Action=="reject" ? "selected" : null)">Reject</option>
             <option value="upload" selected="@(Model.Action=="upload" ? "selected" : null)">Upload</option>
+            <option value="invite" selected="@(Model.Action=="invite" ? "selected" : null)">Invite</option>
+            <option value="create" selected="@(Model.Action=="create" ? "selected" : null)">Create</option>
             <option value="update" selected="@(Model.Action=="update" ? "selected" : null)">Update</option>
-            <option value="delete" selected="@(Model.Action=="delete" ? "selected" : null)">Delete</option>
+            <option value="archive" selected="@(Model.Action=="archive" || Model.Action=="delete" ? "selected" : null)">Archive</option>
+            <option value="restore" selected="@(Model.Action=="restore" ? "selected" : null)">Restore</option>
         </select>
     </form>
 
@@ -40,17 +39,17 @@
                     <th>Action</th>
                     <th>Entity</th>
                     <th>Description</th>
-                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Logs.Count == 0)
                 {
-                    <tr><td colspan="6" class="text-center text-muted py-4">No logs found.</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted py-4">No logs found.</td></tr>
                 }
                 @foreach (var log in Model.Logs)
                 {
-                    var badgeClass = log.action == "approve" ? "badge-approve" : log.action == "reject" ? "badge-reject" : "badge-approve";
+                    var isNegative = log.action == "reject" || log.action == "rejected";
+                    var badgeClass = isNegative ? "badge-reject" : "badge-approve";
                     <tr>
                         <td class="timestamp-text">@log.timestamp.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
                         <td>
@@ -61,18 +60,11 @@
                         </td>
                         <td>
                             <span class="badge-action @badgeClass">
-                                <i class="bi @(log.action == "reject" ? "bi-x-circle" : "bi-check-circle")"></i> @log.action
+                                <i class="bi @(isNegative ? "bi-x-circle" : "bi-check-circle")"></i> @log.action
                             </span>
                         </td>
                         <td>@log.entity</td>
                         <td>@log.description</td>
-                        <td class="text-end">
-                            <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Archive this audit log entry?');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@log.audit_log_id" />
-                                <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
-                            </form>
-                        </td>
                     </tr>
                 }
             </tbody>

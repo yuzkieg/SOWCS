@@ -46,83 +46,45 @@
     }
     else
     {
-        <div class="table-responsive bg-white border rounded-4 p-2">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Project</th>
-                        <th>Status</th>
-                        <th>Priority</th>
-                        <th>Progress</th>
-                        <th>Team</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var project in Model.Projects)
-                    {
-                        <tr>
-                            <td>
-                                <div class="fw-bold">@project.name</div>
-                                <div class="text-muted small">@project.description</div>
-                            </td>
-                            <td>@project.status</td>
-                            <td>@project.priority</td>
-                            <td>@project.progress%</td>
-                            <td class="small text-muted">@project.team_members</td>
-                            <td class="text-end">
-                                <details class="d-inline-block text-start">
-                                    <summary class="btn btn-sm btn-outline-secondary">Edit</summary>
-                                    <form asp-action="Update" method="post" class="border rounded-3 p-3 bg-light mt-2" style="min-width: 320px;">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="projectId" value="@project.project_id" />
-                                        <div class="mb-2">
-                                            <label class="form-label small">Name</label>
-                                            <input type="text" class="form-control form-control-sm" name="name" value="@project.name" required />
-                                        </div>
-                                        <div class="mb-2">
-                                            <label class="form-label small">Description</label>
-                                            <textarea class="form-control form-control-sm" name="description" rows="2">@project.description</textarea>
-                                        </div>
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-4">
-                                                <label class="form-label small">Status</label>
-                                                <select class="form-select form-select-sm" name="status">
-                                                    <option selected="@(project.status=="Planning" ? "selected" : null)">Planning</option>
-                                                    <option selected="@(project.status=="Active" ? "selected" : null)">Active</option>
-                                                    <option selected="@(project.status=="On Hold" ? "selected" : null)">On Hold</option>
-                                                    <option selected="@(project.status=="Completed" ? "selected" : null)">Completed</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-4">
-                                                <label class="form-label small">Priority</label>
-                                                <select class="form-select form-select-sm" name="priority">
-                                                    <option selected="@(project.priority=="Low" ? "selected" : null)">Low</option>
-                                                    <option selected="@(project.priority=="Medium" ? "selected" : null)">Medium</option>
-                                                    <option selected="@(project.priority=="High" ? "selected" : null)">High</option>
-                                                    <option selected="@(project.priority=="Urgent" ? "selected" : null)">Urgent</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-4">
-                                                <label class="form-label small">Progress</label>
-                                                <input type="number" class="form-control form-control-sm" name="progress" min="0" max="100" value="@project.progress" />
-                                            </div>
-                                        </div>
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                        </div>
-                                    </form>
-                                </details>
-                                <form asp-action="Delete" method="post" class="d-inline-block ms-1" onsubmit="return confirm('Archive this project?');">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="projectId" value="@project.project_id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="projects-grid">
+            @foreach (var project in Model.Projects)
+            {
+                var priorityClass = project.priority.Equals("High", StringComparison.OrdinalIgnoreCase) ? "priority-high"
+                    : project.priority.Equals("Medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium"
+                    : project.priority.Equals("Urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical"
+                    : "priority-low";
+                var progressPercent = Model.ProgressByProjectId.TryGetValue(project.project_id, out var computedProgress)
+                    ? computedProgress
+                    : 0;
+                var memberCount = string.IsNullOrWhiteSpace(project.team_members)
+                    ? 0
+                    : project.team_members.Split(',', StringSplitOptions.RemoveEmptyEntries).Length;
+                <div class="project-card">
+                    <div class="project-top-row">
+                        <div class="project-mini-icon"><i class="bi bi-folder2-open"></i></div>
+                        <span class="priority-pill @priorityClass">@project.priority</span>
+                    </div>
+                    <h4 class="project-card-title">@project.name</h4>
+                    <p class="project-card-desc">@(string.IsNullOrWhiteSpace(project.description) ? "No project description provided." : project.description)</p>
+
+                    <div class="project-progress-row">
+                        <span>Progress</span>
+                        <strong>@progressPercent%</strong>
+                    </div>
+                    <div class="project-progress-track">
+                        <div class="project-progress-fill" style="width:@progressPercent%;"></div>
+                    </div>
+
+                    <div class="project-meta-row">
+                        <span><i class="bi bi-person"></i> @memberCount members</span>
+                        <span><i class="bi bi-calendar4"></i> @project.due_date.ToString("MMM d, yyyy")</span>
+                    </div>
+
+                    <a asp-action="Detail" asp-route-id="@project.project_id" class="project-view-link">
+                        View Details <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            }
         </div>
     }
 </div>

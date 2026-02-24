@@ -17,7 +17,7 @@ namespace IT15_SOWCS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AuditLogs(string? search, string? action)
+        public async Task<IActionResult> AuditLogs(string? search, [FromQuery(Name = "action")] string? actionFilter)
         {
             var query = _context.AuditLogs.AsQueryable();
 
@@ -29,16 +29,25 @@ namespace IT15_SOWCS.Controllers
                     log.description.Contains(search));
             }
 
-            if (!string.IsNullOrWhiteSpace(action) && !action.Equals("All", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(actionFilter) && !actionFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(log => log.action == action);
+                var normalizedAction = actionFilter.Trim().ToLowerInvariant();
+                var acceptedActions = normalizedAction switch
+                {
+                    "approve" => new[] { "approve", "approved" },
+                    "reject" => new[] { "reject", "rejected" },
+                    "delete" => new[] { "delete", "archive" },
+                    _ => new[] { normalizedAction }
+                };
+
+                query = query.Where(log => log.action != null && acceptedActions.Contains(log.action.ToLower()));
             }
 
             var model = new AuditLogsPageViewModel
             {
                 Logs = await query.OrderByDescending(log => log.timestamp).ToListAsync(),
                 Search = search,
-                Action = action
+                Action = actionFilter
             };
 
             return View("AuditLogs", model);
