@@ -216,9 +216,15 @@
     border: 1px solid #e2e8f0;
 }
 
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f5d88b;
+}
+
 .doc-feedback {
-    margin-top: 0.45rem;
-    color: #b91c1c;
+    margin-top: 0.7rem;
+    color: #111827;
     font-size: 0.92rem;
     font-style: italic;
 }

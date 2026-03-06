@@ -12,16 +12,27 @@ namespace IT15_SOWCS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
+        private readonly LeaveBalanceService _leaveBalanceService;
 
-        public LeaveRequestController(AppDbContext context, NotificationService notificationService)
+        public LeaveRequestController(
+            AppDbContext context,
+            NotificationService notificationService,
+            LeaveBalanceService leaveBalanceService)
         {
             _context = context;
             _notificationService = notificationService;
+            _leaveBalanceService = leaveBalanceService;
         }
 
         [HttpGet]
         public async Task<IActionResult> LeaveRequest(string? status)
         {
+            var currentEmail = User.Identity?.Name;
+            if (!string.IsNullOrWhiteSpace(currentEmail))
+            {
+                await _leaveBalanceService.RecomputeBalanceForEmployeeAsync(currentEmail);
+            }
+
             var query = _context.LeaveRequests.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
@@ -65,6 +76,22 @@ namespace IT15_SOWCS.Controllers
                 .Where(user => user.Email == employeeEmail)
                 .Select(user => string.IsNullOrWhiteSpace(user.FullName) ? user.Email! : user.FullName)
                 .FirstOrDefaultAsync() ?? employeeEmail;
+
+            var leaveBalanceType = LeaveBalanceService.NormalizeLeaveType(leaveType);
+            if (leaveBalanceType.HasValue)
+            {
+                var employee = await _leaveBalanceService.RecomputeBalanceForEmployeeAsync(employeeEmail);
+                if (employee != null)
+                {
+                    var requestedDays = (decimal)((endDate.Date - startDate.Date).Days + 1);
+                    var available = LeaveBalanceService.GetAvailableBalance(employee, leaveBalanceType.Value);
+                    if (available < requestedDays)
+                    {
+                        TempData["LeaveError"] = $"Insufficient {leaveType} balance. Available: {available:0} day(s), requested: {requestedDays:0} day(s).";
+                        return RedirectToAction(nameof(LeaveRequest));
+                    }
+                }
+            }
 
             var leave = new LeaveRequest
             {

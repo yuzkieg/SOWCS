@@ -493,3 +493,90 @@ body {
   font-size: 1rem !important;
   margin-bottom: 0.9rem !important;
 }
+.um-status-switch {
+    position: relative;
+    width: 77px;
+    height: 24px;
+    border: 1px solid #d7dde7;
+    border-radius: 999px;
+    background: #eef2f7;
+    color: #6b7280;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.um-status-switch .um-status-label {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    z-index: 1;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.um-status-switch .um-status-label-on {
+    left: 8px;
+    opacity: 0;
+}
+
+.um-status-switch .um-status-label-off {
+    right: 8px;
+    opacity: 1;
+}
+
+.um-status-switch .um-status-knob {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.um-status-switch.is-active {
+    background: #17d464;
+    border-color: #11b457;
+    color: #ffffff;
+}
+
+.um-status-switch.is-active .um-status-label-on {
+    opacity: 1;
+}
+
+.um-status-switch.is-active .um-status-label-off {
+    opacity: 0;
+}
+
+.um-status-switch.is-active .um-status-knob {
+    transform: translateX(50px);
+    color: #10b957;
+}
+
+.um-status-switch.is-inactive .um-status-label-on {
+    opacity: 0;
+}
+
+.um-status-switch.is-inactive .um-status-label-off {
+    opacity: 1;
+}
+
+.um-status-switch.is-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}

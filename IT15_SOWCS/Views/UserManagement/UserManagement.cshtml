@@ -32,7 +32,7 @@
                 <i class="bi bi-people"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-value">@Model.TotalUsersCount</span>
+                <span class="stat-value" id="umTotalUsersCount">@Model.TotalUsersCount</span>
                 <span class="stat-label">Total Users</span>
             </div>
         </a>
@@ -45,7 +45,7 @@
                 <i class="bi bi-shield-lock"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-value">@Model.AdminCount</span>
+                <span class="stat-value" id="umAdminCount">@Model.AdminCount</span>
                 <span class="stat-label">Admins</span>
             </div>
         </a>
@@ -58,11 +58,15 @@
                 <i class="bi bi-person-check"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-value">@Model.ActiveEmployeeCount</span>
+                <span class="stat-value" id="umActiveEmployeeCount">@Model.ActiveEmployeeCount</span>
                 <span class="stat-label">Active Employees</span>
             </div>
         </a>
     </div>
+
+    <form id="umStatusTokenForm" method="post" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
 
     <div class="bg-white rounded-4 border p-1">
         <form asp-action="UserManagement" method="get" class="p-3">
@@ -80,6 +84,7 @@
                     <th style="font-size: 0.85rem; font-weight: 500;">System Role</th>
                     <th style="font-size: 0.85rem; font-weight: 500;">Employee Role</th>
                     <th style="font-size: 0.85rem; font-weight: 500;">Joined</th>
+                    <th style="font-size: 0.85rem; font-weight: 500;">Status</th>
                     <th style="font-size: 0.85rem; font-weight: 500;" class="text-end pe-4"></th>
                 </tr>
             </thead>
@@ -87,7 +92,7 @@
                 @if (Model.Users.Count == 0)
                 {
                     <tr>
-                        <td class="ps-4 py-4 text-muted" colspan="5">No users found.</td>
+                        <td class="ps-4 py-4 text-muted" colspan="6">No users found.</td>
                     </tr>
                 }
                 @foreach (var user in Model.Users)
@@ -106,8 +111,11 @@
                             : "badge-system-user";
                     var roleValue = (user.Role ?? string.Empty).ToLowerInvariant();
                     var isActiveEmployee = Model.ActiveEmployeeUserIds.Contains(user.Id);
+                    var isInactiveUser = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow;
+                    var isActiveUser = !isInactiveUser;
                     <tr data-um-row="true"
                         data-system-role="@roleValue"
+                        data-user-active="@(isActiveUser ? "true" : "false")"
                         data-is-active-employee="@(isActiveEmployee ? "true" : "false")">
                         <td class="ps-4">
                             <div class="d-flex align-items-center gap-2">
@@ -119,10 +127,40 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge-role @systemRoleClass">@displaySystemRole</span>
+                            @if (string.Equals(user.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="badge-role @systemRoleClass">Super Admin</span>
+                            }
+                            else
+                            {
+                                <select class="um-role-select badge-role @systemRoleClass"
+                                        data-user-role-select="true"
+                                        data-role="@roleValue"
+                                        data-user-id="@user.Id"
+                                        aria-label="Update user role">
+                                    <option value="user" selected="@(roleValue == "user" ? "selected" : null)">User</option>
+                                    <option value="admin" selected="@(roleValue == "admin" ? "selected" : null)">Admin</option>
+                                </select>
+                            }
                         </td>
                         <td><span class="badge-role badge-emp-role">@employeeRole</span></td>
                         <td class="text-secondary" style="font-size: 0.9rem;">@user.CreatedDate.ToString("MMM d, yyyy")</td>
+                        <td>
+                            <button type="button"
+                                    class="um-status-switch @(isActiveUser ? "is-active" : "is-inactive")"
+                                    data-user-status-toggle="true"
+                                    data-user-id="@user.Id"
+                                    data-active="@(isActiveUser ? "true" : "false")"
+                                    role="switch"
+                                    aria-checked="@(isActiveUser ? "true" : "false")"
+                                    aria-label="Toggle user active status">
+                                <span class="um-status-label um-status-label-on">Active</span>
+                                <span class="um-status-label um-status-label-off">Inactive</span>
+                                <span class="um-status-knob">
+                                    <i class="bi @(isActiveUser ? "bi-check-lg" : "bi-x-lg")"></i>
+                                </span>
+                            </button>
+                        </td>
                         <td class="text-end pe-4">
                             <div class="dropdown d-inline-block">
                                 <button class="btn btn-sm ellipsis-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">
@@ -142,7 +180,7 @@
                     </tr>
                 }
                 <tr id="umNoFilterResultsRow" class="d-none">
-                    <td class="ps-4 py-4 text-muted" colspan="5">No users found for this filter.</td>
+                    <td class="ps-4 py-4 text-muted" colspan="6">No users found for this filter.</td>
                 </tr>
             </tbody>
         </table>
@@ -233,6 +271,8 @@
             }
         }
 
+        window.syncoraApplyUserManagementFilter = applyFilter;
+
         filterCards.forEach(function (card) {
             card.addEventListener('click', function (event) {
                 event.preventDefault();
@@ -248,6 +288,197 @@
         });
 
         applyFilter('@selectedFilter', false);
+    })();
+
+    (function () {
+        const tokenInput = document.querySelector('#umStatusTokenForm input[name="__RequestVerificationToken"]');
+        const statusSwitches = Array.from(document.querySelectorAll('[data-user-status-toggle="true"]'));
+        const roleSelects = Array.from(document.querySelectorAll('[data-user-role-select="true"]'));
+        const totalUsersCount = document.getElementById('umTotalUsersCount');
+        const adminCount = document.getElementById('umAdminCount');
+        const activeEmployeeCount = document.getElementById('umActiveEmployeeCount');
+
+        if (!tokenInput) {
+            return;
+        }
+
+        function showUmToast(message, isError) {
+            const existing = document.getElementById('umActionToast');
+            if (existing) {
+                existing.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.id = 'umActionToast';
+            toast.className = isError ? 'syncora-toast syncora-toast-error' : 'syncora-toast';
+            toast.innerHTML = '<i class="bi ' + (isError ? 'bi-exclamation-circle' : 'bi-check-circle') + '"></i>' + message;
+            document.body.appendChild(toast);
+
+            setTimeout(function () {
+                toast.remove();
+            }, 3200);
+        }
+
+        function setSwitchState(button, activeState) {
+            button.dataset.active = activeState ? 'true' : 'false';
+            button.setAttribute('aria-checked', activeState ? 'true' : 'false');
+            button.classList.toggle('is-active', activeState);
+            button.classList.toggle('is-inactive', !activeState);
+
+            const icon = button.querySelector('.um-status-knob i');
+            if (icon) {
+                icon.className = activeState ? 'bi bi-check-lg' : 'bi bi-x-lg';
+            }
+
+            const row = button.closest('tr[data-um-row="true"]');
+            if (row) {
+                row.setAttribute('data-user-active', activeState ? 'true' : 'false');
+            }
+        }
+
+        function setRoleSelectStyle(select, roleValue) {
+            select.classList.remove('badge-system-user', 'badge-system-admin');
+            select.classList.add(roleValue === 'admin' ? 'badge-system-admin' : 'badge-system-user');
+        }
+
+        roleSelects.forEach(function (select) {
+            select.addEventListener('change', async function () {
+                if (select.dataset.loading === 'true') {
+                    return;
+                }
+
+                const userId = select.getAttribute('data-user-id');
+                const previousRole = (select.dataset.role || select.value || 'user').toLowerCase();
+                const nextRole = (select.value || 'user').toLowerCase();
+                if (!userId) {
+                    return;
+                }
+
+                select.dataset.loading = 'true';
+                select.disabled = true;
+
+                try {
+                    const payload = new URLSearchParams();
+                    payload.append('userId', userId);
+                    payload.append('role', nextRole);
+
+                    const response = await fetch('/UserManagement/UpdateRole', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'RequestVerificationToken': tokenInput.value
+                        },
+                        body: payload.toString()
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Unable to update role.');
+                    }
+
+                    select.dataset.role = result.role;
+                    select.value = result.role;
+                    setRoleSelectStyle(select, result.role);
+
+                    const row = select.closest('tr[data-um-row="true"]');
+                    if (row) {
+                        row.setAttribute('data-system-role', result.role);
+                    }
+
+                    if (totalUsersCount) {
+                        totalUsersCount.textContent = result.totalUsersCount;
+                    }
+                    if (adminCount) {
+                        adminCount.textContent = result.adminCount;
+                    }
+                    if (activeEmployeeCount) {
+                        activeEmployeeCount.textContent = result.activeEmployeeCount;
+                    }
+
+                    if (typeof window.syncoraApplyUserManagementFilter === 'function') {
+                        const url = new URL(window.location.href);
+                        const filter = (url.searchParams.get('filter') || 'all').toLowerCase();
+                        window.syncoraApplyUserManagementFilter(filter, false);
+                    }
+
+                    showUmToast('User role updated.', false);
+                } catch (error) {
+                    select.value = previousRole;
+                    setRoleSelectStyle(select, previousRole);
+                    showUmToast(error && error.message ? error.message : 'Unable to update role.', true);
+                } finally {
+                    select.dataset.loading = 'false';
+                    select.disabled = false;
+                }
+            });
+        });
+
+        statusSwitches.forEach(function (button) {
+            button.addEventListener('click', async function () {
+                if (button.dataset.loading === 'true') {
+                    return;
+                }
+
+                const userId = button.getAttribute('data-user-id');
+                const currentState = button.dataset.active === 'true';
+                const nextState = !currentState;
+                if (!userId) {
+                    return;
+                }
+
+                button.dataset.loading = 'true';
+                button.classList.add('is-loading');
+
+                try {
+                    const payload = new URLSearchParams();
+                    payload.append('userId', userId);
+                    payload.append('isActive', String(nextState));
+
+                    const response = await fetch('/UserManagement/ToggleStatus', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'RequestVerificationToken': tokenInput.value
+                        },
+                        body: payload.toString()
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Unable to update user status.');
+                    }
+
+                    setSwitchState(button, !!result.isActive);
+
+                    const row = button.closest('tr[data-um-row="true"]');
+                    if (row && result.hasEmployeeRecord) {
+                        row.setAttribute('data-is-active-employee', result.isActive ? 'true' : 'false');
+                    }
+
+                    if (totalUsersCount) {
+                        totalUsersCount.textContent = result.totalUsersCount;
+                    }
+                    if (adminCount) {
+                        adminCount.textContent = result.adminCount;
+                    }
+                    if (activeEmployeeCount) {
+                        activeEmployeeCount.textContent = result.activeEmployeeCount;
+                    }
+
+                    if (typeof window.syncoraApplyUserManagementFilter === 'function') {
+                        const url = new URL(window.location.href);
+                        const filter = (url.searchParams.get('filter') || 'all').toLowerCase();
+                        window.syncoraApplyUserManagementFilter(filter, false);
+                    }
+                    showUmToast(result.isActive ? 'User activated.' : 'User deactivated.', false);
+                } catch (error) {
+                    showUmToast(error && error.message ? error.message : 'Unable to update user status.', true);
+                } finally {
+                    button.dataset.loading = 'false';
+                    button.classList.remove('is-loading');
+                }
+            });
+        });
     })();
 </script>
 

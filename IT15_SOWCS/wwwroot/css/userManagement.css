@@ -144,6 +144,26 @@
     font-weight: 500;
 }
 
+.um-role-select.badge-role {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    min-width: 92px;
+    height: 30px;
+    padding: 4px 26px 4px 12px;
+    line-height: 1;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 16 16'%3E%3Cpath fill='%23475569' d='M3.2 5.5L8 10.3l4.8-4.8 1 1L8 12.3 2.2 6.5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px 10px;
+}
+
+.um-role-select.badge-role:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
 .badge-system-user {
     background: #f1f5f9;
     color: #475569;

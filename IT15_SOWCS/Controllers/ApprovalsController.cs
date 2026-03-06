@@ -11,16 +11,23 @@ namespace IT15_SOWCS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
+        private readonly LeaveBalanceService _leaveBalanceService;
 
-        public ApprovalsController(AppDbContext context, NotificationService notificationService)
+        public ApprovalsController(
+            AppDbContext context,
+            NotificationService notificationService,
+            LeaveBalanceService leaveBalanceService)
         {
             _context = context;
             _notificationService = notificationService;
+            _leaveBalanceService = leaveBalanceService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Approvals()
         {
+            await _leaveBalanceService.RecomputeAllBalancesAsync();
+
             var model = new ApprovalsPageViewModel
             {
                 PendingLeaveRequests = await _context.LeaveRequests
@@ -46,6 +53,25 @@ namespace IT15_SOWCS.Controllers
                 return NotFound();
             }
 
+            if (string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase))
+            {
+                var leaveBalanceType = LeaveBalanceService.NormalizeLeaveType(leave.leave_type);
+                if (leaveBalanceType.HasValue)
+                {
+                    var employee = await _leaveBalanceService.RecomputeBalanceForEmployeeAsync(leave.employee_email);
+                    if (employee != null)
+                    {
+                        var requestedDays = (decimal)leave.days_count;
+                        var available = LeaveBalanceService.GetAvailableBalance(employee, leaveBalanceType.Value);
+                        if (available < requestedDays)
+                        {
+                            TempData["SuccessMessage"] = $"Insufficient {leave.leave_type} balance for approval. Available: {available:0} day(s), requested: {requestedDays:0} day(s).";
+                            return RedirectToAction(nameof(Approvals));
+                        }
+                    }
+                }
+            }
+
             leave.status = status;
             leave.review_notes = notes;
             leave.reviewed_by = User.Identity?.Name;
@@ -58,6 +84,12 @@ namespace IT15_SOWCS.Controllers
                 "Leave",
                 "/LeaveRequest/LeaveRequest");
             await _context.SaveChangesAsync();
+
+            if (string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase))
+            {
+                await _leaveBalanceService.RecomputeBalanceForEmployeeAsync(leave.employee_email);
+            }
+
             TempData["SuccessMessage"] = status == "Approved"
                 ? "Leave request approved."
                 : "Leave request rejected.";

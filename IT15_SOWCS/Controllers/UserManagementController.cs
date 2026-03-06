@@ -110,14 +110,47 @@ namespace IT15_SOWCS.Controllers
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return NotFound();
+                return NotFound(new { success = false, message = "User not found." });
             }
 
-            user.Role = role.ToLowerInvariant();
-            user.UpdatedDate = DateTime.UtcNow;
-            await _userManager.UpdateAsync(user);
+            var normalizedRole = (role ?? string.Empty).Trim().ToLowerInvariant();
+            if (normalizedRole != "admin" && normalizedRole != "user")
+            {
+                return BadRequest(new { success = false, message = "Invalid role selected." });
+            }
 
-            return RedirectToAction(nameof(UserManagement));
+            if (string.Equals(user.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Super Admin role cannot be changed here." });
+            }
+
+            user.Role = normalizedRole;
+            user.UpdatedDate = DateTime.UtcNow;
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = string.Join(" ", updateResult.Errors.Select(error => error.Description))
+                });
+            }
+
+            var totalUsersCount = await _context.Users.CountAsync();
+            var adminCount = await _context.Users.CountAsync(dbUser =>
+                dbUser.Role != null && (
+                    dbUser.Role.ToLower() == "admin" ||
+                    dbUser.Role.ToLower() == "superadmin"));
+            var activeEmployeeCount = await _context.Employees.CountAsync(employee => employee.is_active);
+
+            return Json(new
+            {
+                success = true,
+                role = normalizedRole,
+                totalUsersCount,
+                adminCount,
+                activeEmployeeCount
+            });
         }
 
         [HttpPost]
@@ -136,15 +169,17 @@ namespace IT15_SOWCS.Controllers
                 return RedirectToAction(nameof(UserManagement));
             }
 
+            var userEmail = user.Email ?? string.Empty;
+
             _context.ArchiveItems.Add(new ArchiveItem
             {
                 source_id = null,
                 source_type = "User",
-                title = string.IsNullOrWhiteSpace(user.FullName) ? (user.Email ?? "Unknown User") : user.FullName,
+                title = string.IsNullOrWhiteSpace(user.FullName) ? (userEmail == string.Empty ? "Unknown User" : userEmail) : user.FullName,
                 type = "User",
                 archived_by = User.Identity?.Name ?? "System",
                 date_archived = DateTime.UtcNow,
-                reason = $"Archived user account ({user.Email})",
+                reason = $"Archived user account ({userEmail})",
                 serialized_data = JsonSerializer.Serialize(new
                 {
                     user.Email,
@@ -152,10 +187,146 @@ namespace IT15_SOWCS.Controllers
                     user.Role
                 })
             });
+            
+            var linkedEmployees = await _context.Employees
+                .Where(employee => employee.user_id == userId)
+                .ToListAsync();
+
+            foreach (var employee in linkedEmployees)
+            {
+                var employeeSnapshot = new
+                {
+                    employee.user_id,
+                    employee.full_name,
+                    employee.department,
+                    employee.position,
+                    employee.contact_number,
+                    employee.hire_date,
+                    employee.manager_email,
+                    employee.annual_leave_balance,
+                    employee.sick_leave_balance,
+                    employee.personal_leave_balance,
+                    employee.employee_role,
+                    employee.is_active
+                };
+
+                _context.ArchiveItems.Add(new ArchiveItem
+                {
+                    source_id = employee.employee_id,
+                    source_type = "Employee",
+                    title = employee.full_name,
+                    type = "Employee",
+                    archived_by = User.Identity?.Name ?? "System",
+                    date_archived = DateTime.UtcNow,
+                    reason = $"Archived together with user account ({userEmail})",
+                    serialized_data = JsonSerializer.Serialize(employeeSnapshot)
+                });
+            }
+
+            foreach (var employee in linkedEmployees)
+            {
+                employee.is_active = false;
+            }
+
+            var hasLeaveRequestReferences = !string.IsNullOrWhiteSpace(userEmail) &&
+                await _context.LeaveRequests.AnyAsync(request => request.employee_email == userEmail);
+            var hasManagedProjectReferences = !string.IsNullOrWhiteSpace(userEmail) &&
+                await _context.Projects.AnyAsync(project => project.manager_email == userEmail);
+            var hasLinkedEmployees = linkedEmployees.Count > 0;
+
             await _context.SaveChangesAsync();
 
-            await _userManager.DeleteAsync(user);
+            if (hasLeaveRequestReferences || hasManagedProjectReferences || hasLinkedEmployees)
+            {
+                user.LockoutEnabled = true;
+                user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100);
+                user.UpdatedDate = DateTime.UtcNow;
+
+                var deactivateResult = await _userManager.UpdateAsync(user);
+                if (!deactivateResult.Succeeded)
+                {
+                    TempData["UserManagementError"] = string.Join(" ", deactivateResult.Errors.Select(error => error.Description));
+                    return RedirectToAction(nameof(UserManagement));
+                }
+
+                TempData["SuccessMessage"] = "User archived and deactivated. Historical records were preserved.";
+                return RedirectToAction(nameof(UserManagement));
+            }
+
+            var deleteResult = await _userManager.DeleteAsync(user);
+            if (!deleteResult.Succeeded)
+            {
+                TempData["UserManagementError"] = string.Join(" ", deleteResult.Errors.Select(error => error.Description));
+            }
+            else
+            {
+                TempData["SuccessMessage"] = "User archived successfully.";
+            }
+
             return RedirectToAction(nameof(UserManagement));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatus(string userId, bool isActive)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "User not found." });
+            }
+
+            if (string.Equals(user.Email, User.Identity?.Name, StringComparison.OrdinalIgnoreCase) && !isActive)
+            {
+                return BadRequest(new { success = false, message = "You cannot deactivate your currently logged-in user." });
+            }
+
+            user.LockoutEnabled = true;
+            user.LockoutEnd = isActive
+                ? null
+                : DateTimeOffset.UtcNow.AddYears(100);
+            user.UpdatedDate = DateTime.UtcNow;
+
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = string.Join(" ", updateResult.Errors.Select(error => error.Description))
+                });
+            }
+
+            var employeeRecords = await _context.Employees
+                .Where(employee => employee.user_id == userId)
+                .ToListAsync();
+
+            if (employeeRecords.Count > 0)
+            {
+                foreach (var employee in employeeRecords)
+                {
+                    employee.is_active = isActive;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            var totalUsersCount = await _context.Users.CountAsync();
+            var adminCount = await _context.Users.CountAsync(dbUser =>
+                dbUser.Role != null && (
+                    dbUser.Role.ToLower() == "admin" ||
+                    dbUser.Role.ToLower() == "superadmin"));
+            var activeEmployeeCount = await _context.Employees.CountAsync(employee => employee.is_active);
+
+            return Json(new
+            {
+                success = true,
+                isActive,
+                hasEmployeeRecord = employeeRecords.Count > 0,
+                totalUsersCount,
+                adminCount,
+                activeEmployeeCount
+            });
         }
     }
 }

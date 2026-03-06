@@ -58,9 +58,25 @@
                 "Task" => "badge-task",
                 "Project" => "badge-project",
                 "Document" => "badge-document",
+                "Employee" => "badge-employee",
+                "User" => "badge-user",
+                "LeaveRequest" => "badge-leave",
                 _ => "badge-task"
             };
-            <div class="archive-item-card">
+            var cardClass = item.Type switch
+            {
+                "Task" => "archive-card-task",
+                "Project" => "archive-card-project",
+                "Document" => "archive-card-document",
+                "Employee" => "archive-card-employee",
+                "User" => "archive-card-user",
+                "LeaveRequest" => "archive-card-leave",
+                _ => "archive-card-task"
+            };
+            var remainingClass = remainingDays <= 7 ? "auto-remove-critical"
+                : remainingDays <= 15 ? "auto-remove-warning"
+                : "auto-remove-safe";
+            <div class="archive-item-card @cardClass">
                 <div class="type-icon-wrapper">
                     <i class="bi @iconClass fs-5"></i>
                 </div>
@@ -91,7 +107,7 @@
                             data-id="@item.Id">
                         <i class="bi bi-trash"></i> Remove
                     </button>
-                    <div class="auto-remove-text">Automatically removed in @remainingDays days</div>
+                    <div class="auto-remove-text @remainingClass">Automatically removed in @remainingDays days</div>
                 </div>
             </div>
         }

@@ -78,6 +78,7 @@
 
 .audit-table-scroll .table {
     min-width: 860px;
+    table-layout: fixed;
 }
 
 .table thead th {
@@ -85,15 +86,41 @@
     color: #64748b;
     font-weight: 500;
     font-size: 0.85rem;
-    padding: 1rem;
+    padding: 0.9rem 0.75rem;
     border-bottom: 1px solid #e2e8f0;
 }
 
 .table tbody td {
-    padding: 1rem;
+    padding: 0.9rem 0.75rem;
     vertical-align: middle;
     border-bottom: 1px solid #f1f5f9;
     font-size: 0.9rem;
+}
+
+.audit-table-scroll .table th:nth-child(1),
+.audit-table-scroll .table td:nth-child(1) {
+    width: 20%;
+}
+
+.audit-table-scroll .table th:nth-child(2),
+.audit-table-scroll .table td:nth-child(2) {
+    width: 24%;
+}
+
+.audit-table-scroll .table th:nth-child(3),
+.audit-table-scroll .table td:nth-child(3) {
+    width: 13%;
+    white-space: nowrap;
+}
+
+.audit-table-scroll .table th:nth-child(4),
+.audit-table-scroll .table td:nth-child(4) {
+    width: 13%;
+}
+
+.audit-table-scroll .table th:nth-child(5),
+.audit-table-scroll .table td:nth-child(5) {
+    width: 30%;
 }
 
 .log-user-info .log-user-name {

@@ -17,6 +17,7 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<LeaveBalanceService>();
 
 // Identity setup 
 builder.Services.AddIdentity<Users, IdentityRole>(options =>

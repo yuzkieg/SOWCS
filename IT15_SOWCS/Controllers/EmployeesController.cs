@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,15 +11,19 @@ namespace IT15_SOWCS.Controllers
     public class EmployeesController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly LeaveBalanceService _leaveBalanceService;
 
-        public EmployeesController(AppDbContext context)
+        public EmployeesController(AppDbContext context, LeaveBalanceService leaveBalanceService)
         {
             _context = context;
+            _leaveBalanceService = leaveBalanceService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Employees(string? search, string? department)
         {
+            await _leaveBalanceService.RecomputeAllBalancesAsync();
+
             var query = _context.Employees.Include(employee => employee.User).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -125,6 +130,22 @@ namespace IT15_SOWCS.Controllers
                 return NotFound();
             }
 
+            var employeeSnapshot = new
+            {
+                employee.user_id,
+                employee.full_name,
+                employee.department,
+                employee.position,
+                employee.contact_number,
+                employee.hire_date,
+                employee.manager_email,
+                employee.annual_leave_balance,
+                employee.sick_leave_balance,
+                employee.personal_leave_balance,
+                employee.employee_role,
+                employee.is_active
+            };
+
             _context.ArchiveItems.Add(new ArchiveItem
             {
                 source_id = employee.employee_id,
@@ -134,7 +155,7 @@ namespace IT15_SOWCS.Controllers
                 archived_by = User.Identity?.Name ?? "System",
                 date_archived = DateTime.UtcNow,
                 reason = $"Archived employee record ({employee.User?.Email ?? "no email"})",
-                serialized_data = JsonSerializer.Serialize(employee)
+                serialized_data = JsonSerializer.Serialize(employeeSnapshot)
             });
 
             _context.Employees.Remove(employee);

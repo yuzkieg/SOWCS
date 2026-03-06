@@ -56,7 +56,13 @@
         <div class="doc-grid">
             @foreach (var doc in Model.Documents)
             {
-                var statusClass = doc.status == "Approved" ? "status-approved" : doc.status == "Rejected" ? "status-rejected" : "status-draft";
+                var statusClass = doc.status == "Approved"
+                    ? "status-approved"
+                    : doc.status == "Rejected"
+                        ? "status-rejected"
+                        : doc.status == "Pending"
+                            ? "status-pending"
+                            : "status-draft";
                 <div class="doc-card">
                     <div class="dropdown doc-actions-dropdown">
                         <button class="btn btn-sm doc-actions-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">

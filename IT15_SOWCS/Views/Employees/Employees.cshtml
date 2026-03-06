@@ -2,6 +2,8 @@
 @{
     Layout = "_EmployeesLayout";
     ViewData["Title"] = "Employees";
+    var departmentOptions = new[] { "Human Resource", "Project Management", "Regular Employee" };
+    var roleOptions = new[] { "Employee", "Manager", "HR manager" };
 }
 
 <div class="employees-container">
@@ -127,7 +129,7 @@
                             <div class="col-6">
                                 <label class="modal-label">Department</label>
                                 <select class="form-select" name="department">
-                                    @foreach (var dept in Model.Employees.Select(e => e.department).Distinct().OrderBy(d => d))
+                                    @foreach (var dept in departmentOptions)
                                     {
                                         <option value="@dept" selected="@(employee.department == dept ? "selected" : null)">@dept</option>
                                     }
@@ -136,9 +138,10 @@
                             <div class="col-6">
                                 <label class="modal-label">Role</label>
                                 <select class="form-select" name="employeeRole">
-                                    <option value="Employee" selected="@(employee.employee_role == "Employee" ? "selected" : null)">Employee</option>
-                                    <option value="Admin" selected="@(employee.employee_role == "Admin" ? "selected" : null)">Admin</option>
-                                    <option value="Manager" selected="@(employee.employee_role == "Manager" ? "selected" : null)">Manager</option>
+                                    @foreach (var role in roleOptions)
+                                    {
+                                        <option value="@role" selected="@(employee.employee_role == role ? "selected" : null)">@role</option>
+                                    }
                                 </select>
                             </div>
                             <div class="col-6">
@@ -206,7 +209,12 @@
                         </div>
                         <div class="col-6">
                             <label class="form-label small">Department</label>
-                            <input class="form-control" name="department" required />
+                            <select class="form-select" name="department" required>
+                                @foreach (var dept in departmentOptions)
+                                {
+                                    <option value="@dept">@dept</option>
+                                }
+                            </select>
                         </div>
                         <div class="col-6">
                             <label class="form-label small">Position</label>
@@ -218,7 +226,12 @@
                         </div>
                         <div class="col-6">
                             <label class="form-label small">Role</label>
-                            <input class="form-control" name="employeeRole" value="Employee" required />
+                            <select class="form-select" name="employeeRole" required>
+                                @foreach (var role in roleOptions)
+                                {
+                                    <option value="@role" selected="@(role == "Employee" ? "selected" : null)">@role</option>
+                                }
+                            </select>
                         </div>
                         <div class="col-6">
                             <label class="form-label small">Hire Date</label>

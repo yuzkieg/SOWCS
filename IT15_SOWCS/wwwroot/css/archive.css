@@ -75,6 +75,7 @@
 .archive-item-card {
     background-color: #fff;
     border: 1px solid #e7ecf3;
+    border-left: 4px solid #cbd5e1;
     border-radius: 12px;
     padding: 1.2rem;
     display: flex;
@@ -139,6 +140,24 @@
     border-color: #cffafe;
 }
 
+.badge-employee {
+    color: #065f46;
+    background-color: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.badge-user {
+    color: #1d4ed8;
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.badge-leave {
+    color: #92400e;
+    background-color: #fffbeb;
+    border-color: #fde68a;
+}
+
 .item-subtext {
     color: #64748b;
     font-size: 0.9rem;
@@ -201,6 +220,73 @@
     font-size: 0.95rem;
     text-align: right;
     margin-top: 2px;
+}
+
+.auto-remove-safe {
+    color: #64748b;
+}
+
+.auto-remove-warning {
+    color: #b45309;
+}
+
+.auto-remove-critical {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.archive-card-task {
+    border-left-color: #64748b;
+}
+
+.archive-card-project {
+    border-left-color: #6366f1;
+}
+
+.archive-card-document {
+    border-left-color: #0891b2;
+}
+
+.archive-card-employee {
+    border-left-color: #059669;
+}
+
+.archive-card-user {
+    border-left-color: #2563eb;
+}
+
+.archive-card-leave {
+    border-left-color: #d97706;
+}
+
+.archive-card-task .type-icon-wrapper {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.archive-card-project .type-icon-wrapper {
+    background-color: #eef2ff;
+    color: #4f46e5;
+}
+
+.archive-card-document .type-icon-wrapper {
+    background-color: #ecfeff;
+    color: #0e7490;
+}
+
+.archive-card-employee .type-icon-wrapper {
+    background-color: #ecfdf5;
+    color: #047857;
+}
+
+.archive-card-user .type-icon-wrapper {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+}
+
+.archive-card-leave .type-icon-wrapper {
+    background-color: #fffbeb;
+    color: #b45309;
 }
 
 .archive-modal-content {
