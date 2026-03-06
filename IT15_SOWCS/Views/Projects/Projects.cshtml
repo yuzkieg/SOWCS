@@ -59,10 +59,33 @@
                 var memberCount = string.IsNullOrWhiteSpace(project.team_members)
                     ? 0
                     : project.team_members.Split(',', StringSplitOptions.RemoveEmptyEntries).Length;
+                var selectedMembers = (project.team_members ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(member => member.Trim())
+                    .Where(member => !string.IsNullOrWhiteSpace(member))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
                 <div class="project-card">
                     <div class="project-top-row">
                         <div class="project-mini-icon"><i class="bi bi-folder2-open"></i></div>
                         <span class="priority-pill @priorityClass">@project.priority</span>
+                        <div class="dropdown project-actions-dropdown">
+                            <button class="btn project-actions-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Project actions">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editProjectModal-@project.project_id">
+                                        <i class="bi bi-pencil-square me-2"></i>Edit
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item text-warning" data-bs-toggle="modal" data-bs-target="#archiveProjectModal-@project.project_id">
+                                        <i class="bi bi-archive me-2"></i>Archive
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                     <h4 class="project-card-title">@project.name</h4>
                     <p class="project-card-desc">@(string.IsNullOrWhiteSpace(project.description) ? "No project description provided." : project.description)</p>
@@ -84,6 +107,97 @@
                         View Details <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
+
+                <div class="modal fade" id="editProjectModal-@project.project_id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold">Edit Project</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body pt-3">
+                                <form asp-action="Update" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="projectId" value="@project.project_id" />
+                                    <input type="hidden" name="progress" value="@progressPercent" />
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Project Name</label>
+                                        <input type="text" name="name" class="form-control custom-input" value="@project.name" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Description</label>
+                                        <textarea name="description" class="form-control custom-input" rows="3">@project.description</textarea>
+                                    </div>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">Status</label>
+                                            <select class="form-select custom-input" name="status">
+                                                <option value="Planning" selected="@(project.status == "Planning")">Planning</option>
+                                                <option value="Active" selected="@(project.status == "Active")">Active</option>
+                                                <option value="On Hold" selected="@(project.status == "On Hold")">On Hold</option>
+                                                <option value="Completed" selected="@(project.status == "Completed")">Completed</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">Priority</label>
+                                            <select class="form-select custom-input" name="priority">
+                                                <option value="Low" selected="@(project.priority == "Low")">Low</option>
+                                                <option value="Medium" selected="@(project.priority == "Medium")">Medium</option>
+                                                <option value="High" selected="@(project.priority == "High")">High</option>
+                                                <option value="Urgent" selected="@(project.priority == "Urgent")">Urgent</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-semibold">Team Members</label>
+                                        <div class="team-members-checklist">
+                                            @foreach (var employee in Model.Employees)
+                                            {
+                                                <label class="team-member-option">
+                                                    <input type="checkbox"
+                                                           name="teamMembers"
+                                                           value="@employee.full_name"
+                                                           checked="@selectedMembers.Contains(employee.full_name)" />
+                                                    <span>@employee.full_name</span>
+                                                </label>
+                                            }
+                                        </div>
+                                        <div class="form-text mt-1">Select team members to keep in this project.</div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-save px-4">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="archiveProjectModal-@project.project_id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold">Archive Project</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body pt-3">
+                                <p class="mb-4 fs-5">Archive this project?</p>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
+                                    <form asp-action="Delete" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@project.project_id" />
+                                        <button type="submit" class="btn btn-save px-4">Archive</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
         </div>
     }
@@ -100,18 +214,18 @@
                 <form asp-action="Create" method="post" id="createProjectForm">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Project Name</label>
+                        <label class="form-label fw-semibold">Project Name</label>
                         <input type="text" name="name" class="form-control custom-input" placeholder="e.g. Website Redesign" required>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Description</label>
+                        <label class="form-label fw-semibold">Description</label>
                         <textarea name="description" class="form-control custom-input" rows="3" placeholder="Briefly describe the project goals..."></textarea>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">Status</label>
+                            <label class="form-label fw-semibold">Status</label>
                             <select class="form-select custom-input" name="status">
                                 <option selected>Planning</option>
                                 <option>Active</option>
@@ -120,7 +234,7 @@
                             </select>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">Priority</label>
+                            <label class="form-label fw-semibold">Priority</label>
                             <select class="form-select custom-input" name="priority">
                                 <option>Low</option>
                                 <option selected>Medium</option>
@@ -131,14 +245,17 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label small fw-bold text-muted">Team Members</label>
-                        <select class="form-select custom-input" name="teamMembers" multiple>
+                        <label class="form-label fw-semibold">Team Members</label>
+                        <div class="team-members-checklist">
                             @foreach (var employee in Model.Employees)
                             {
-                                <option value="@employee.full_name">@employee.full_name</option>
+                                <label class="team-member-option">
+                                    <input type="checkbox" name="teamMembers" value="@employee.full_name" />
+                                    <span>@employee.full_name</span>
+                                </label>
                             }
-                        </select>
-                        <div class="form-text mt-1" style="font-size: 0.75rem;">Hold Ctrl/Cmd to select multiple members.</div>
+                        </div>
+                        <div class="form-text mt-1">Select one or more team members.</div>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">

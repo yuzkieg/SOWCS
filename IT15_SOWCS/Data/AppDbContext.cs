@@ -17,6 +17,7 @@ namespace IT15_SOWCS.Data
         public DbSet<DocumentRecord> Documents => Set<DocumentRecord>();
         public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
         public DbSet<ArchiveItem> ArchiveItems => Set<ArchiveItem>();
+        public DbSet<NotificationItem> Notifications => Set<NotificationItem>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -34,6 +35,7 @@ namespace IT15_SOWCS.Data
             builder.Entity<DocumentRecord>().ToTable("Document");
             builder.Entity<AuditLogEntry>().ToTable("AuditLog");
             builder.Entity<ArchiveItem>().ToTable("ArchiveItem");
+            builder.Entity<NotificationItem>().ToTable("NotificationItem");
 
             builder.Entity<Employee>()
                 .Property(employee => employee.annual_leave_balance)
@@ -85,6 +87,30 @@ namespace IT15_SOWCS.Data
                 .WithMany(project => project.Tasks)
                 .HasForeignKey(task => task.project_id)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<NotificationItem>()
+                .Property(notification => notification.title)
+                .HasMaxLength(120);
+
+            builder.Entity<NotificationItem>()
+                .Property(notification => notification.message)
+                .HasMaxLength(500);
+
+            builder.Entity<NotificationItem>()
+                .Property(notification => notification.category)
+                .HasMaxLength(40);
+
+            builder.Entity<NotificationItem>()
+                .Property(notification => notification.action_url)
+                .HasMaxLength(255);
+
+            builder.Entity<NotificationItem>()
+                .HasIndex(notification => new
+                {
+                    notification.recipient_email,
+                    notification.is_read,
+                    notification.created_at
+                });
         }
     }
 }

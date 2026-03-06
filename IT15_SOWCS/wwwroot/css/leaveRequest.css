@@ -149,8 +149,19 @@
     font-style: italic;
 }
 
+.leave-feedback {
+    margin-top: 6px;
+    color: #b91c1c;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
 .leave-meta {
     text-align: right;
+}
+
+.leave-card-actions {
+    margin-bottom: 0.25rem;
 }
 
 .day-count {

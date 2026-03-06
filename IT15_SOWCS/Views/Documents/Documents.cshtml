@@ -58,33 +58,33 @@
             {
                 var statusClass = doc.status == "Approved" ? "status-approved" : doc.status == "Rejected" ? "status-rejected" : "status-draft";
                 <div class="doc-card">
-                    <details class="d-inline-block text-start d-none" id="editDoc-@doc.document_id">
-                        <summary id="editDocSummary-@doc.document_id" class="btn btn-sm btn-outline-primary">Edit</summary>
-                        <form asp-action="Update" method="post" class="mt-2 border rounded-3 p-2 bg-light">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="documentId" value="@doc.document_id" />
-                            <input class="form-control form-control-sm mb-2" name="title" value="@doc.title" />
-                            <select class="form-select form-select-sm mb-2" name="category">
-                                <option value="Policy" selected="@(doc.category=="Policy" ? "selected" : null)">Policy</option>
-                                <option value="Other" selected="@(doc.category=="Other" ? "selected" : null)">Other</option>
-                                <option value="Template" selected="@(doc.category=="Template" ? "selected" : null)">Template</option>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary w-100">Save</button>
-                        </form>
-                    </details>
-
                     <div class="dropdown doc-actions-dropdown">
-                        <button class="btn btn-sm ellipsis-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">
+                        <button class="btn btn-sm doc-actions-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">
                             <i class="bi bi-three-dots-vertical"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="@doc.file_path" target="_blank">View</a></li>
-                            <li><button type="button" class="dropdown-item" onclick="document.getElementById('editDocSummary-@doc.document_id').click();">Edit</button></li>
+                            <li>
+                                <a class="dropdown-item" href="@doc.file_path" target="_blank">
+                                    <i class="bi bi-eye me-2"></i>View
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="@doc.file_path" download="@doc.file_name">
+                                    <i class="bi bi-download me-2"></i>Download
+                                </a>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editDocumentModal-@doc.document_id">
+                                    <i class="bi bi-pencil-square me-2"></i>Edit
+                                </button>
+                            </li>
                             <li>
                                 <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this document?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="documentId" value="@doc.document_id" />
-                                    <button type="submit" class="dropdown-item text-warning">Archive</button>
+                                    <button type="submit" class="dropdown-item text-warning">
+                                        <i class="bi bi-archive me-2"></i>Archive
+                                    </button>
                                 </form>
                             </li>
                         </ul>
@@ -101,11 +101,57 @@
                                 <span class="badge-status @statusClass">@doc.status</span>
                                 <span class="badge-category">@doc.category</span>
                             </div>
+                            @if (doc.status == "Rejected" && !string.IsNullOrWhiteSpace(doc.review_notes))
+                            {
+                                <div class="doc-feedback">Feedback: @doc.review_notes</div>
+                            }
                         </div>
                     </div>
                     <div class="doc-footer pt-3">
                         <span>@FormatSize(doc.file_size_bytes)</span>
                         <span>@doc.uploaded_date.ToString("MMM d, yyyy")</span>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="editDocumentModal-@doc.document_id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content upload-modal">
+                            <div class="modal-header border-0">
+                                <h5 class="modal-title">Edit Document</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form asp-action="Update" method="post" enctype="multipart/form-data">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="documentId" value="@doc.document_id" />
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Title</label>
+                                        <input type="text" class="form-control" name="title" value="@doc.title" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Category</label>
+                                        <select class="form-select" name="category">
+                                            <option value="Other" selected="@(doc.category == "Other" ? "selected" : null)">Other</option>
+                                            <option value="Policy" selected="@(doc.category == "Policy" ? "selected" : null)">Policy</option>
+                                            <option value="Template" selected="@(doc.category == "Template" ? "selected" : null)">Template</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Replace Document (Optional)</label>
+                                        <input type="file"
+                                               class="form-control"
+                                               name="uploadedFile"
+                                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.png" />
+                                        <div class="form-text mt-1">Current file: @doc.file_name</div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-upload-submit">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             }

@@ -109,7 +109,7 @@ namespace IT15_SOWCS.Controllers
             string? description,
             string status,
             string priority,
-            string[] teamMembers)
+            string[]? teamMembers)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -139,12 +139,13 @@ namespace IT15_SOWCS.Controllers
                 manager_name = managerName,
                 start_date = DateTime.UtcNow.Date,
                 due_date = DateTime.UtcNow.Date.AddDays(30),
-                team_members = string.Join(", ", teamMembers.Where(member => !string.IsNullOrWhiteSpace(member))),
+                team_members = string.Join(", ", (teamMembers ?? Array.Empty<string>()).Where(member => !string.IsNullOrWhiteSpace(member))),
                 progress = 0
             };
 
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Project created successfully.";
             return RedirectToAction(nameof(Projects));
         }
 
@@ -156,7 +157,8 @@ namespace IT15_SOWCS.Controllers
             string? description,
             string status,
             string priority,
-            int progress)
+            int progress,
+            string[]? teamMembers)
         {
             var project = await _context.Projects.FindAsync(projectId);
             if (project == null)
@@ -169,8 +171,10 @@ namespace IT15_SOWCS.Controllers
             project.status = status;
             project.priority = priority;
             project.progress = Math.Clamp(progress, 0, 100);
+            project.team_members = string.Join(", ", (teamMembers ?? Array.Empty<string>()).Where(member => !string.IsNullOrWhiteSpace(member)));
 
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Project updated successfully.";
             return RedirectToAction(nameof(Projects));
         }
 
@@ -198,6 +202,7 @@ namespace IT15_SOWCS.Controllers
 
             _context.Projects.Remove(project);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Project archived successfully.";
             return RedirectToAction(nameof(Projects));
         }
     }

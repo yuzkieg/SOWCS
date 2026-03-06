@@ -154,6 +154,9 @@
     display: flex;
     gap: 6px;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 260px;
 }
 
 .archive-actions form {
@@ -190,6 +193,51 @@
     color: #b91c1c;
     border-color: #fecaca;
     background-color: #fef2f2;
+}
+
+.auto-remove-text {
+    width: 100%;
+    color: #64748b;
+    font-size: 0.95rem;
+    text-align: right;
+    margin-top: 2px;
+}
+
+.archive-modal-content {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+}
+
+.archive-modal-content .modal-title {
+    font-size: 2rem;
+    font-weight: 700 !important;
+    color: #111827;
+}
+
+.btn-save {
+    background: #0f172a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.btn-save:hover {
+    background: #1e293b;
+    color: #fff;
+}
+
+.btn-cancel {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    color: #475569;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.btn-cancel:hover {
+    background: #f8fafc;
 }
 
 @media (max-width: 992px) {

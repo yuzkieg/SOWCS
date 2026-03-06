@@ -1,6 +1,7 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Filters;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ builder.Services.AddControllersWithViews(options =>
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddScoped<NotificationService>();
 
 // Identity setup 
 builder.Services.AddIdentity<Users, IdentityRole>(options =>
@@ -53,6 +55,27 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.ExecuteSqlRaw(@"
+IF OBJECT_ID(N'[NotificationItem]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [NotificationItem] (
+        [notification_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [recipient_email] NVARCHAR(450) NOT NULL,
+        [title] NVARCHAR(120) NOT NULL,
+        [message] NVARCHAR(500) NOT NULL,
+        [action_url] NVARCHAR(255) NULL,
+        [category] NVARCHAR(40) NOT NULL,
+        [is_read] BIT NOT NULL DEFAULT(0),
+        [created_at] DATETIME2 NOT NULL
+    );
+    CREATE INDEX [IX_NotificationItem_recipient_email_is_read_created_at]
+    ON [NotificationItem]([recipient_email], [is_read], [created_at]);
+END");
+}
 
 if (!app.Environment.IsDevelopment())
 {

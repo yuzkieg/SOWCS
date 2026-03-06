@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,12 @@ namespace IT15_SOWCS.Controllers
     public class LeaveRequestController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly NotificationService _notificationService;
 
-        public LeaveRequestController(AppDbContext context)
+        public LeaveRequestController(AppDbContext context, NotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -39,6 +42,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string leaveType, DateTime startDate, DateTime endDate, string? reason)
         {
+            if (startDate.Date < DateTime.Today || endDate.Date < DateTime.Today)
+            {
+                TempData["LeaveError"] = "Leave dates cannot be in the past.";
+                return RedirectToAction(nameof(LeaveRequest));
+            }
+
             if (endDate < startDate)
             {
                 TempData["LeaveError"] = "End date cannot be earlier than start date.";
@@ -70,6 +79,12 @@ namespace IT15_SOWCS.Controllers
             };
 
             _context.LeaveRequests.Add(leave);
+            await _notificationService.AddForRoleAsync(
+                "manager",
+                "New Leave Request",
+                $"{employeeName} submitted a {leave.leave_type} request for approval.",
+                "LeaveApproval",
+                "/Approvals/Approvals");
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(LeaveRequest));
         }
@@ -87,6 +102,18 @@ namespace IT15_SOWCS.Controllers
             if (leave.status != "Pending")
             {
                 TempData["LeaveError"] = "Only pending requests can be edited.";
+                return RedirectToAction(nameof(LeaveRequest));
+            }
+
+            if (startDate.Date < DateTime.Today || endDate.Date < DateTime.Today)
+            {
+                TempData["LeaveError"] = "Leave dates cannot be in the past.";
+                return RedirectToAction(nameof(LeaveRequest));
+            }
+
+            if (endDate.Date < startDate.Date)
+            {
+                TempData["LeaveError"] = "End date cannot be earlier than start date.";
                 return RedirectToAction(nameof(LeaveRequest));
             }
 

@@ -22,6 +22,10 @@
         <div class="alert alert-danger">@tasksError</div>
     }
 
+    <form id="taskMoveTokenForm" method="post">
+        @Html.AntiForgeryToken()
+    </form>
+
     <form asp-action="Tasks" method="get" class="tasks-filters module-filters">
         <div class="search-wrapper shadow-sm flex-grow-1">
             <i class="bi bi-search text-muted"></i>
@@ -55,14 +59,14 @@
     else
     {
         <div class="tasks-board">
-            <section class="task-column">
+            <section class="task-column" data-status="Pending">
                 <div class="lane-title">
                     <span class="lane-pill lane-todo">To Do</span>
                     <span>(@todoTasks.Count)</span>
                 </div>
                 @foreach (var task in todoTasks)
                 {
-                    <article class="task-card">
+                    <article class="task-card" data-task-id="@task.task_id">
                         <div class="dropdown task-card-menu">
                             <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
                                 <i class="bi bi-three-dots-vertical"></i>
@@ -73,7 +77,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="In Progress" />
-                                        <button type="submit" class="dropdown-item">Move to In Progress</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-right-circle me-2"></i>Move to In Progress</button>
                                     </form>
                                 </li>
                                 <li>
@@ -81,7 +85,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Review" />
-                                        <button type="submit" class="dropdown-item">Move to Review</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-right-circle me-2"></i>Move to Review</button>
                                     </form>
                                 </li>
                                 <li>
@@ -89,7 +93,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Completed" />
-                                        <button type="submit" class="dropdown-item">Mark Complete</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-check2-circle me-2"></i>Mark Complete</button>
                                     </form>
                                 </li>
                                 <li>
@@ -103,13 +107,13 @@
                                             data-employee-id="@task.employee_id"
                                             data-priority="@task.priority"
                                             data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
-                                            data-status="@task.status">Edit</button>
+                                            data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                 </li>
                                 <li>
                                     <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
-                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                        <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
                                     </form>
                                 </li>
                             </ul>
@@ -132,14 +136,14 @@
                 }
             </section>
 
-            <section class="task-column">
+            <section class="task-column" data-status="In Progress">
                 <div class="lane-title">
                     <span class="lane-pill lane-inprogress">In Progress</span>
                     <span>(@inProgressTasks.Count)</span>
                 </div>
                 @foreach (var task in inProgressTasks)
                 {
-                    <article class="task-card">
+                    <article class="task-card" data-task-id="@task.task_id">
                         <div class="dropdown task-card-menu">
                             <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
                                 <i class="bi bi-three-dots-vertical"></i>
@@ -150,7 +154,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Pending" />
-                                        <button type="submit" class="dropdown-item">Move to To Do</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-left-circle me-2"></i>Move to To Do</button>
                                     </form>
                                 </li>
                                 <li>
@@ -158,7 +162,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Review" />
-                                        <button type="submit" class="dropdown-item">Move to Review</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-right-circle me-2"></i>Move to Review</button>
                                     </form>
                                 </li>
                                 <li>
@@ -166,7 +170,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Completed" />
-                                        <button type="submit" class="dropdown-item">Mark Complete</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-check2-circle me-2"></i>Mark Complete</button>
                                     </form>
                                 </li>
                                 <li>
@@ -180,13 +184,13 @@
                                             data-employee-id="@task.employee_id"
                                             data-priority="@task.priority"
                                             data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
-                                            data-status="@task.status">Edit</button>
+                                            data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                 </li>
                                 <li>
                                     <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
-                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                        <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
                                     </form>
                                 </li>
                             </ul>
@@ -209,14 +213,14 @@
                 }
             </section>
 
-            <section class="task-column">
+            <section class="task-column" data-status="Review">
                 <div class="lane-title">
                     <span class="lane-pill lane-review">Review</span>
                     <span>(@reviewTasks.Count)</span>
                 </div>
                 @foreach (var task in reviewTasks)
                 {
-                    <article class="task-card">
+                    <article class="task-card" data-task-id="@task.task_id">
                         <div class="dropdown task-card-menu">
                             <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
                                 <i class="bi bi-three-dots-vertical"></i>
@@ -227,7 +231,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Pending" />
-                                        <button type="submit" class="dropdown-item">Move to To Do</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-left-circle me-2"></i>Move to To Do</button>
                                     </form>
                                 </li>
                                 <li>
@@ -235,7 +239,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="In Progress" />
-                                        <button type="submit" class="dropdown-item">Move to In Progress</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-right-circle me-2"></i>Move to In Progress</button>
                                     </form>
                                 </li>
                                 <li>
@@ -243,7 +247,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Completed" />
-                                        <button type="submit" class="dropdown-item">Mark Complete</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-check2-circle me-2"></i>Mark Complete</button>
                                     </form>
                                 </li>
                                 <li>
@@ -257,13 +261,13 @@
                                             data-employee-id="@task.employee_id"
                                             data-priority="@task.priority"
                                             data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
-                                            data-status="@task.status">Edit</button>
+                                            data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                 </li>
                                 <li>
                                     <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
-                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                        <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
                                     </form>
                                 </li>
                             </ul>
@@ -286,14 +290,14 @@
                 }
             </section>
 
-            <section class="task-column">
+            <section class="task-column" data-status="Completed">
                 <div class="lane-title">
                     <span class="lane-pill lane-completed">Completed</span>
                     <span>(@completedTasks.Count)</span>
                 </div>
                 @foreach (var task in completedTasks)
                 {
-                    <article class="task-card">
+                    <article class="task-card" data-task-id="@task.task_id">
                         <div class="dropdown task-card-menu">
                             <button class="btn task-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">
                                 <i class="bi bi-three-dots-vertical"></i>
@@ -304,7 +308,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Pending" />
-                                        <button type="submit" class="dropdown-item">Move to To Do</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-left-circle me-2"></i>Move to To Do</button>
                                     </form>
                                 </li>
                                 <li>
@@ -312,7 +316,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="In Progress" />
-                                        <button type="submit" class="dropdown-item">Move to In Progress</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-right-circle me-2"></i>Move to In Progress</button>
                                     </form>
                                 </li>
                                 <li>
@@ -320,7 +324,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
                                         <input type="hidden" name="status" value="Review" />
-                                        <button type="submit" class="dropdown-item">Move to Review</button>
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-arrow-right-circle me-2"></i>Move to Review</button>
                                     </form>
                                 </li>
                                 <li>
@@ -334,13 +338,13 @@
                                             data-employee-id="@task.employee_id"
                                             data-priority="@task.priority"
                                             data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
-                                            data-status="@task.status">Edit</button>
+                                            data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                 </li>
                                 <li>
                                     <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="taskId" value="@task.task_id" />
-                                        <button type="submit" class="dropdown-item dropdown-item-danger">Archive</button>
+                                        <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
                                     </form>
                                 </li>
                             </ul>
@@ -421,6 +425,113 @@
 </div>
 
 <script>
+    function showTasksToast(message, isError) {
+        const existing = document.getElementById('tasksActionToast');
+        if (existing) {
+            existing.remove();
+        }
+
+        const toast = document.createElement('div');
+        toast.id = 'tasksActionToast';
+        toast.className = isError ? 'syncora-toast syncora-toast-error' : 'syncora-toast';
+        toast.innerHTML = '<i class="bi ' + (isError ? 'bi-exclamation-circle' : 'bi-check-circle') + '"></i>' + message;
+        document.body.appendChild(toast);
+
+        setTimeout(function () {
+            toast.remove();
+        }, isError ? 3000 : 3000);
+    }
+
+    function refreshTaskLaneCounts() {
+        document.querySelectorAll('.task-column').forEach(function (lane) {
+            const count = lane.querySelectorAll('.task-card').length;
+            const countNode = lane.querySelector('.lane-title span:last-child');
+            if (countNode) {
+                countNode.textContent = '(' + count + ')';
+            }
+        });
+    }
+
+    function enableTasksDragDrop() {
+        const tokenInput = document.querySelector('#taskMoveTokenForm input[name="__RequestVerificationToken"]');
+        const token = tokenInput ? tokenInput.value : '';
+        const moveUrl = '@Url.Action("Move", "Tasks")';
+
+        document.querySelectorAll('.task-card').forEach(function (card) {
+            card.setAttribute('draggable', 'true');
+            card.addEventListener('dragstart', function (event) {
+                card.classList.add('is-dragging');
+                event.dataTransfer.setData('text/plain', 'moving');
+            });
+            card.addEventListener('dragend', function () {
+                card.classList.remove('is-dragging');
+            });
+        });
+
+        document.querySelectorAll('.task-column').forEach(function (lane) {
+            lane.addEventListener('dragover', function (event) {
+                event.preventDefault();
+                lane.classList.add('lane-drop-active');
+            });
+
+            lane.addEventListener('dragleave', function () {
+                lane.classList.remove('lane-drop-active');
+            });
+
+            lane.addEventListener('drop', async function (event) {
+                event.preventDefault();
+                lane.classList.remove('lane-drop-active');
+
+                const draggingCard = document.querySelector('.task-card.is-dragging');
+                if (!draggingCard) {
+                    return;
+                }
+
+                const taskId = draggingCard.getAttribute('data-task-id') || '';
+                const targetStatus = lane.getAttribute('data-status') || 'Pending';
+                const sourceLane = draggingCard.closest('.task-column');
+                const sourceStatus = sourceLane ? sourceLane.getAttribute('data-status') : '';
+
+                if (!taskId || sourceStatus === targetStatus) {
+                    return;
+                }
+
+                const body = new URLSearchParams();
+                body.append('taskId', taskId);
+                body.append('status', targetStatus);
+
+                try {
+                    const response = await fetch(moveUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'RequestVerificationToken': token,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: body.toString()
+                    });
+
+                    if (!response.ok) {
+                        showTasksToast('Failed to move task.', true);
+                        return;
+                    }
+
+                    lane.appendChild(draggingCard);
+                    refreshTaskLaneCounts();
+
+                    try {
+                        const payload = await response.json();
+                        showTasksToast(payload.message || ('Task moved to ' + targetStatus + '.'), false);
+                    } catch {
+                        showTasksToast('Task moved successfully.', false);
+                    }
+                } catch {
+                    showTasksToast('Failed to move task.', true);
+                }
+            });
+        });
+    }
+
     document.querySelectorAll('.open-edit-task-modal').forEach(function (button) {
         button.addEventListener('click', function () {
             document.getElementById('editTaskId').value = button.getAttribute('data-task-id') || '';
@@ -432,4 +543,7 @@
             document.getElementById('editTaskStatus').value = button.getAttribute('data-status') || 'Pending';
         });
     });
+
+    enableTasksDragDrop();
 </script>
+

@@ -105,7 +105,7 @@
                                         <form asp-action="DeleteUser" method="post" onsubmit="return confirm('Archive this user account?');">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="userId" value="@user.Id" />
-                                            <button type="submit" class="dropdown-item text-warning">Archive</button>
+                                            <button type="submit" class="dropdown-item text-warning"><i class="bi bi-archive me-2"></i>Archive</button>
                                         </form>
                                     </li>
                                 </ul>
@@ -156,3 +156,4 @@
         </div>
     </div>
 </div>
+

@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +12,13 @@ namespace IT15_SOWCS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly NotificationService _notificationService;
 
-        public DocumentsController(AppDbContext context, IWebHostEnvironment environment)
+        public DocumentsController(AppDbContext context, IWebHostEnvironment environment, NotificationService notificationService)
         {
             _context = context;
             _environment = environment;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -79,6 +82,12 @@ namespace IT15_SOWCS.Controllers
             };
 
             _context.Documents.Add(document);
+            await _notificationService.AddForRoleAsync(
+                "manager",
+                "New Document Submission",
+                $"{document.title} was uploaded and is waiting for approval.",
+                "DocumentApproval",
+                "/Approvals/Approvals");
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Documents));
@@ -86,7 +95,7 @@ namespace IT15_SOWCS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(int documentId, string title, string category)
+        public async Task<IActionResult> Update(int documentId, string title, string category, IFormFile? uploadedFile)
         {
             var document = await _context.Documents.FindAsync(documentId);
             if (document == null)
@@ -94,10 +103,49 @@ namespace IT15_SOWCS.Controllers
                 return NotFound();
             }
 
+            if (uploadedFile != null && uploadedFile.Length > 0)
+            {
+                var uploadsDirectory = Path.Combine(_environment.WebRootPath, "uploads");
+                Directory.CreateDirectory(uploadsDirectory);
+
+                var safeFileName = $"{Guid.NewGuid()}_{Path.GetFileName(uploadedFile.FileName)}";
+                var fullPath = Path.Combine(uploadsDirectory, safeFileName);
+
+                await using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await uploadedFile.CopyToAsync(stream);
+                }
+
+                if (!string.IsNullOrWhiteSpace(document.file_path))
+                {
+                    var oldRelativePath = document.file_path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                    var oldFullPath = Path.Combine(_environment.WebRootPath, oldRelativePath);
+                    if (System.IO.File.Exists(oldFullPath))
+                    {
+                        System.IO.File.Delete(oldFullPath);
+                    }
+                }
+
+                document.file_name = uploadedFile.FileName;
+                document.file_path = $"/uploads/{safeFileName}";
+                document.file_size_bytes = uploadedFile.Length;
+            }
+
             document.title = title.Trim();
             document.category = category.Trim();
+            document.status = "Pending";
+            document.review_notes = null;
+            document.reviewed_by = null;
+            document.reviewed_date = null;
 
+            await _notificationService.AddForRoleAsync(
+                "manager",
+                "Document Updated",
+                $"{document.title} was updated and needs approval review.",
+                "DocumentApproval",
+                "/Approvals/Approvals");
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Document updated successfully.";
 
             return RedirectToAction(nameof(Documents));
         }

@@ -42,6 +42,8 @@
         }
         @foreach (var item in Model)
         {
+            var daysElapsed = (int)Math.Floor((DateTime.UtcNow - item.DateArchived.ToUniversalTime()).TotalDays);
+            var remainingDays = Math.Max(0, 30 - daysElapsed);
             var iconClass = item.Type switch
             {
                 "Task" => "bi-clipboard-check",
@@ -75,20 +77,79 @@
                     </div>
                 </div>
                 <div class="archive-actions">
-                    <form asp-action="Restore" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Restore this archived item?');">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-archive-action btn-restore-outline">
-                            <i class="bi bi-arrow-counterclockwise"></i> Restore
-                        </button>
-                    </form>
-                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Delete this archived item permanently? This cannot be undone.');">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-archive-action btn-delete-outline">
-                            <i class="bi bi-trash"></i> Remove
-                        </button>
-                    </form>
+                    <button type="button"
+                            class="btn btn-archive-action btn-restore-outline open-restore-modal"
+                            data-bs-toggle="modal"
+                            data-bs-target="#restoreArchiveModal"
+                            data-id="@item.Id">
+                        <i class="bi bi-arrow-counterclockwise"></i> Restore
+                    </button>
+                    <button type="button"
+                            class="btn btn-archive-action btn-delete-outline open-delete-modal"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteArchiveModal"
+                            data-id="@item.Id">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                    <div class="auto-remove-text">Automatically removed in @remainingDays days</div>
                 </div>
             </div>
         }
     </div>
 </div>
+
+<div class="modal fade" id="restoreArchiveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content archive-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Restore Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="mb-4 fs-5">Restore this archived item?</p>
+                <form asp-action="Restore" method="post" id="restoreArchiveForm" class="d-flex justify-content-end gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="restoreArchiveId" />
+                    <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save px-4">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteArchiveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content archive-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Delete Permanently</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="mb-4 fs-5">Delete this archived item permanently? This cannot be undone.</p>
+                <form asp-action="Delete" method="post" id="deleteArchiveForm" class="d-flex justify-content-end gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteArchiveId" />
+                    <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-save px-4">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.open-restore-modal').forEach(function (button) {
+            button.addEventListener('click', function () {
+                document.getElementById('restoreArchiveId').value = button.getAttribute('data-id') || '';
+            });
+        });
+
+        document.querySelectorAll('.open-delete-modal').forEach(function (button) {
+            button.addEventListener('click', function () {
+                document.getElementById('deleteArchiveId').value = button.getAttribute('data-id') || '';
+            });
+        });
+    </script>
+}

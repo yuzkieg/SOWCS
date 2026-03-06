@@ -24,6 +24,17 @@ namespace IT15_SOWCS.Controllers
         {
             ViewData["Title"] = "Archive";
 
+            var expirationCutoff = DateTime.UtcNow.AddDays(-30);
+            var expiredItems = await _context.ArchiveItems
+                .Where(item => !item.is_restored && item.date_archived <= expirationCutoff)
+                .ToListAsync();
+
+            if (expiredItems.Count > 0)
+            {
+                _context.ArchiveItems.RemoveRange(expiredItems);
+                await _context.SaveChangesAsync();
+            }
+
             var query = _context.ArchiveItems
                 .Where(item => !item.is_restored)
                 .AsQueryable();
@@ -175,6 +186,7 @@ namespace IT15_SOWCS.Controllers
 
             item.is_restored = true;
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Archived item restored successfully.";
             return RedirectToAction(nameof(Archive));
         }
 
@@ -190,6 +202,7 @@ namespace IT15_SOWCS.Controllers
 
             _context.ArchiveItems.Remove(item);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Archived item deleted permanently.";
             return RedirectToAction(nameof(Archive));
         }
     }

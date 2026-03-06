@@ -54,9 +54,31 @@
                         </div>
                         <div class="leave-date">@request.start_date.ToString("MMM d, yyyy") - @request.end_date.ToString("MMM d, yyyy")</div>
                         <div class="leave-note">Note: @request.reason</div>
+                        @if (request.status == "Rejected")
+                        {
+                            <div class="leave-feedback">
+                                Feedback: @(string.IsNullOrWhiteSpace(request.review_notes) ? "No feedback provided." : request.review_notes)
+                            </div>
+                        }
                     </div>
                 </div>
                 <div class="leave-meta">
+                    <div class="dropdown leave-card-actions">
+                        <button class="btn btn-sm ellipsis-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this leave request?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="leaveRequestId" value="@request.LR_id" />
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-archive me-2"></i>Archive
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="day-count">@request.days_count</div>
                     <span class="day-label">days</span>
                     <div class="submitted-date">Submitted @request.start_date.ToString("MMM d")</div>
@@ -87,11 +109,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Start Date</label>
-                        <input type="date" class="form-control" name="startDate" required>
+                        <input type="date" class="form-control" name="startDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" required>
                     </div>
                     <div class="form-group">
                         <label>End Date</label>
-                        <input type="date" class="form-control" name="endDate" required>
+                        <input type="date" class="form-control" name="endDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" required>
                     </div>
                 </div>
 
@@ -114,6 +136,8 @@
     const openBtn = document.querySelector('.btn-new-request');
     const closeBtn = document.getElementById('closeModal');
     const cancelBtn = document.getElementById('cancelBtn');
+    const startDateInput = document.querySelector('input[name="startDate"]');
+    const endDateInput = document.querySelector('input[name="endDate"]');
 
     openBtn.addEventListener('click', () => {
         modal.style.display = 'flex';
@@ -123,8 +147,20 @@
         modal.style.display = 'none';
     };
 
+    function syncEndDateMin() {
+        if (!startDateInput || !endDateInput) return;
+        const today = '@DateTime.Today.ToString("yyyy-MM-dd")';
+        const minDate = startDateInput.value && startDateInput.value > today ? startDateInput.value : today;
+        endDateInput.min = minDate;
+        if (endDateInput.value && endDateInput.value < minDate) {
+            endDateInput.value = minDate;
+        }
+    }
+
     closeBtn.addEventListener('click', closeModal);
     cancelBtn.addEventListener('click', closeModal);
+    startDateInput?.addEventListener('change', syncEndDateMin);
+    syncEndDateMin();
 
     window.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();

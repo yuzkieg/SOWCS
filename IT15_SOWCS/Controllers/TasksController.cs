@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,12 @@ namespace IT15_SOWCS.Controllers
     public class TasksController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly NotificationService _notificationService;
 
-        public TasksController(AppDbContext context)
+        public TasksController(AppDbContext context, NotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -75,6 +78,17 @@ namespace IT15_SOWCS.Controllers
                 return RedirectToAction(nameof(Tasks));
             }
 
+            if (dueDate.Date < DateTime.Today)
+            {
+                TempData["TasksError"] = "Due date cannot be in the past.";
+                if (redirectProjectId.HasValue)
+                {
+                    return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
+                }
+
+                return RedirectToAction(nameof(Tasks));
+            }
+
             var task = new WorkTask
             {
                 employee_id = employee.employee_id,
@@ -90,7 +104,14 @@ namespace IT15_SOWCS.Controllers
             };
 
             _context.Tasks.Add(task);
+            await _notificationService.AddForUserAsync(
+                task.assigned_to,
+                "New Task Assigned",
+                $"You were assigned \"{task.title}\" in project {project.name}.",
+                "Task",
+                $"/Projects/Detail/{project.project_id}");
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Task created successfully.";
 
             if (redirectProjectId.HasValue)
             {
@@ -127,6 +148,7 @@ namespace IT15_SOWCS.Controllers
 
             if (employeeId.HasValue)
             {
+                var previousAssignedTo = task.assigned_to;
                 var employee = await _context.Employees
                     .Include(item => item.User)
                     .FirstOrDefaultAsync(item => item.employee_id == employeeId.Value);
@@ -136,10 +158,21 @@ namespace IT15_SOWCS.Controllers
                     task.employee_id = employee.employee_id;
                     task.assigned_name = employee.full_name;
                     task.assigned_to = employee.User?.Email ?? string.Empty;
+
+                    if (!string.Equals(previousAssignedTo, task.assigned_to, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await _notificationService.AddForUserAsync(
+                            task.assigned_to,
+                            "Task Reassigned",
+                            $"Task \"{task.title}\" was assigned to you.",
+                            "Task",
+                            $"/Projects/Detail/{task.project_id}");
+                    }
                 }
             }
 
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Task updated successfully.";
 
             if (redirectProjectId.HasValue)
             {
@@ -163,6 +196,17 @@ namespace IT15_SOWCS.Controllers
             task.completed_date = status == "Completed" ? DateTime.UtcNow : null;
 
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"Task moved to {status}.";
+
+            if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new
+                {
+                    success = true,
+                    status,
+                    message = TempData["SuccessMessage"]?.ToString() ?? "Task status updated."
+                });
+            }
 
             if (redirectProjectId.HasValue)
             {
@@ -196,6 +240,7 @@ namespace IT15_SOWCS.Controllers
 
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Task archived successfully.";
 
             if (redirectProjectId.HasValue)
             {
