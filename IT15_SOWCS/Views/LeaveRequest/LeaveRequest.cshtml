@@ -10,7 +10,7 @@
             <h2>Leave Requests</h2>
             <p>Submit and track your leave requests</p>
         </div>
-        <button class="btn-new-request">
+        <button class="btn-new-request" type="button" data-bs-toggle="modal" data-bs-target="#createLeaveRequestModal">
             <i class="bi bi-plus-lg"></i> New Request
         </button>
     </div>
@@ -69,7 +69,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this leave request?');">
+                                <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Leave Request" data-archive-message="Archive this leave request?">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="leaveRequestId" value="@request.LR_id" />
                                     <button type="submit" class="dropdown-item">
@@ -79,73 +79,80 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="day-count">@request.days_count</div>
-                    <span class="day-label">days</span>
-                    <div class="submitted-date">Submitted @request.start_date.ToString("MMM d")</div>
+                    <div class="day-count-wrap">
+                        <div class="day-count">@request.days_count</div>
+                        <span class="day-label">days</span>
+                        <div class="submitted-date">Submitted @request.start_date.ToString("MMM d")</div>
+                    </div>
                 </div>
             </div>
         }
     }
 
-    <div id="leaveModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Submit Leave Request</h3>
-                <button class="close-modal" id="closeModal">&times;</button>
+    <div class="modal fade" id="createLeaveRequestModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Submit Leave Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <form asp-action="Create" method="post" id="leaveForm">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Leave Type</label>
+                            <select class="form-select custom-input" name="leaveType" required>
+                                <option>Annual Leave</option>
+                                <option>Sick Leave</option>
+                                <option>Unpaid Leave</option>
+                                <option>Personal Leave</option>
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold">Start Date</label>
+                                <input type="date"
+                                       class="form-control custom-input"
+                                       id="leaveStartDate"
+                                       name="startDate"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                       required>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold">End Date</label>
+                                <input type="date"
+                                       class="form-control custom-input"
+                                       id="leaveEndDate"
+                                       name="endDate"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Reason (Optional)</label>
+                            <textarea class="form-control custom-input"
+                                      rows="4"
+                                      name="reason"
+                                      placeholder="Brief description of your leave reason"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-save px-4">Submit Request</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <form asp-action="Create" method="post" id="leaveForm">
-                @Html.AntiForgeryToken()
-                <div class="form-group">
-                    <label>Leave Type</label>
-                    <select class="form-control" name="leaveType">
-                        <option>Annual Leave</option>
-                        <option>Sick Leave</option>
-                        <option>Unpaid Leave</option>
-                        <option>Personal Leave</option>
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Start Date</label>
-                        <input type="date" class="form-control" name="startDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" required>
-                    </div>
-                    <div class="form-group">
-                        <label>End Date</label>
-                        <input type="date" class="form-control" name="endDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Reason (Optional)</label>
-                    <textarea class="form-control" rows="4" name="reason" placeholder="Brief description of your leave reason"></textarea>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
-                    <button type="submit" class="btn-submit">Submit Request</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
 
 <script>
-    const modal = document.getElementById('leaveModal');
-    const openBtn = document.querySelector('.btn-new-request');
-    const closeBtn = document.getElementById('closeModal');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const startDateInput = document.querySelector('input[name="startDate"]');
-    const endDateInput = document.querySelector('input[name="endDate"]');
-
-    openBtn.addEventListener('click', () => {
-        modal.style.display = 'flex';
-    });
-
-    const closeModal = () => {
-        modal.style.display = 'none';
-    };
+    const startDateInput = document.getElementById('leaveStartDate');
+    const endDateInput = document.getElementById('leaveEndDate');
+    const createLeaveRequestModal = document.getElementById('createLeaveRequestModal');
 
     function syncEndDateMin() {
         if (!startDateInput || !endDateInput) return;
@@ -157,14 +164,10 @@
         }
     }
 
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
     startDateInput?.addEventListener('change', syncEndDateMin);
+    createLeaveRequestModal?.addEventListener('shown.bs.modal', syncEndDateMin);
     syncEndDateMin();
-
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
 </script>
+
 
 

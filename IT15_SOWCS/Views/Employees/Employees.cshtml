@@ -84,7 +84,7 @@
                                         <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editEmployeeModal-@employee.employee_id"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
                                     <li>
-                                        <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this employee record?');">
+                                        <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Employee" data-archive-message="Archive this employee record?">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="employeeId" value="@employee.employee_id" />
                                             <button type="submit" class="dropdown-item text-warning"><i class="bi bi-archive me-2"></i>Archive</button>
@@ -234,5 +234,6 @@
         </div>
     </div>
 </div>
+
 
 

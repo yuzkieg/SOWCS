@@ -99,14 +99,14 @@
 </div>
 
 <div class="modal fade" id="restoreArchiveModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content archive-modal-content">
+    <div class="modal-dialog modal-dialog-centered syncora-confirm-dialog">
+        <div class="modal-content archive-modal-content syncora-confirm-content">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Restore Item</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-3">
-                <p class="mb-4 fs-5">Restore this archived item?</p>
+                <p class="mb-3">Restore this archived item?</p>
                 <form asp-action="Restore" method="post" id="restoreArchiveForm" class="d-flex justify-content-end gap-2">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" id="restoreArchiveId" />
@@ -119,14 +119,14 @@
 </div>
 
 <div class="modal fade" id="deleteArchiveModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content archive-modal-content">
+    <div class="modal-dialog modal-dialog-centered syncora-confirm-dialog">
+        <div class="modal-content archive-modal-content syncora-confirm-content">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Delete Permanently</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-3">
-                <p class="mb-4 fs-5">Delete this archived item permanently? This cannot be undone.</p>
+                <p class="mb-3">Delete this archived item permanently? This cannot be undone.</p>
                 <form asp-action="Delete" method="post" id="deleteArchiveForm" class="d-flex justify-content-end gap-2">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" id="deleteArchiveId" />

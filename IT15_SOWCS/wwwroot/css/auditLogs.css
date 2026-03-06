@@ -70,6 +70,16 @@
     overflow: hidden;
 }
 
+.audit-table-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.audit-table-scroll .table {
+    min-width: 860px;
+}
+
 .table thead th {
     background: #f8fafc;
     color: #64748b;
@@ -138,5 +148,9 @@
 @media (max-width: 768px) {
     .audit-container {
         padding: 1rem;
+    }
+
+    .audit-table-scroll .table {
+        min-width: 780px;
     }
 }

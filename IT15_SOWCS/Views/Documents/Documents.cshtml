@@ -79,7 +79,7 @@
                                 </button>
                             </li>
                             <li>
-                                <form asp-action="Delete" method="post" onsubmit="return confirm('Archive this document?');">
+                                <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Document" data-archive-message="Archive this document?">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="documentId" value="@doc.document_id" />
                                     <button type="submit" class="dropdown-item text-warning">
@@ -208,3 +208,4 @@
         </div>
     </div>
 </div>
+

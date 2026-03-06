@@ -20,7 +20,7 @@ namespace IT15_SOWCS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> UserManagement(string? search)
+        public async Task<IActionResult> UserManagement(string? search, string? filter = "all")
         {
             var usersQuery = _context.Users.AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
@@ -30,6 +30,7 @@ namespace IT15_SOWCS.Controllers
                     (user.Email ?? string.Empty).Contains(search));
             }
 
+            var activeFilter = string.IsNullOrWhiteSpace(filter) ? "all" : filter.Trim().ToLowerInvariant();
             var users = await usersQuery.OrderByDescending(user => user.CreatedDate).ToListAsync();
 
             var employeeRolesByEmail = await _context.Employees
@@ -43,10 +44,21 @@ namespace IT15_SOWCS.Controllers
             var model = new UserManagementPageViewModel
             {
                 Users = users,
+                TotalUsersCount = await _context.Users.CountAsync(),
                 EmployeeRolesByEmail = employeeRolesByEmail,
-                AdminCount = users.Count(user => user.Role == "admin"),
+                ActiveEmployeeUserIds = (await _context.Employees
+                    .Where(employee => employee.is_active)
+                    .Select(employee => employee.user_id)
+                    .Distinct()
+                    .ToListAsync())
+                    .ToHashSet(),
+                AdminCount = await _context.Users.CountAsync(user =>
+                    user.Role != null && (
+                        user.Role.ToLower() == "admin" ||
+                        user.Role.ToLower() == "superadmin")),
                 ActiveEmployeeCount = await _context.Employees.CountAsync(employee => employee.is_active),
-                Search = search
+                Search = search,
+                SelectedFilter = activeFilter
             };
 
             return View("UserManagement", model);

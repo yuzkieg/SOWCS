@@ -22,18 +22,22 @@
 
     <div class="d-flex">
         @await Html.PartialAsync("_Sidebar")
+        <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
         <div class="flex-grow-1 d-flex flex-column" style="min-height: 100vh;">
 
             <nav class="navbar navbar-expand-sm navbar-white bg-white border-bottom px-4 py-3">
                 <div class="container-fluid">
-                    
-                    
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" id="topbarSidebarToggle" class="topbar-sidebar-toggle" aria-label="Toggle sidebar">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
                     @await Html.PartialAsync("_TopNavActions")
                 </div>
             </nav>
 
-            <main role="main" class="px-3 pt-2 pb-3 flex-grow-1">
+            <main role="main" class="dashboard-main px-3 pt-2 pb-3 flex-grow-1">
                 @RenderBody()
             </main>
         </div>
@@ -48,32 +52,73 @@
 </html>
 
 <script>
-        document.addEventListener("DOMContentLoaded", function() {
-        const sidebar = document.getElementById('sidebar');
-        const toggleBtn = document.getElementById('toggleSidebar');
+    document.addEventListener("DOMContentLoaded", function () {
+        const sidebar = document.getElementById("sidebar");
+        const headerToggle = document.getElementById("topbarSidebarToggle");
+        const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+        const mobileQuery = window.matchMedia("(max-width: 992px)");
 
-        if (toggleBtn && sidebar) {
-            toggleBtn.addEventListener('click', function() {
-                sidebar.classList.toggle('collapsed');
-                const isCollapsed = sidebar.classList.contains('collapsed');
-                localStorage.setItem('sidebar-collapsed', isCollapsed.toString());
-            });
+        if (!sidebar || !headerToggle || !sidebarBackdrop) {
+            return;
         }
 
-        const savedState = localStorage.getItem('sidebar-collapsed');
-        if (savedState === null) {
-            sidebar.classList.remove('collapsed');
-            localStorage.setItem('sidebar-collapsed', 'false');
-        } else if (savedState === 'true') {
-            sidebar.classList.add('collapsed');
-        } else {
-            sidebar.classList.remove('collapsed');
+        function setDesktopState() {
+            const savedState = localStorage.getItem("sidebar-collapsed");
+            if (savedState === "true") {
+                sidebar.classList.add("collapsed");
+            } else {
+                sidebar.classList.remove("collapsed");
+            }
+            sidebar.classList.remove("mobile-open");
+            document.body.classList.remove("sidebar-mobile-open");
         }
-});
+
+        function setMobileState() {
+            sidebar.classList.remove("collapsed");
+            sidebar.classList.remove("mobile-open");
+            document.body.classList.remove("sidebar-mobile-open");
+        }
+
+        function applySidebarMode() {
+            if (mobileQuery.matches) {
+                setMobileState();
+            } else {
+                setDesktopState();
+            }
+        }
+
+        headerToggle.addEventListener("click", function () {
+            if (mobileQuery.matches) {
+                const willOpen = !sidebar.classList.contains("mobile-open");
+                sidebar.classList.toggle("mobile-open", willOpen);
+                document.body.classList.toggle("sidebar-mobile-open", willOpen);
+            } else {
+                sidebar.classList.toggle("collapsed");
+                localStorage.setItem("sidebar-collapsed", sidebar.classList.contains("collapsed").toString());
+            }
+        });
+
+        sidebarBackdrop.addEventListener("click", function () {
+            sidebar.classList.remove("mobile-open");
+            document.body.classList.remove("sidebar-mobile-open");
+        });
+
+        window.addEventListener("resize", applySidebarMode);
+        applySidebarMode();
+
+        const moduleSuccessToast = document.getElementById("moduleSuccessToast");
+        if (moduleSuccessToast) {
+            setTimeout(function () {
+                moduleSuccessToast.remove();
+            }, 3000);
+        }
+
+        const moduleErrorToast = document.getElementById("moduleErrorToast");
+        if (moduleErrorToast) {
+            setTimeout(function () {
+                moduleErrorToast.remove();
+            }, 3000);
+        }
+    });
 </script>
-
-
-
-
-
 

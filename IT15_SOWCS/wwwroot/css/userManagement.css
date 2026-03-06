@@ -39,6 +39,23 @@
     gap: 1.25rem;
 }
 
+.stat-filter-card {
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.stat-filter-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+}
+
+.stat-filter-card.active {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
 .stat-icon {
     width: 48px;
     height: 48px;
@@ -137,6 +154,12 @@
     background: #faf5ff;
     color: #7e22ce;
     border: 1px solid #f3e8ff;
+}
+
+.badge-system-superadmin {
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
 }
 
 .badge-emp-role {

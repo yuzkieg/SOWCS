@@ -3,7 +3,12 @@
 @{
     var user = await UserManager.GetUserAsync(User);
     var fullName = user?.FullName ?? "User";
-    var role = "Admin";
+    var rawRole = user?.Role ?? "user";
+    var role = rawRole.Equals("superadmin", StringComparison.OrdinalIgnoreCase)
+        ? "Super Admin"
+        : string.IsNullOrWhiteSpace(rawRole)
+            ? "User"
+            : char.ToUpperInvariant(rawRole[0]) + rawRole.Substring(1);
 
     var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
@@ -17,17 +22,13 @@
 }
 
 <div class="sidebar-container" id="sidebar">
-     <div class="brand-header">
+    <div class="brand-header">
         <a asp-controller="Dashboard" asp-action="Index" class="brand-wrapper" id="brandSection">
             <div class="brand-icon-box">
                 <img src="~/images/SOWCS.png" alt="SOWCS Logo" class="brand-logo-img" />
             </div>
             <span class="brand-name">Syncora</span>
         </a>
-        <button class="btn-toggle" id="toggleSidebar">
-            <i class="bi bi-list fs-4 text-white"></i>
-        </button>
-
     </div>
     <ul class="sidebar-nav">
         <li class="nav-item">
@@ -82,6 +83,12 @@
             <a asp-controller="AuditLogs" asp-action="AuditLogs"
                class="nav-link @IsActive("AuditLogs", "AuditLogs")" title="Audit Logs">
                 <i class="bi bi-file-earmark-bar-graph"></i> <span class="nav-text">Audit Logs</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a asp-controller="Reports" asp-action="Reports"
+               class="nav-link @IsActive("Reports", "Reports")" title="Reports">
+                <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
             </a>
         </li>
         <li class="nav-item">

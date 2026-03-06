@@ -1,0 +1,129 @@
+@model IT15_SOWCS.ViewModels.ReportsPageViewModel
+@{
+    Layout = null;
+    var generatedBy = ViewData["GeneratedBy"]?.ToString() ?? "System";
+    var generatedAt = ViewData["GeneratedAt"] is DateTime value ? value : DateTime.Now;
+    string reportTitle = Model.ActiveTab switch
+    {
+        "tasks" => "Tasks Summary Report",
+        "employees" => "Employee Directory Report",
+        "leave" => "Leave Requests Report",
+        _ => "Projects Overview Report"
+    };
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@reportTitle</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+        .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; background: #fff; }
+        .head { background: #1f2d49; color: #fff; padding: 26px 34px; display: flex; justify-content: space-between; }
+        .brand { font-size: 38px; font-weight: 700; margin-bottom: 10px; }
+        .sub { font-size: 22px; }
+        .meta { text-align: right; font-size: 18px; line-height: 1.6; font-weight: 700; margin-top: 14px; }
+        .content { padding: 26px 34px 34px; }
+        .block { margin-bottom: 26px; }
+        .title { background: #eef2ff; color: #4f46e5; font-size: 22px; font-weight: 700; padding: 10px 12px; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid #e5e7eb; font-size: 15px; padding: 9px 8px; text-align: left; }
+        th { font-size: 13px; text-transform: uppercase; color: #475569; letter-spacing: 0.04em; background: #f8fafc; }
+        .sum td { font-weight: 700; border-bottom: none; }
+        @@media print { .sheet { margin: 0; width: auto; min-height: 0; } }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="sheet">
+        <div class="head">
+            <div>
+                <div class="brand">Syncora</div>
+                <div class="sub">@reportTitle</div>
+            </div>
+            <div class="meta">
+                <div>Generated: @generatedAt.ToString("MMMM d, yyyy")</div>
+                <div>By: @generatedBy</div>
+            </div>
+        </div>
+        <div class="content">
+            @if (Model.ActiveTab == "projects")
+            {
+                <div class="block">
+                    <div class="title">Summary</div>
+                    <table class="sum">
+                        <thead><tr><th>Total Projects</th><th>In Progress</th><th>Completed</th><th>On Hold</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalProjects</td><td>@Model.ProjectsInProgress</td><td>@Model.ProjectsCompleted</td><td>@Model.ProjectsOnHold</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="block">
+                    <div class="title">Projects Overview</div>
+                    <table>
+                        <thead><tr><th>Project Name</th><th>Status</th><th>Priority</th><th>Progress</th></tr></thead>
+                        <tbody>
+                        @foreach (var row in Model.ProjectRows) { <tr><td>@row.Name</td><td>@row.Status</td><td>@row.Priority</td><td>@row.Progress%</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else if (Model.ActiveTab == "tasks")
+            {
+                <div class="block">
+                    <div class="title">Summary</div>
+                    <table class="sum">
+                        <thead><tr><th>Total Tasks</th><th>Completed</th><th>In Progress</th><th>Pending Review</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalTasks</td><td>@Model.TasksCompleted</td><td>@Model.TasksInProgress</td><td>@Model.TasksPendingReview</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="block">
+                    <div class="title">Tasks Summary</div>
+                    <table>
+                        <thead><tr><th>Title</th><th>Project</th><th>Status</th><th>Priority</th></tr></thead>
+                        <tbody>
+                        @foreach (var row in Model.TaskRows) { <tr><td>@row.Title</td><td>@row.Project</td><td>@row.Status</td><td>@row.Priority</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else if (Model.ActiveTab == "employees")
+            {
+                <div class="block">
+                    <div class="title">Summary</div>
+                    <table class="sum">
+                        <thead><tr><th>Total Employees</th><th>Active</th><th>Departments</th><th>Managers</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalEmployees</td><td>@Model.ActiveEmployees</td><td>@Model.TotalDepartments</td><td>@Model.TotalManagers</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="block">
+                    <div class="title">Employee Directory</div>
+                    <table>
+                        <thead><tr><th>Name</th><th>Department</th><th>Position</th><th>Role</th></tr></thead>
+                        <tbody>
+                        @foreach (var row in Model.EmployeeRows) { <tr><td>@row.Name</td><td>@row.Department</td><td>@row.Position</td><td>@row.Role</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="block">
+                    <div class="title">Summary</div>
+                    <table class="sum">
+                        <thead><tr><th>Total Requests</th><th>Pending</th><th>Approved</th><th>Rejected</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalLeaveRequests</td><td>@Model.PendingLeaveRequests</td><td>@Model.ApprovedLeaveRequests</td><td>@Model.RejectedLeaveRequests</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="block">
+                    <div class="title">Leave Requests</div>
+                    <table>
+                        <thead><tr><th>Employee</th><th>Type</th><th>Start Date</th><th>End Date</th><th>Days</th><th>Status</th><th>Reviewed By</th></tr></thead>
+                        <tbody>
+                        @foreach (var row in Model.LeaveRows) { <tr><td>@row.Employee</td><td>@row.Type</td><td>@row.StartDate.ToString("MMM d, yyyy")</td><td>@row.EndDate.ToString("MMM d, yyyy")</td><td>@row.Days</td><td>@row.Status</td><td>@row.ReviewedBy</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</body>
+</html>

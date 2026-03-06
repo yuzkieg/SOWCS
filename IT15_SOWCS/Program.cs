@@ -59,6 +59,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Users>>();
+
     dbContext.Database.ExecuteSqlRaw(@"
 IF OBJECT_ID(N'[NotificationItem]', N'U') IS NULL
 BEGIN
@@ -75,6 +77,14 @@ BEGIN
     CREATE INDEX [IX_NotificationItem_recipient_email_is_read_created_at]
     ON [NotificationItem]([recipient_email], [is_read], [created_at]);
 END");
+
+    var superAdminUser = await userManager.FindByEmailAsync("yuzkiega@gmail.com");
+    if (superAdminUser != null && !string.Equals(superAdminUser.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
+    {
+        superAdminUser.Role = "superadmin";
+        superAdminUser.UpdatedDate = DateTime.UtcNow;
+        await userManager.UpdateAsync(superAdminUser);
+    }
 }
 
 if (!app.Environment.IsDevelopment())

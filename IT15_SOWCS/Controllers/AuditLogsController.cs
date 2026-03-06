@@ -19,7 +19,10 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> AuditLogs(string? search, [FromQuery(Name = "action")] string? actionFilter)
         {
-            var query = _context.AuditLogs.AsQueryable();
+            var query = _context.AuditLogs
+                .Where(log => log.action == null || !EF.Functions.Like(log.action, "view"))
+                .Where(log => log.action == null || !EF.Functions.Like(log.action, "view%"))
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {

@@ -1,0 +1,167 @@
+@model IT15_SOWCS.ViewModels.SuperAdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+}
+
+<div class="sa-page">
+    <section class="sa-hero">
+        <div class="sa-hero-left">
+            <p class="sa-kicker"><i class="bi bi-stars"></i> Productivity Analytics - Super Admin</p>
+            <h1>@Model.FullName.ToUpperInvariant()</h1>
+            <p>Predictive talent intelligence dashboard - shifting from what happened to what it means for the future.</p>
+        </div>
+        <div class="sa-hero-right">
+            <div><strong>@Model.TasksCompleted</strong><span>Tasks Completed</span></div>
+            <div><strong>@Model.EmployeesCount</strong><span>Employees</span></div>
+        </div>
+    </section>
+
+    <div class="sa-caption">Performance Metrics</div>
+    <section class="sa-metrics">
+        <article class="sa-metric-card">
+            <p>Task Velocity</p>
+            <h3>@Model.TaskVelocityDays <small>days</small></h3>
+            <span>avg. assignment to completion</span>
+        </article>
+        <article class="sa-metric-card green">
+            <p>Throughput</p>
+            <h3>@Model.Throughput</h3>
+            <span>@(Model.ThroughputDeltaPercent >= 0 ? "+" : "")@Model.ThroughputDeltaPercent% vs last month</span>
+        </article>
+        <article class="sa-metric-card purple">
+            <p>Collab Score</p>
+            <h3>@Model.CollaborationScore<small>/100</small></h3>
+            <div class="sa-mini-progress"><div style="width:@Model.CollaborationScore%"></div></div>
+        </article>
+        <article class="sa-metric-card amber">
+            <p>Completion Rate</p>
+            <h3>@Model.CompletionRatePercent<small>%</small></h3>
+            <span>@Model.CompletionNumerator of @Model.CompletionDenominator tasks</span>
+        </article>
+    </section>
+
+    <section class="sa-panels">
+        <article class="sa-panel risk">
+            <header><h5><i class="bi bi-exclamation-triangle"></i> Reject Risk Model</h5><span>@Model.RejectRisks.Count flagged</span></header>
+            @foreach (var item in Model.RejectRisks)
+            {
+                <div class="sa-person risk">
+                    <div class="avatar">@item.Initials</div>
+                    <div class="body">
+                        <div class="name-line">@item.Name <span class="pill warn">@item.Classification</span></div>
+                        <div class="meta">@item.RoleLabel</div>
+                        <div class="stats"><span>@item.RejectRatePercent% reject rate</span><span>@item.CompletionPercent% completion</span><span>@(item.WoWPercent >= 0 ? "+" : "")@item.WoWPercent% WoW</span></div>
+                    </div>
+                </div>
+            }
+        </article>
+        <article class="sa-panel top">
+            <header><h5><i class="bi bi-stars"></i> Top Performer Model</h5><span>@Model.TopPerformers.Count identified</span></header>
+            @foreach (var item in Model.TopPerformers)
+            {
+                <div class="sa-person top">
+                    <div class="avatar">@item.Initials</div>
+                    <div class="body">
+                        <div class="name-line">@item.Name <span class="pill ok">@item.Classification</span></div>
+                        <div class="meta">@item.RoleLabel</div>
+                        <div class="stats"><span>@item.CompletionPercent% completion</span><span>@item.CollaborationScore collab</span><span>@item.Velocity velocity</span></div>
+                    </div>
+                </div>
+            }
+        </article>
+    </section>
+
+    <section class="sa-chart-grid">
+        <article class="sa-panel">
+            <header><h5><i class="bi bi-fire"></i> Productivity Heatmap</h5></header>
+            <div class="sa-heatmap">
+                @for (var row = 0; row < 5; row++)
+                {
+                    <div class="hm-row">
+                        @for (var col = 0; col < 9; col++)
+                        {
+                            var value = Model.Heatmap[row, col];
+                            var opacity = Math.Min(1, (value + 1) / 6.0);
+                            <span style="opacity:@opacity"></span>
+                        }
+                    </div>
+                }
+            </div>
+        </article>
+        <article class="sa-panel">
+            <header><h5><i class="bi bi-bullseye"></i> Reject Correlation Plot</h5></header>
+            <div class="sa-corr-plot">
+                @foreach (var point in Model.CorrelationPoints)
+                {
+                    var left = Math.Clamp(point.Tasks * 8, 2, 96);
+                    var top = Math.Clamp(100 - point.Reject, 4, 96);
+                    <span class="dot" style="left:@left%;top:@top%;"></span>
+                }
+                <div class="risk-line"></div>
+            </div>
+        </article>
+    </section>
+
+    <section class="sa-panel">
+        <header><h5><i class="bi bi-graph-up-arrow"></i> Predictive Trend Lines</h5></header>
+        <div class="sa-trend-grid">
+            @for (var i = 0; i < months.Length; i++)
+            {
+                var actual = i < Model.PredictiveActual.Count ? Model.PredictiveActual[i] : (int?)null;
+                var projected = i < Model.PredictiveProjected.Count ? Model.PredictiveProjected[i] : 0;
+                <div class="month-col">
+                    <span>@months[i]</span>
+                    <div class="bar">
+                        @if (actual.HasValue)
+                        {
+                            <div class="actual" style="height:@actual.Value%"></div>
+                        }
+                        <div class="predicted" style="height:@projected%"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <div class="sa-caption">Automated Next-Step Suggestions</div>
+    <section class="sa-suggestion-grid">
+        @foreach (var suggestion in Model.Suggestions)
+        {
+            var css = suggestion.Type == "positive" ? "positive" : "risk";
+            <article class="sa-suggestion @css">
+                <p>@suggestion.Message</p>
+                <div>
+                    <button type="button">@suggestion.ActionLabel</button>
+                    <a href="#">Dismiss</a>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="sa-panel">
+        <header><h5><i class="bi bi-people"></i> Full Employee Analytics Overview</h5></header>
+        <div class="table-responsive">
+            <table class="table sa-table mb-0">
+                <thead>
+                    <tr><th>Employee</th><th>Tasks</th><th>Completion</th><th>Reject %</th><th>WoW</th><th>Collab</th><th>Classification</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.AnalyticsRows)
+                    {
+                        <tr>
+                            <td><div class="sa-emp"><span>@row.Initials</span><div><strong>@row.Name</strong><small>@row.RoleLabel</small></div></div></td>
+                            <td>@row.Tasks</td>
+                            <td>@row.CompletionPercent%</td>
+                            <td>@row.RejectPercent%</td>
+                            <td>@(row.WoWPercent >= 0 ? "+" : "")@row.WoWPercent%</td>
+                            <td><div class="sa-collab"><em style="width:@Math.Clamp(row.CollaborationScore, 0, 100)%"></em>@row.CollaborationScore</div></td>
+                            <td><span class="pill @(row.Classification == "Reward Milestone" ? "ok" : row.Classification == "Stable" ? "stable" : "warn")">@row.Classification</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

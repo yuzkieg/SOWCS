@@ -1,0 +1,305 @@
+@model IT15_SOWCS.ViewModels.ReportsPageViewModel
+@{
+    Layout = "_ReportsLayout";
+    ViewData["Title"] = "Reports";
+}
+
+<div class="reports-page">
+    <div class="reports-header">
+        <div>
+            <h2>Reports</h2>
+            <p>Generate and export reports as PDF</p>
+        </div>
+        <a class="btn reports-export-btn"
+           asp-action="ExportPdf"
+           asp-route-tab="@Model.ActiveTab"
+           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+           target="_blank"
+           rel="noopener">
+            <i class="bi bi-download me-2"></i>Export PDF
+        </a>
+    </div>
+
+    <form id="reportsDateFilterForm" asp-action="Reports" method="get" class="reports-date-filter">
+        <input type="hidden" name="tab" value="@Model.ActiveTab" />
+        <div class="reports-filter-left">
+            <i class="bi bi-funnel"></i>
+            <span class="reports-filter-title">Filter by Date</span>
+            <span class="reports-filter-label">From</span>
+            <input type="date" id="reportsStartDate" name="from" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
+            <span class="reports-filter-label">To</span>
+            <input type="date" id="reportsEndDate" name="to" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
+            <button type="button" id="reportsClearDateBtn" class="btn btn-sm reports-clear-btn @(Model.StartDate.HasValue || Model.EndDate.HasValue ? string.Empty : "d-none")">
+                <i class="bi bi-x-lg"></i> Clear
+            </button>
+        </div>
+        <div class="reports-filter-right">
+            <span>@Model.RecordsMatch records match</span>
+        </div>
+    </form>
+
+    <div class="report-tab-grid">
+        <a class="report-tab-card @(Model.ActiveTab == "projects" ? "active" : string.Empty)"
+           data-report-tab-link="true"
+           asp-action="Reports"
+           asp-route-tab="projects"
+           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))">
+            <span class="report-tab-icon projects"><i class="bi bi-kanban"></i></span>
+            <span>Projects Overview</span>
+        </a>
+        <a class="report-tab-card @(Model.ActiveTab == "tasks" ? "active" : string.Empty)"
+           data-report-tab-link="true"
+           asp-action="Reports"
+           asp-route-tab="tasks"
+           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))">
+            <span class="report-tab-icon tasks"><i class="bi bi-clipboard2-check"></i></span>
+            <span>Tasks Summary</span>
+        </a>
+        <a class="report-tab-card @(Model.ActiveTab == "employees" ? "active" : string.Empty)"
+           data-report-tab-link="true"
+           asp-action="Reports"
+           asp-route-tab="employees"
+           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))">
+            <span class="report-tab-icon employees"><i class="bi bi-people"></i></span>
+            <span>Employee Directory</span>
+        </a>
+        <a class="report-tab-card @(Model.ActiveTab == "leave" ? "active" : string.Empty)"
+           data-report-tab-link="true"
+           asp-action="Reports"
+           asp-route-tab="leave"
+           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))">
+            <span class="report-tab-icon leave"><i class="bi bi-calendar-event"></i></span>
+            <span>Leave Requests</span>
+        </a>
+    </div>
+
+    <div id="reportsTabContent">
+    @if (Model.ActiveTab == "projects")
+    {
+        <div class="reports-stat-grid">
+            <div class="stat-box"><div class="value">@Model.TotalProjects</div><div class="label">Total Projects</div></div>
+            <div class="stat-box"><div class="value blue">@Model.ProjectsInProgress</div><div class="label">In Progress</div></div>
+            <div class="stat-box"><div class="value green">@Model.ProjectsCompleted</div><div class="label">Completed</div></div>
+            <div class="stat-box"><div class="value orange">@Model.ProjectsOnHold</div><div class="label">On Hold</div></div>
+        </div>
+        <section class="reports-preview-card">
+            <div class="reports-preview-head">
+                <h5><i class="bi bi-file-earmark-text me-2"></i>Projects Overview - Preview</h5>
+                <span>Showing first @Model.ProjectRows.Count records - PDF exports all</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table reports-table">
+                    <thead>
+                        <tr><th>Project Name</th><th>Status</th><th>Priority</th><th>Progress</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.ProjectRows)
+                        {
+                            <tr><td>@row.Name</td><td>@row.Status</td><td>@row.Priority</td><td>@row.Progress%</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+    else if (Model.ActiveTab == "tasks")
+    {
+        <div class="reports-stat-grid">
+            <div class="stat-box"><div class="value">@Model.TotalTasks</div><div class="label">Total Tasks</div></div>
+            <div class="stat-box"><div class="value green">@Model.TasksCompleted</div><div class="label">Completed</div></div>
+            <div class="stat-box"><div class="value blue">@Model.TasksInProgress</div><div class="label">In Progress</div></div>
+            <div class="stat-box"><div class="value violet">@Model.TasksPendingReview</div><div class="label">Pending Review</div></div>
+        </div>
+        <section class="reports-preview-card">
+            <div class="reports-preview-head">
+                <h5><i class="bi bi-file-earmark-text me-2"></i>Tasks Summary - Preview</h5>
+                <span>Showing first @Model.TaskRows.Count records - PDF exports all</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table reports-table">
+                    <thead>
+                        <tr><th>Title</th><th>Project</th><th>Status</th><th>Priority</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.TaskRows)
+                        {
+                            <tr><td>@row.Title</td><td>@row.Project</td><td>@row.Status</td><td>@row.Priority</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+    else if (Model.ActiveTab == "employees")
+    {
+        <div class="reports-stat-grid">
+            <div class="stat-box"><div class="value">@Model.TotalEmployees</div><div class="label">Total Employees</div></div>
+            <div class="stat-box"><div class="value green">@Model.ActiveEmployees</div><div class="label">Active</div></div>
+            <div class="stat-box"><div class="value blue">@Model.TotalDepartments</div><div class="label">Departments</div></div>
+            <div class="stat-box"><div class="value violet">@Model.TotalManagers</div><div class="label">Managers</div></div>
+        </div>
+        <section class="reports-preview-card">
+            <div class="reports-preview-head">
+                <h5><i class="bi bi-file-earmark-text me-2"></i>Employee Directory - Preview</h5>
+                <span>Showing first @Model.EmployeeRows.Count records - PDF exports all</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table reports-table">
+                    <thead>
+                        <tr><th>Name</th><th>Department</th><th>Position</th><th>Role</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.EmployeeRows)
+                        {
+                            <tr><td>@row.Name</td><td>@row.Department</td><td>@row.Position</td><td>@row.Role</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="reports-stat-grid">
+            <div class="stat-box"><div class="value">@Model.TotalLeaveRequests</div><div class="label">Total Requests</div></div>
+            <div class="stat-box"><div class="value orange">@Model.PendingLeaveRequests</div><div class="label">Pending</div></div>
+            <div class="stat-box"><div class="value green">@Model.ApprovedLeaveRequests</div><div class="label">Approved</div></div>
+            <div class="stat-box"><div class="value red">@Model.RejectedLeaveRequests</div><div class="label">Rejected</div></div>
+        </div>
+        <section class="reports-preview-card">
+            <div class="reports-preview-head">
+                <h5><i class="bi bi-file-earmark-text me-2"></i>Leave Requests - Preview</h5>
+                <span>Showing first @Model.LeaveRows.Count records - PDF exports all</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table reports-table">
+                    <thead>
+                        <tr><th>Employee</th><th>Leave Type</th><th>Status</th><th>Days</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.LeaveRows)
+                        {
+                            <tr><td>@row.Employee</td><td>@row.Type</td><td>@row.Status</td><td>@row.Days days</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('reportsDateFilterForm');
+            const startDateInput = document.getElementById('reportsStartDate');
+            const endDateInput = document.getElementById('reportsEndDate');
+            const clearBtn = document.getElementById('reportsClearDateBtn');
+            if (!form || !startDateInput || !endDateInput || !clearBtn) {
+                return;
+            }
+
+            function syncEndDateConstraint() {
+                const start = startDateInput.value;
+                endDateInput.min = start || '';
+                if (start && endDateInput.value && endDateInput.value < start) {
+                    endDateInput.value = start;
+                }
+            }
+
+            function syncClearButton() {
+                clearBtn.classList.toggle('d-none', !startDateInput.value && !endDateInput.value);
+            }
+
+            startDateInput.addEventListener('change', function () {
+                syncEndDateConstraint();
+                syncClearButton();
+                form.submit();
+            });
+
+            endDateInput.addEventListener('change', function () {
+                syncEndDateConstraint();
+                syncClearButton();
+                form.submit();
+            });
+
+            clearBtn.addEventListener('click', function () {
+                startDateInput.value = '';
+                endDateInput.value = '';
+                syncEndDateConstraint();
+                syncClearButton();
+                form.submit();
+            });
+
+            const tabLinks = Array.from(document.querySelectorAll('[data-report-tab-link="true"]'));
+            const tabContent = document.getElementById('reportsTabContent');
+            const recordsLabel = document.querySelector('.reports-filter-right span');
+            const exportButton = document.querySelector('.reports-export-btn');
+
+            async function loadTab(link, pushHistory) {
+                if (!tabContent) {
+                    return;
+                }
+
+                const response = await fetch(link.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!response.ok) {
+                    window.location.href = link.href;
+                    return;
+                }
+
+                const html = await response.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const nextTabContent = doc.getElementById('reportsTabContent');
+                if (!nextTabContent) {
+                    window.location.href = link.href;
+                    return;
+                }
+
+                tabContent.innerHTML = nextTabContent.innerHTML;
+                tabLinks.forEach(function (item) { item.classList.remove('active'); });
+                link.classList.add('active');
+
+                const nextRecords = doc.querySelector('.reports-filter-right span');
+                if (nextRecords && recordsLabel) {
+                    recordsLabel.textContent = nextRecords.textContent || '';
+                }
+
+                const nextExport = doc.querySelector('.reports-export-btn');
+                if (nextExport && exportButton) {
+                    exportButton.setAttribute('href', nextExport.getAttribute('href') || exportButton.getAttribute('href') || '#');
+                }
+
+                if (pushHistory) {
+                    window.history.pushState({ reportsTabUrl: link.href }, '', link.href);
+                }
+            }
+
+            tabLinks.forEach(function (link) {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    loadTab(link, true);
+                });
+            });
+
+            window.addEventListener('popstate', function () {
+                const current = tabLinks.find(function (link) {
+                    return link.href === window.location.href;
+                });
+                if (current) {
+                    loadTab(current, false);
+                }
+            });
+
+            syncEndDateConstraint();
+            syncClearButton();
+        })();
+    </script>
+}

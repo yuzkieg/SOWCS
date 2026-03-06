@@ -354,3 +354,483 @@
         font-size: 1.5rem;
     }
 }
+
+/* Super Admin Dashboard */
+.sa-page {
+    padding: 0.35rem 0.4rem 1rem;
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+.sa-hero {
+    border-radius: 14px;
+    background: radial-gradient(circle at 75% 40%, rgba(96, 54, 207, 0.5), transparent 35%), linear-gradient(120deg, #0f1c3b 0%, #11143b 60%, #2e225d 100%);
+    color: #fff;
+    padding: 1rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+    min-width: 0;
+}
+
+.sa-hero-left {
+    min-width: 0;
+}
+
+.sa-kicker {
+    margin: 0 0 0.2rem;
+    opacity: 0.85;
+    font-size: 0.78rem;
+}
+
+.sa-hero h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.sa-hero p {
+    margin: 0.18rem 0 0;
+    font-size: 0.85rem;
+    max-width: 560px;
+    opacity: 0.9;
+    overflow-wrap: anywhere;
+}
+
+.sa-hero-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sa-hero-right div {
+    text-align: right;
+}
+
+.sa-hero-right strong {
+    display: block;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.sa-hero-right span {
+    font-size: 0.72rem;
+    opacity: 0.8;
+}
+
+.sa-caption {
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    margin: 0.55rem 0;
+    font-weight: 700;
+}
+
+.sa-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin-bottom: 0.8rem;
+}
+
+.sa-metric-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    padding: 0.75rem;
+}
+
+.sa-metric-card.green { background: #f0fdf4; }
+.sa-metric-card.purple { background: #faf5ff; }
+.sa-metric-card.amber { background: #fffbeb; }
+
+.sa-metric-card p {
+    margin: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.sa-metric-card h3 {
+    margin: 0.2rem 0 0.15rem;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.sa-metric-card h3 small {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.sa-metric-card span {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.sa-mini-progress {
+    margin-top: 0.35rem;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 99px;
+}
+
+.sa-mini-progress div {
+    height: 100%;
+    background: #0f172a;
+    border-radius: 99px;
+}
+
+.sa-panels, .sa-chart-grid, .sa-suggestion-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.sa-panel {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 12px;
+    padding: 0.8rem;
+    min-width: 0;
+}
+
+.sa-panel > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.55rem;
+}
+
+.sa-panel > header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.sa-panel > header span {
+    color: #94a3b8;
+    font-size: 0.72rem;
+}
+
+.sa-person {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 0.45rem;
+}
+
+.sa-person.risk {
+    border-color: #fecaca;
+    background: #fff7f7;
+}
+
+.sa-person.top {
+    border-color: #dbeafe;
+    background: #f8fbff;
+}
+
+.sa-person .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f97316;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sa-person.top .avatar {
+    background: #7c3aed;
+}
+
+.sa-person .body {
+    flex: 1;
+}
+
+.name-line {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sa-person .meta {
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.sa-person .stats {
+    margin-top: 0.18rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.7rem;
+    color: #334155;
+}
+
+.pill {
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+}
+
+.pill.warn {
+    background: #ffedd5;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+
+.pill.ok {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.pill.stable {
+    background: #e2e8f0;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+
+.sa-heatmap .hm-row {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 3px;
+    margin-bottom: 4px;
+}
+
+.sa-heatmap .hm-row span {
+    display: block;
+    height: 18px;
+    border-radius: 4px;
+    background: #4f46e5;
+}
+
+.sa-corr-plot {
+    position: relative;
+    height: 145px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: linear-gradient(#fff, #fcfdff);
+    overflow: hidden;
+}
+
+.sa-corr-plot .dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6366f1;
+    transform: translate(-50%, -50%);
+}
+
+.sa-corr-plot .risk-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 68%;
+    border-top: 1px dashed #f97316;
+}
+
+.sa-trend-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0.3rem;
+}
+
+.month-col {
+    text-align: center;
+}
+
+.month-col > span {
+    display: block;
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-bottom: 0.2rem;
+}
+
+.month-col .bar {
+    height: 90px;
+    position: relative;
+    border-radius: 7px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.month-col .actual,
+.month-col .predicted {
+    position: absolute;
+    bottom: 0;
+    width: 8px;
+    border-radius: 6px 6px 0 0;
+}
+
+.month-col .actual {
+    background: #4f46e5;
+    left: calc(50% - 9px);
+}
+
+.month-col .predicted {
+    background: rgba(124, 58, 237, 0.55);
+    left: calc(50% + 1px);
+}
+
+.sa-suggestion {
+    border-radius: 10px;
+    border: 1px solid #fcd34d;
+    background: #fffbeb;
+    padding: 0.65rem 0.75rem;
+}
+
+.sa-suggestion.positive {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+
+.sa-suggestion p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #0f172a;
+}
+
+.sa-suggestion div {
+    margin-top: 0.35rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.sa-suggestion button {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.6rem;
+    font-weight: 600;
+}
+
+.sa-suggestion a {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-decoration: none;
+}
+
+.sa-table th {
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+}
+
+.sa-table td {
+    font-size: 0.84rem;
+    color: #1e293b;
+}
+
+.sa-emp {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sa-emp > span {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.62rem;
+    font-weight: 700;
+}
+
+.sa-emp strong {
+    display: block;
+    font-size: 0.78rem;
+}
+
+.sa-emp small {
+    display: block;
+    font-size: 0.68rem;
+    color: #94a3b8;
+}
+
+.sa-collab {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+}
+
+.sa-collab em {
+    height: 4px;
+    width: 42px;
+    display: inline-block;
+    background: #8b5cf6;
+    border-radius: 99px;
+}
+
+@media (max-width: 1200px) {
+    .sa-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .sa-hero {
+        flex-direction: column;
+    }
+
+    .sa-hero-right {
+        justify-content: flex-start;
+    }
+
+    .sa-hero-right div {
+        text-align: left;
+    }
+
+    .sa-panels, .sa-chart-grid, .sa-suggestion-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 680px) {
+    .sa-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .sa-trend-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .sa-page {
+        padding: 0.2rem 0.15rem 0.75rem;
+    }
+
+    .sa-hero {
+        padding: 0.85rem 0.9rem;
+    }
+
+    .sa-hero h1 {
+        font-size: 1.65rem;
+    }
+}

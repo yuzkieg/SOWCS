@@ -139,7 +139,7 @@
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
                                     <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="taskId" value="@task.task_id" />
                                             <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
@@ -211,7 +211,7 @@
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
                                     <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="taskId" value="@task.task_id" />
                                             <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
@@ -283,7 +283,7 @@
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
                                     <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="taskId" value="@task.task_id" />
                                             <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
@@ -355,7 +355,7 @@
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
                                     <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" onsubmit="return confirm('Archive this task?');">
+                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="taskId" value="@task.task_id" />
                                             <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
@@ -538,6 +538,168 @@
         const token = tokenInput ? tokenInput.value : '';
         const moveUrl = '@Url.Action("Move", "Tasks")';
         const redirectProjectId = '@Model.Project.project_id';
+        const longPressDelay = 220;
+        const supportsTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+
+        async function moveTaskCard(draggingCard, lane) {
+            const taskIdInput = draggingCard.querySelector('input[name="taskId"]');
+            const taskId = taskIdInput ? taskIdInput.value : '';
+            const targetStatus = lane.getAttribute('data-status') || 'Pending';
+            const sourceLane = draggingCard.closest('.task-lane');
+            const sourceStatus = sourceLane ? sourceLane.getAttribute('data-status') : '';
+
+            if (!taskId || sourceStatus === targetStatus) {
+                return false;
+            }
+
+            const body = new URLSearchParams();
+            body.append('taskId', taskId);
+            body.append('status', targetStatus);
+            body.append('redirectProjectId', redirectProjectId);
+
+            try {
+                const response = await fetch(moveUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'RequestVerificationToken': token,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: body.toString()
+                });
+
+                if (!response.ok) {
+                    showActionToast('Failed to move task.');
+                    return false;
+                }
+
+                lane.appendChild(draggingCard);
+                refreshLaneCountsAndProgress();
+
+                try {
+                    const payload = await response.json();
+                    showActionToast(payload.message || 'Task moved successfully.');
+                } catch {
+                    showActionToast('Task moved successfully.');
+                }
+                return true;
+            } catch {
+                showActionToast('Failed to move task.');
+                return false;
+            }
+        }
+
+        function bindTouchDrag(card) {
+            if (!supportsTouch) {
+                return;
+            }
+
+            let pressTimer = null;
+            let dragging = false;
+            let activeLane = null;
+            let pointerOffsetX = 0;
+            let pointerOffsetY = 0;
+            let startParent = null;
+            let startNextSibling = null;
+
+            function clearLaneHighlight() {
+                document.querySelectorAll('.task-lane.lane-drop-active').forEach(function (lane) {
+                    lane.classList.remove('lane-drop-active');
+                });
+            }
+
+            function resetCardPosition() {
+                card.style.position = '';
+                card.style.left = '';
+                card.style.top = '';
+                card.style.width = '';
+                card.style.zIndex = '';
+                card.style.pointerEvents = '';
+                card.style.transform = '';
+                card.style.boxShadow = '';
+                card.classList.remove('is-dragging');
+            }
+
+            card.addEventListener('touchstart', function (event) {
+                if (event.touches.length !== 1) {
+                    return;
+                }
+                if (event.target.closest('button, a, input, select, textarea, .dropdown-menu')) {
+                    return;
+                }
+
+                const touch = event.touches[0];
+                const rect = card.getBoundingClientRect();
+                pointerOffsetX = touch.clientX - rect.left;
+                pointerOffsetY = touch.clientY - rect.top;
+                startParent = card.parentElement;
+                startNextSibling = card.nextElementSibling;
+
+                pressTimer = window.setTimeout(function () {
+                    dragging = true;
+                    card.classList.add('is-dragging');
+                    card.style.position = 'fixed';
+                    card.style.left = (touch.clientX - pointerOffsetX) + 'px';
+                    card.style.top = (touch.clientY - pointerOffsetY) + 'px';
+                    card.style.width = rect.width + 'px';
+                    card.style.zIndex = '2000';
+                    card.style.pointerEvents = 'none';
+                    card.style.transform = 'rotate(1deg)';
+                    card.style.boxShadow = '0 18px 35px rgba(15, 23, 42, 0.25)';
+                }, longPressDelay);
+            }, { passive: true });
+
+            card.addEventListener('touchmove', function (event) {
+                if (!dragging) {
+                    return;
+                }
+                event.preventDefault();
+                const touch = event.touches[0];
+                card.style.left = (touch.clientX - pointerOffsetX) + 'px';
+                card.style.top = (touch.clientY - pointerOffsetY) + 'px';
+
+                clearLaneHighlight();
+                activeLane = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.task-lane') || null;
+                if (activeLane) {
+                    activeLane.classList.add('lane-drop-active');
+                }
+            }, { passive: false });
+
+            card.addEventListener('touchend', async function () {
+                if (pressTimer) {
+                    window.clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+
+                if (!dragging) {
+                    return;
+                }
+
+                dragging = false;
+                clearLaneHighlight();
+                resetCardPosition();
+
+                if (activeLane) {
+                    await moveTaskCard(card, activeLane);
+                } else if (startParent) {
+                    if (startNextSibling && startNextSibling.parentElement === startParent) {
+                        startParent.insertBefore(card, startNextSibling);
+                    } else {
+                        startParent.appendChild(card);
+                    }
+                }
+            });
+
+            card.addEventListener('touchcancel', function () {
+                if (pressTimer) {
+                    window.clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+                dragging = false;
+                clearLaneHighlight();
+                resetCardPosition();
+            });
+        }
 
         document.querySelectorAll('.task-card-mini').forEach(function (card) {
             card.setAttribute('draggable', 'true');
@@ -548,6 +710,8 @@
             card.addEventListener('dragend', function () {
                 card.classList.remove('is-dragging');
             });
+
+            bindTouchDrag(card);
         });
 
         document.querySelectorAll('.task-lane').forEach(function (lane) {
@@ -568,46 +732,7 @@
                 if (!draggingCard) {
                     return;
                 }
-
-                const taskIdInput = draggingCard.querySelector('input[name="taskId"]');
-                const taskId = taskIdInput ? taskIdInput.value : '';
-                const targetStatus = lane.getAttribute('data-status') || 'Pending';
-                const sourceLane = draggingCard.closest('.task-lane');
-                const sourceStatus = sourceLane ? sourceLane.getAttribute('data-status') : '';
-
-                if (!taskId || sourceStatus === targetStatus) {
-                    return;
-                }
-
-                const body = new URLSearchParams();
-                body.append('taskId', taskId);
-                body.append('status', targetStatus);
-                body.append('redirectProjectId', redirectProjectId);
-
-                const response = await fetch(moveUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                        'RequestVerificationToken': token,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: body.toString()
-                });
-
-                if (!response.ok) {
-                    showActionToast('Failed to move task.');
-                    return;
-                }
-
-                lane.appendChild(draggingCard);
-                refreshLaneCountsAndProgress();
-
-                try {
-                    const payload = await response.json();
-                    showActionToast(payload.message || 'Task moved successfully.');
-                } catch {
-                    showActionToast('Task moved successfully.');
-                }
+                await moveTaskCard(draggingCard, lane);
             });
         });
     }
@@ -626,4 +751,5 @@
 
     enableTaskDragDrop();
 </script>
+
 
