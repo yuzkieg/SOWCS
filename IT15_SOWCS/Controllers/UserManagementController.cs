@@ -19,6 +19,12 @@ namespace IT15_SOWCS.Controllers
             _userManager = userManager;
         }
 
+        private async Task<bool> IsSuperAdminAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            return string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
+        }
+
         [HttpGet]
         public async Task<IActionResult> UserManagement(string? search, string? filter = "all")
         {
@@ -157,6 +163,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(string userId)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {

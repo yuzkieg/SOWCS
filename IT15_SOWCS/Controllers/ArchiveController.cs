@@ -19,9 +19,20 @@ namespace IT15_SOWCS.Controllers
             _userManager = userManager;
         }
 
+        private async Task<bool> IsSuperAdminAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            return string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
+        }
+
         [HttpGet]
         public async Task<IActionResult> Archive(string? search, string? type)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             ViewData["Title"] = "Archive";
 
             var expirationCutoff = DateTime.UtcNow.AddDays(-30);
@@ -71,6 +82,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Restore(int id)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var item = await _context.ArchiveItems.FindAsync(id);
             if (item == null)
             {
@@ -194,6 +210,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var item = await _context.ArchiveItems.FindAsync(id);
             if (item == null)
             {

@@ -1,7 +1,11 @@
 @model IT15_SOWCS.ViewModels.ProjectsPageViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
 @{
     ViewData["Title"] = "Projects";
     Layout = "_ProjectsLayout";
+    var currentUser = await UserManager.GetUserAsync(User);
+    var canArchive = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="projects-container">
@@ -79,11 +83,14 @@
                                         <i class="bi bi-pencil-square me-2"></i>Edit
                                     </button>
                                 </li>
-                                <li>
-                                    <button type="button" class="dropdown-item text-warning" data-bs-toggle="modal" data-bs-target="#archiveProjectModal-@project.project_id">
-                                        <i class="bi bi-archive me-2"></i>Archive
-                                    </button>
-                                </li>
+                                @if (canArchive)
+                                {
+                                    <li>
+                                        <button type="button" class="dropdown-item text-warning" data-bs-toggle="modal" data-bs-target="#archiveProjectModal-@project.project_id">
+                                            <i class="bi bi-archive me-2"></i>Archive
+                                        </button>
+                                    </li>
+                                }
                             </ul>
                         </div>
                     </div>
@@ -177,27 +184,30 @@
                     </div>
                 </div>
 
-                <div class="modal fade" id="archiveProjectModal-@project.project_id" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered syncora-confirm-dialog">
-                        <div class="modal-content border-0 shadow-lg syncora-confirm-content">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title fw-bold">Archive Project</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body pt-3">
-                                <p class="mb-3">Archive this project?</p>
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
-                                    <form asp-action="Delete" method="post" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="projectId" value="@project.project_id" />
-                                        <button type="submit" class="btn btn-save px-4">Archive</button>
-                                    </form>
+                @if (canArchive)
+                {
+                    <div class="modal fade" id="archiveProjectModal-@project.project_id" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered syncora-confirm-dialog">
+                            <div class="modal-content border-0 shadow-lg syncora-confirm-content">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title fw-bold">Archive Project</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body pt-3">
+                                    <p class="mb-3">Archive this project?</p>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-cancel px-4" data-bs-dismiss="modal">Cancel</button>
+                                        <form asp-action="Delete" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="projectId" value="@project.project_id" />
+                                            <button type="submit" class="btn btn-save px-4">Archive</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
             }
         </div>
     }

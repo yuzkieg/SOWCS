@@ -19,6 +19,20 @@ namespace IT15_SOWCS.Controllers
             _notificationService = notificationService;
         }
 
+        private async Task<bool> IsSuperAdminAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            return await _context.Users.AnyAsync(user =>
+                user.Email == currentEmail &&
+                user.Role != null &&
+                user.Role.ToLower() == "superadmin");
+        }
+
         [HttpGet]
         public async Task<IActionResult> Tasks(string? search, string? status, string? priority)
         {
@@ -220,6 +234,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int taskId, int? redirectProjectId)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var task = await _context.Tasks.FindAsync(taskId);
             if (task == null)
             {

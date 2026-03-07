@@ -15,6 +15,7 @@
 
     var normalizedRole = rawRole.Trim().ToLowerInvariant();
     var normalizedEmployeeRole = rawEmployeeRole.Trim().ToLowerInvariant();
+    var isSuperAdmin = normalizedRole == "superadmin";
     var isHrManager = normalizedEmployeeRole == "hr manager" || normalizedEmployeeRole == "hr";
     var isProjectManager = normalizedEmployeeRole == "manager" || normalizedEmployeeRole == "project manager";
     var isRegularEmployee = normalizedRole == "user" && !isHrManager && !isProjectManager;
@@ -127,12 +128,6 @@
                     <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a asp-controller="Archive" asp-action="Archive"
-                   class="nav-link @IsActive("Archive", "Archive")" title="Archive">
-                    <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
-                </a>
-            </li>
         }
         else if (isProjectManager)
         {
@@ -170,12 +165,6 @@
                 <a asp-controller="Reports" asp-action="Reports"
                    class="nav-link @IsActive("Reports", "Reports")" title="Reports">
                     <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a asp-controller="Archive" asp-action="Archive"
-                   class="nav-link @IsActive("Archive", "Archive")" title="Archive">
-                    <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
                 </a>
             </li>
         }
@@ -235,12 +224,15 @@
                     <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a asp-controller="Archive" asp-action="Archive"
-                   class="nav-link @IsActive("Archive", "Archive")" title="Archive">
-                    <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
-                </a>
-            </li>
+            @if (isSuperAdmin)
+            {
+                <li class="nav-item">
+                    <a asp-controller="Archive" asp-action="Archive"
+                       class="nav-link @IsActive("Archive", "Archive")" title="Archive">
+                        <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
+                    </a>
+                </li>
+            }
         }
     </ul>
 

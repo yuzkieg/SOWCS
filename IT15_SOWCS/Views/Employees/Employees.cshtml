@@ -1,9 +1,13 @@
 @model IT15_SOWCS.ViewModels.EmployeesPageViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
 @{
     Layout = "_EmployeesLayout";
     ViewData["Title"] = "Employees";
     var departmentOptions = new[] { "Human Resource", "Project Management", "Regular Employee" };
     var roleOptions = new[] { "Employee", "Manager", "HR manager" };
+    var currentUser = await UserManager.GetUserAsync(User);
+    var canArchive = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="employees-container">
@@ -85,13 +89,16 @@
                                     <li>
                                         <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editEmployeeModal-@employee.employee_id"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
-                                    <li>
-                                        <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Employee" data-archive-message="Archive this employee record?">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="employeeId" value="@employee.employee_id" />
-                                            <button type="submit" class="dropdown-item text-warning"><i class="bi bi-archive me-2"></i>Archive</button>
-                                        </form>
-                                    </li>
+                                    @if (canArchive)
+                                    {
+                                        <li>
+                                            <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Employee" data-archive-message="Archive this employee record?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="employeeId" value="@employee.employee_id" />
+                                                <button type="submit" class="dropdown-item text-warning"><i class="bi bi-archive me-2"></i>Archive</button>
+                                            </form>
+                                        </li>
+                                    }
                                 </ul>
                             </div>
                         </td>

@@ -24,6 +24,20 @@ namespace IT15_SOWCS.Controllers
             _leaveBalanceService = leaveBalanceService;
         }
 
+        private async Task<bool> IsSuperAdminAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            return await _context.Users.AnyAsync(user =>
+                user.Email == currentEmail &&
+                user.Role != null &&
+                user.Role.ToLower() == "superadmin");
+        }
+
         [HttpGet]
         public async Task<IActionResult> LeaveRequest(string? status)
         {
@@ -161,6 +175,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int leaveRequestId)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var leave = await _context.LeaveRequests.FindAsync(leaveRequestId);
             if (leave == null)
             {

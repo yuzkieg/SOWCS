@@ -19,6 +19,20 @@ namespace IT15_SOWCS.Controllers
             _leaveBalanceService = leaveBalanceService;
         }
 
+        private async Task<bool> IsSuperAdminAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            return await _context.Users.AnyAsync(user =>
+                user.Email == currentEmail &&
+                user.Role != null &&
+                user.Role.ToLower() == "superadmin");
+        }
+
         [HttpGet]
         public async Task<IActionResult> Employees(string? search, string? department)
         {
@@ -124,6 +138,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int employeeId)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var employee = await _context.Employees.Include(item => item.User).FirstOrDefaultAsync(item => item.employee_id == employeeId);
             if (employee == null)
             {

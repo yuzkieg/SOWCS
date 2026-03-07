@@ -1,7 +1,11 @@
 @model IT15_SOWCS.ViewModels.LeaveRequestsPageViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
 @{
     Layout = "_LeaveRequestLayout";
     ViewData["Title"] = "Leave Requests";
+    var currentUser = await UserManager.GetUserAsync(User);
+    var canArchive = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="leave-container">
@@ -90,22 +94,25 @@
                     </div>
                 </div>
                 <div class="leave-meta">
-                    <div class="dropdown leave-card-actions">
-                        <button class="btn btn-sm ellipsis-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">
-                            <i class="bi bi-three-dots-vertical"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Leave Request" data-archive-message="Archive this leave request?">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="leaveRequestId" value="@request.LR_id" />
-                                    <button type="submit" class="dropdown-item">
-                                        <i class="bi bi-archive me-2"></i>Archive
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+                    @if (canArchive)
+                    {
+                        <div class="dropdown leave-card-actions">
+                            <button class="btn btn-sm ellipsis-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" aria-label="Actions">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Leave Request" data-archive-message="Archive this leave request?">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="leaveRequestId" value="@request.LR_id" />
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-archive me-2"></i>Archive
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    }
                     <div class="day-count-wrap">
                         <div class="day-count">@request.days_count</div>
                         <span class="day-label">days</span>

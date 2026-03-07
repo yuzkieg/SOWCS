@@ -1,7 +1,11 @@
 @model IT15_SOWCS.ViewModels.ProjectDetailViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
 @{
     Layout = "_ProjectsLayout";
     ViewData["Title"] = "Project Detail";
+    var currentUser = await UserManager.GetUserAsync(User);
+    var canArchive = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
 
     var todoTasks = Model.Tasks.Where(task => task.status == "Pending").ToList();
     var inProgressTasks = Model.Tasks.Where(task => task.status == "In Progress").ToList();
@@ -138,14 +142,17 @@
                                                 data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
-                                    <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="taskId" value="@task.task_id" />
-                                            <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
-                                            <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
-                                        </form>
-                                    </li>
+                                    @if (canArchive)
+                                    {
+                                        <li>
+                                            <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@task.task_id" />
+                                                <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
+                                                <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
+                                            </form>
+                                        </li>
+                                    }
                                 </ul>
                             </div>
                             <div class="task-card-title">@task.title</div>
@@ -210,14 +217,17 @@
                                                 data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
-                                    <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="taskId" value="@task.task_id" />
-                                            <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
-                                            <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
-                                        </form>
-                                    </li>
+                                    @if (canArchive)
+                                    {
+                                        <li>
+                                            <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@task.task_id" />
+                                                <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
+                                                <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
+                                            </form>
+                                        </li>
+                                    }
                                 </ul>
                             </div>
                             <div class="task-card-title">@task.title</div>
@@ -282,14 +292,17 @@
                                                 data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
-                                    <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="taskId" value="@task.task_id" />
-                                            <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
-                                            <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
-                                        </form>
-                                    </li>
+                                    @if (canArchive)
+                                    {
+                                        <li>
+                                            <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@task.task_id" />
+                                                <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
+                                                <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
+                                            </form>
+                                        </li>
+                                    }
                                 </ul>
                             </div>
                             <div class="task-card-title">@task.title</div>
@@ -354,14 +367,17 @@
                                                 data-due-date="@task.due_date.ToString("yyyy-MM-dd")"
                                                 data-status="@task.status"><i class="bi bi-pencil-square me-2"></i>Edit</button>
                                     </li>
-                                    <li>
-                                        <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="taskId" value="@task.task_id" />
-                                            <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
-                                            <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
-                                        </form>
-                                    </li>
+                                    @if (canArchive)
+                                    {
+                                        <li>
+                                            <form asp-controller="Tasks" asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Task" data-archive-message="Archive this task?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@task.task_id" />
+                                                <input type="hidden" name="redirectProjectId" value="@Model.Project.project_id" />
+                                                <button type="submit" class="dropdown-item dropdown-item-danger"><i class="bi bi-archive me-2"></i>Archive</button>
+                                            </form>
+                                        </li>
+                                    }
                                 </ul>
                             </div>
                             <div class="task-card-title">@task.title</div>
@@ -751,5 +767,8 @@
 
     enableTaskDragDrop();
 </script>
+
+
+
 
 

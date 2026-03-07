@@ -1,9 +1,13 @@
 @model IT15_SOWCS.ViewModels.UserManagementPageViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
 @{
     Layout = "_UserManagementLayout";
     ViewData["Title"] = "User Management";
     var selectedFilter = (Model.SelectedFilter ?? "all").ToLowerInvariant();
     var searchQuery = string.IsNullOrWhiteSpace(Model.Search) ? null : Model.Search;
+    var currentUser = await UserManager.GetUserAsync(User);
+    var canArchive = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="um-container">
@@ -167,13 +171,16 @@
                                     <i class="bi bi-three-dots-vertical"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <form asp-action="DeleteUser" method="post" class="archive-confirm-form" data-archive-title="Archive User Account" data-archive-message="Archive this user account?">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="userId" value="@user.Id" />
-                                            <button type="submit" class="dropdown-item text-warning"><i class="bi bi-archive me-2"></i>Archive</button>
-                                        </form>
-                                    </li>
+                                    @if (canArchive)
+                                    {
+                                        <li>
+                                            <form asp-action="DeleteUser" method="post" class="archive-confirm-form" data-archive-title="Archive User Account" data-archive-message="Archive this user account?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@user.Id" />
+                                                <button type="submit" class="dropdown-item text-warning"><i class="bi bi-archive me-2"></i>Archive</button>
+                                            </form>
+                                        </li>
+                                    }
                                 </ul>
                             </div>
                         </td>

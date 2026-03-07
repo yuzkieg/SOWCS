@@ -3,6 +3,7 @@ using IT15_SOWCS.Models;
 using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -19,6 +20,20 @@ namespace IT15_SOWCS.Controllers
             _context = context;
             _environment = environment;
             _notificationService = notificationService;
+        }
+
+        private async Task<bool> IsSuperAdminAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            return await _context.Users.AnyAsync(user =>
+                user.Email == currentEmail &&
+                user.Role != null &&
+                user.Role.ToLower() == "superadmin");
         }
 
         [HttpGet]
@@ -46,6 +61,54 @@ namespace IT15_SOWCS.Controllers
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Preview(int documentId)
+        {
+            var document = await _context.Documents.FindAsync(documentId);
+            if (document == null)
+            {
+                return NotFound();
+            }
+
+            var fullPath = ResolveDocumentPath(document);
+            if (string.IsNullOrWhiteSpace(fullPath))
+            {
+                return NotFound();
+            }
+
+            var contentTypeProvider = new FileExtensionContentTypeProvider();
+            if (!contentTypeProvider.TryGetContentType(document.file_name, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Download(int documentId)
+        {
+            var document = await _context.Documents.FindAsync(documentId);
+            if (document == null)
+            {
+                return NotFound();
+            }
+
+            var fullPath = ResolveDocumentPath(document);
+            if (string.IsNullOrWhiteSpace(fullPath))
+            {
+                return NotFound();
+            }
+
+            var contentTypeProvider = new FileExtensionContentTypeProvider();
+            if (!contentTypeProvider.TryGetContentType(document.file_name, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            return PhysicalFile(fullPath, contentType, fileDownloadName: document.file_name, enableRangeProcessing: true);
         }
 
         [HttpPost]
@@ -154,6 +217,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int documentId)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var document = await _context.Documents.FindAsync(documentId);
             if (document == null)
             {
@@ -178,6 +246,60 @@ namespace IT15_SOWCS.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Documents));
+        }
+
+        private string? ResolveDocumentPath(DocumentRecord document)
+        {
+            var uploadsDirectory = Path.Combine(_environment.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsDirectory))
+            {
+                return null;
+            }
+
+            var candidates = new List<string>();
+            if (!string.IsNullOrWhiteSpace(document.file_path))
+            {
+                var normalizedPath = document.file_path.Trim();
+                if (Path.IsPathRooted(normalizedPath))
+                {
+                    candidates.Add(normalizedPath);
+                }
+                else
+                {
+                    var webRelative = normalizedPath.TrimStart('~', '/').Replace('/', Path.DirectorySeparatorChar);
+                    candidates.Add(Path.Combine(_environment.WebRootPath, webRelative));
+                    candidates.Add(Path.Combine(uploadsDirectory, Path.GetFileName(normalizedPath)));
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(document.file_name))
+            {
+                candidates.Add(Path.Combine(uploadsDirectory, Path.GetFileName(document.file_name)));
+            }
+
+            foreach (var candidate in candidates.Where(candidate => !string.IsNullOrWhiteSpace(candidate)))
+            {
+                if (System.IO.File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            var safeFileName = Path.GetFileName(document.file_name ?? string.Empty);
+            if (string.IsNullOrWhiteSpace(safeFileName))
+            {
+                return null;
+            }
+
+            var matchedFiles = Directory.GetFiles(uploadsDirectory, $"*_{safeFileName}");
+            if (matchedFiles.Length == 0)
+            {
+                return null;
+            }
+
+            return matchedFiles
+                .OrderByDescending(file => System.IO.File.GetLastWriteTimeUtc(file))
+                .FirstOrDefault();
         }
     }
 }

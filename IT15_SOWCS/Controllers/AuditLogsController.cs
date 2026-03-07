@@ -16,6 +16,20 @@ namespace IT15_SOWCS.Controllers
             _context = context;
         }
 
+        private async Task<bool> IsSuperAdminAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            return await _context.Users.AnyAsync(user =>
+                user.Email == currentEmail &&
+                user.Role != null &&
+                user.Role.ToLower() == "superadmin");
+        }
+
         [HttpGet]
         public async Task<IActionResult> AuditLogs(
             string? search,
@@ -84,6 +98,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var log = await _context.AuditLogs.FindAsync(id);
             if (log == null)
             {
@@ -111,6 +130,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ClearAll()
         {
+            if (!await IsSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var logs = await _context.AuditLogs.ToListAsync();
             if (logs.Count > 0)
             {

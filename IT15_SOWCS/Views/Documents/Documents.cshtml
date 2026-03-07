@@ -1,7 +1,11 @@
 @model IT15_SOWCS.ViewModels.DocumentsPageViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IT15_SOWCS.Models.Users> UserManager
 @{
     Layout = "_DocumentsLayout";
     ViewData["Title"] = "Documents";
+    var currentUser = await UserManager.GetUserAsync(User);
+    var canArchive = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
 }
 
 @functions {
@@ -70,12 +74,17 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <a class="dropdown-item" href="@doc.file_path" target="_blank">
+                                <a class="dropdown-item"
+                                   asp-action="Preview"
+                                   asp-route-documentId="@doc.document_id"
+                                   target="_blank">
                                     <i class="bi bi-eye me-2"></i>View
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="@doc.file_path" download="@doc.file_name">
+                                <a class="dropdown-item"
+                                   asp-action="Download"
+                                   asp-route-documentId="@doc.document_id">
                                     <i class="bi bi-download me-2"></i>Download
                                 </a>
                             </li>
@@ -84,15 +93,18 @@
                                     <i class="bi bi-pencil-square me-2"></i>Edit
                                 </button>
                             </li>
-                            <li>
-                                <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Document" data-archive-message="Archive this document?">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="documentId" value="@doc.document_id" />
-                                    <button type="submit" class="dropdown-item text-warning">
-                                        <i class="bi bi-archive me-2"></i>Archive
-                                    </button>
-                                </form>
-                            </li>
+                            @if (canArchive)
+                            {
+                                <li>
+                                    <form asp-action="Delete" method="post" class="archive-confirm-form" data-archive-title="Archive Document" data-archive-message="Archive this document?">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="documentId" value="@doc.document_id" />
+                                        <button type="submit" class="dropdown-item text-warning">
+                                            <i class="bi bi-archive me-2"></i>Archive
+                                        </button>
+                                    </form>
+                                </li>
+                            }
                         </ul>
                     </div>
 
