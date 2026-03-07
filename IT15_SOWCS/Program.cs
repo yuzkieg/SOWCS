@@ -18,6 +18,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<LeaveBalanceService>();
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddMemoryCache();
 
 // Identity setup 
 builder.Services.AddIdentity<Users, IdentityRole>(options =>

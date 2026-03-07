@@ -320,6 +320,35 @@ body {
   font-weight: 500;
 }
 
+.global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.22);
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.global-loading-overlay.visible {
+  display: flex;
+}
+
+.global-loading-spinner {
+  width: 54px;
+  height: 54px;
+  border: 4px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #0f172a;
+  border-radius: 50%;
+  animation: global-spin 0.9s linear infinite;
+}
+
+@keyframes global-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 640px) {
   .notification-popover {
     right: -52px;

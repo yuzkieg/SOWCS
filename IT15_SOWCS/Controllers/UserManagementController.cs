@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,13 @@ namespace IT15_SOWCS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
+        private readonly EmailService _emailService;
 
-        public UserManagementController(AppDbContext context, UserManager<Users> userManager)
+        public UserManagementController(AppDbContext context, UserManager<Users> userManager, EmailService emailService)
         {
             _context = context;
             _userManager = userManager;
+            _emailService = emailService;
         }
 
         private async Task<bool> IsSuperAdminAsync()
@@ -104,7 +107,23 @@ namespace IT15_SOWCS.Controllers
             if (!result.Succeeded)
             {
                 TempData["UserManagementError"] = string.Join(" ", result.Errors.Select(error => error.Description));
+                return RedirectToAction(nameof(UserManagement));
             }
+
+            var inviter = await _userManager.GetUserAsync(User);
+            var inviterName = inviter?.FullName ?? inviter?.Email ?? "Syncora Admin";
+            var inviterEmail = inviter?.Email ?? "admin@syncora.local";
+            var joinLink = Url.Action("Login", "Account", null, Request.Scheme) ?? string.Empty;
+            var inviteSent = await _emailService.SendInviteEmailAsync(
+                normalizedEmail,
+                fullName,
+                inviterName,
+                inviterEmail,
+                joinLink);
+
+            TempData["SuccessMessage"] = inviteSent
+                ? "User invited successfully. Invitation email has been sent."
+                : "User created, but invitation email could not be sent. Check EmailSettings.";
 
             return RedirectToAction(nameof(UserManagement));
         }

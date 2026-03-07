@@ -121,15 +121,46 @@
 }
 
 .profile-modal-content {
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid #e5e7eb;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
 }
 
 .profile-modal-content .modal-title {
-    font-size: 2rem;
+    font-size: 1.125rem;
     font-weight: 700 !important;
     color: #111827;
+}
+
+#verifyPasswordModal .modal-dialog,
+#setPasswordModal .modal-dialog {
+    max-width: 520px;
+}
+
+#verifyPasswordModal .profile-modal-content .modal-title,
+#setPasswordModal .profile-modal-content .modal-title {
+    font-size: 1.125rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+#verifyPasswordModal .modal-body,
+#setPasswordModal .modal-body {
+    padding-top: 0.75rem !important;
+}
+
+#verifyPasswordModal .btn-save,
+#setPasswordModal .btn-save,
+#verifyPasswordModal .btn-cancel,
+#setPasswordModal .btn-cancel {
+    min-height: 40px;
+    min-width: 112px;
+    padding: 0.5rem 1rem !important;
+}
+
+#verifyPasswordModal p {
+    font-size: 0.95rem;
+    color: #334155;
 }
 
 @media (max-width: 768px) {

@@ -1,21 +1,23 @@
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
-using System.Net.Mail;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace IT15_SOWCS.Controllers
 {
     public class ProfileController : Controller
     {
         private readonly UserManager<Users> _userManager;
-        private readonly IConfiguration _configuration;
+        private readonly EmailService _emailService;
+        private readonly IMemoryCache _memoryCache;
 
-        public ProfileController(UserManager<Users> userManager, IConfiguration configuration)
+        public ProfileController(UserManager<Users> userManager, EmailService emailService, IMemoryCache memoryCache)
         {
             _userManager = userManager;
-            _configuration = configuration;
+            _emailService = emailService;
+            _memoryCache = memoryCache;
         }
 
         [HttpGet]
@@ -31,11 +33,53 @@ namespace IT15_SOWCS.Controllers
             {
                 User = user,
                 HasPassword = await _userManager.HasPasswordAsync(user),
-                OpenSetPasswordModal = string.Equals(TempData["OpenSetPasswordModal"]?.ToString(), "true", StringComparison.OrdinalIgnoreCase),
-                ResetToken = TempData["ProfileResetToken"]?.ToString()
+                OpenSetPasswordModal = false,
+                ResetToken = null
             };
 
+            var verifiedToken = _memoryCache.Get<string>(GetPasswordVerifiedCacheKey(user.Id));
+            if (!string.IsNullOrWhiteSpace(verifiedToken))
+            {
+                model.OpenSetPasswordModal = true;
+                model.ResetToken = verifiedToken;
+            }
+            else if (string.Equals(TempData["OpenSetPasswordModal"]?.ToString(), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                model.OpenSetPasswordModal = true;
+                model.ResetToken = TempData["ProfileResetToken"]?.ToString();
+            }
+
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PasswordVerificationStatus()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { verified = false });
+            }
+
+            var token = _memoryCache.Get<string>(GetPasswordVerifiedCacheKey(user.Id));
+            return Json(new
+            {
+                verified = !string.IsNullOrWhiteSpace(token),
+                token
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ClearPasswordVerificationState()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { cleared = false });
+            }
+
+            _memoryCache.Remove(GetPasswordVerifiedCacheKey(user.Id));
+            return Json(new { cleared = true });
         }
 
         [HttpPost]
@@ -88,8 +132,13 @@ namespace IT15_SOWCS.Controllers
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var profileLink = Url.Action("Profile", "Profile", null, Request.Scheme) ?? string.Empty;
-            var emailSent = await TrySendPasswordVerificationEmailAsync(user.Email ?? string.Empty, profileLink);
+            var verifyLink = Url.Action("VerifyPasswordEmailLink", "Profile", new
+            {
+                userId = user.Id,
+                token
+            }, Request.Scheme) ?? string.Empty;
+            var displayName = string.IsNullOrWhiteSpace(user.FullName) ? (user.Email ?? "User") : user.FullName;
+            var emailSent = await _emailService.SendResetPasswordEmailAsync(user.Email ?? string.Empty, displayName, verifyLink);
 
             if (emailSent)
             {
@@ -97,12 +146,39 @@ namespace IT15_SOWCS.Controllers
             }
             else
             {
-                TempData["ProfileError"] = "Email settings are not configured. You can set your password now.";
+                TempData["ProfileError"] = "Email settings are not configured. Please configure EmailSettings.";
             }
 
-            TempData["OpenSetPasswordModal"] = "true";
-            TempData["ProfileResetToken"] = token;
             return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> VerifyPasswordEmailLink(string userId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+            {
+                return View("PasswordVerificationFailed");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return View("PasswordVerificationFailed");
+            }
+
+            var isValid = await _userManager.VerifyUserTokenAsync(
+                user,
+                _userManager.Options.Tokens.PasswordResetTokenProvider,
+                "ResetPassword",
+                token);
+
+            if (!isValid)
+            {
+                return View("PasswordVerificationFailed");
+            }
+
+            _memoryCache.Set(GetPasswordVerifiedCacheKey(user.Id), token, TimeSpan.FromMinutes(20));
+            return View("PasswordVerificationSuccess");
         }
 
         [HttpPost]
@@ -138,49 +214,12 @@ namespace IT15_SOWCS.Controllers
                 return RedirectToAction(nameof(Profile));
             }
 
+            _memoryCache.Remove(GetPasswordVerifiedCacheKey(user.Id));
             TempData["SuccessMessage"] = "Password updated successfully.";
             return RedirectToAction(nameof(Profile));
         }
 
-        private async Task<bool> TrySendPasswordVerificationEmailAsync(string toEmail, string profileLink)
-        {
-            if (string.IsNullOrWhiteSpace(toEmail))
-            {
-                return false;
-            }
+        private static string GetPasswordVerifiedCacheKey(string userId) => $"profile-password-verified:{userId}";
 
-            var smtpHost = _configuration["EmailSettings:SmtpHost"];
-            var smtpPortRaw = _configuration["EmailSettings:SmtpPort"];
-            var smtpUser = _configuration["EmailSettings:Username"];
-            var smtpPassword = _configuration["EmailSettings:Password"];
-            var fromEmail = _configuration["EmailSettings:FromEmail"] ?? smtpUser;
-            var enableSsl = bool.TryParse(_configuration["EmailSettings:EnableSsl"], out var parsedSsl) ? parsedSsl : true;
-
-            if (string.IsNullOrWhiteSpace(smtpHost) ||
-                string.IsNullOrWhiteSpace(smtpPortRaw) ||
-                string.IsNullOrWhiteSpace(smtpUser) ||
-                string.IsNullOrWhiteSpace(smtpPassword) ||
-                string.IsNullOrWhiteSpace(fromEmail) ||
-                !int.TryParse(smtpPortRaw, out var smtpPort))
-            {
-                return false;
-            }
-
-            using var message = new MailMessage(fromEmail, toEmail)
-            {
-                Subject = "Password Change Verification",
-                Body = $"You requested to change your password. Continue from Profile Settings: {profileLink}",
-                IsBodyHtml = false
-            };
-
-            using var client = new SmtpClient(smtpHost, smtpPort)
-            {
-                Credentials = new NetworkCredential(smtpUser, smtpPassword),
-                EnableSsl = enableSsl
-            };
-
-            await client.SendMailAsync(message);
-            return true;
-        }
     }
 }

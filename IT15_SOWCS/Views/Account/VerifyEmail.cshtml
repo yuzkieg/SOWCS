@@ -7,21 +7,47 @@
 
 <div class="account-container">
     <div class="account-box">
-        <h2 class="text-center">Reset your password</h2>
+        <h2 class="text-center">Verify your email</h2>
         <p class="text-center text-muted-small mb-4">
-            Enter your email and we’ll send you a reset link
+            @if (Model.IsCodeStep)
+            {
+                <text>Enter the 6-digit code we sent to your email.</text>
+            }
+            else
+            {
+                <text>Enter your email and we’ll send a verification code.</text>
+            }
         </p>
 
         <form asp-action="VerifyEmail" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input asp-for="IsCodeStep" type="hidden" />
 
             <div class="mb-4">
                 <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-control" />
+                @if (Model.IsCodeStep)
+                {
+                    <input asp-for="Email" class="form-control" readonly />
+                }
+                else
+                {
+                    <input asp-for="Email" class="form-control" />
+                }
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Send reset link</button>
+            @if (Model.IsCodeStep)
+            {
+                <div class="mb-4">
+                    <label asp-for="VerificationCode" class="form-label"></label>
+                    <input asp-for="VerificationCode" class="form-control" placeholder="123456" maxlength="6" />
+                    <span asp-validation-for="VerificationCode" class="text-danger"></span>
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100">
+                @(Model.IsCodeStep ? "Verify code" : "Send verification code")
+            </button>
 
             <div class="text-center mt-3">
                 <a asp-action="Login" class="account-link">Back to sign in</a>

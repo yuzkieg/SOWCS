@@ -166,6 +166,68 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+    let overlay = document.getElementById("globalLoadingOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "globalLoadingOverlay";
+        overlay.className = "global-loading-overlay";
+        overlay.innerHTML = '<div class="global-loading-spinner" aria-hidden="true"></div>';
+        document.body.appendChild(overlay);
+    }
+
+    function showLoading() {
+        overlay.classList.add("visible");
+        window.setTimeout(function () {
+            overlay.classList.remove("visible");
+        }, 10000);
+    }
+
+    function isInternalNavigation(anchor) {
+        const href = anchor.getAttribute("href");
+        if (!href || href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+            return false;
+        }
+
+        if (anchor.getAttribute("target") === "_blank" || anchor.hasAttribute("download")) {
+            return false;
+        }
+
+        try {
+            const url = new URL(anchor.href, window.location.origin);
+            return url.origin === window.location.origin;
+        } catch {
+            return false;
+        }
+    }
+
+    document.addEventListener("click", function (event) {
+        const anchor = event.target.closest("a[href]");
+        if (!anchor || !isInternalNavigation(anchor)) {
+            return;
+        }
+
+        showLoading();
+    });
+
+    document.addEventListener("submit", function (event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (form.target === "_blank") {
+            return;
+        }
+
+        showLoading();
+    });
+
+    window.addEventListener("beforeunload", function () {
+        showLoading();
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     let pendingArchiveForm = null;
     const modalId = "archiveConfirmModal";
 
