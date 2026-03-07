@@ -1,0 +1,127 @@
+@model IT15_SOWCS.ViewModels.HrManagerDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="dashboard-page hr-dashboard-page">
+    <section class="hr-welcome-banner">
+        <p class="welcome-label">Welcome back,</p>
+        <h1 class="welcome-name">@Model.FullName</h1>
+        <p class="welcome-subtitle">You have @Model.PendingLeaves pending leave request@(Model.PendingLeaves == 1 ? "" : "s") awaiting your review.</p>
+        <div class="hr-hero-actions">
+            <a asp-controller="Approvals" asp-action="Approvals" class="btn btn-sm btn-light">Review Requests <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <article class="stat-card card-active-projects">
+            <p class="stat-label">Total Employees</p>
+            <h3 class="stat-value">@Model.TotalEmployees</h3>
+            <span class="stat-icon"><i class="bi bi-people"></i></span>
+        </article>
+        <article class="stat-card card-my-tasks">
+            <p class="stat-label">Active Employees</p>
+            <h3 class="stat-value">@Model.ActiveEmployees</h3>
+            <span class="stat-icon"><i class="bi bi-person-check"></i></span>
+        </article>
+        <article class="stat-card card-documents">
+            <p class="stat-label">Pending Leaves</p>
+            <h3 class="stat-value">@Model.PendingLeaves</h3>
+            <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+        </article>
+        <article class="stat-card card-pending-leaves">
+            <p class="stat-label">Approved Leaves</p>
+            <h3 class="stat-value">@Model.ApprovedLeaves</h3>
+            <span class="stat-icon"><i class="bi bi-calendar2-check"></i></span>
+        </article>
+    </section>
+
+    <section class="hr-main-grid">
+        <article class="panel-card">
+            <header class="panel-header">
+                <h5><i class="bi bi-clock-history me-1"></i> Pending Leave Requests</h5>
+                <a asp-controller="Approvals" asp-action="Approvals" class="panel-link">View All <i class="bi bi-arrow-right"></i></a>
+            </header>
+            @if (Model.PendingLeaveRequests.Count == 0)
+            {
+                <div class="empty-dashboard-state">No pending leave requests.</div>
+            }
+            else
+            {
+                <div class="hr-leave-list">
+                    @foreach (var item in Model.PendingLeaveRequests)
+                    {
+                        <div class="hr-leave-item">
+                            <div class="hr-leave-avatar">@item.EmployeeName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => char.ToUpperInvariant(s[0])).Take(2).Aggregate("", (a, b) => a + b)</div>
+                            <div class="hr-leave-main">
+                                <h6>@item.EmployeeName</h6>
+                                <p>@item.LeaveType - @item.Days day@(item.Days == 1 ? "" : "s")</p>
+                            </div>
+                            <div class="hr-leave-meta">
+                                <small>@item.StartDate.ToString("MMM d") - @item.EndDate.ToString("MMM d")</small>
+                                <span class="badge-status badge-pending">@item.Status</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="panel-card">
+            <header class="panel-header">
+                <h5><i class="bi bi-activity me-1"></i> Departments</h5>
+            </header>
+            @if (Model.DepartmentLoads.Count == 0)
+            {
+                <div class="empty-dashboard-state">No department data.</div>
+            }
+            else
+            {
+                <div class="hr-dept-list">
+                    @foreach (var dept in Model.DepartmentLoads)
+                    {
+                        <div class="hr-dept-item">
+                            <div class="hr-dept-row">
+                                <span>@dept.Department</span>
+                                <strong>@dept.Count</strong>
+                            </div>
+                            <div class="hr-dept-track">
+                                <div class="hr-dept-fill" style="width:@dept.Percent%;"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            <div class="mt-2">
+                <a asp-controller="Employees" asp-action="Employees" class="panel-link">View All Employees <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </article>
+    </section>
+
+    <section class="panel-card mt-3">
+        <header class="panel-header">
+            <h5>Recent Employees</h5>
+            <a asp-controller="Employees" asp-action="Employees" class="panel-link">View All <i class="bi bi-arrow-right"></i></a>
+        </header>
+        @if (Model.RecentEmployees.Count == 0)
+        {
+            <div class="empty-dashboard-state">No employee records found.</div>
+        }
+        else
+        {
+            <div class="hr-recent-grid">
+                @foreach (var employee in Model.RecentEmployees)
+                {
+                    <div class="hr-recent-card">
+                        <span class="hr-recent-avatar">@employee.Initials</span>
+                        <div>
+                            <h6>@employee.Name</h6>
+                            <p>@employee.Role</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>

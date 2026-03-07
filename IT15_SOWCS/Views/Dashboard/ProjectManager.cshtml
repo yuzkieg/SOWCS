@@ -1,0 +1,202 @@
+@model IT15_SOWCS.ViewModels.ProjectManagerDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var displayName = string.IsNullOrWhiteSpace(Model.FullName) ? "Project Manager" : Model.FullName;
+    if (displayName.Contains("@", StringComparison.Ordinal))
+    {
+        displayName = displayName.Split('@')[0];
+    }
+}
+
+<div class="dashboard-page pm-dashboard-page">
+    <section class="pm-welcome-banner">
+        <div class="pm-hero-left">
+            <p class="welcome-label"><i class="bi bi-briefcase me-1"></i> Project Manager Dashboard</p>
+            <h1 class="welcome-name">@displayName</h1>
+            <p class="welcome-subtitle">Manage your team's projects, tasks, and approvals from one place.</p>
+        </div>
+        <div class="pm-hero-metrics">
+            <div class="pm-metric projects"><strong>@Model.ProjectsCount</strong><span>Projects</span></div>
+            <div class="pm-metric members"><strong>@Model.TeamMembersCount</strong><span>Team Members</span></div>
+            <div class="pm-metric pending"><strong>@Model.PendingLeavesCount</strong><span>Pending Leaves</span></div>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <article class="stat-card card-active-projects">
+            <p class="stat-label">Total Tasks</p>
+            <h3 class="stat-value">@Model.TotalTasks</h3>
+            <p class="stat-subtext">all assigned tasks</p>
+            <span class="stat-icon"><i class="bi bi-list-task"></i></span>
+        </article>
+        <article class="stat-card card-my-tasks">
+            <p class="stat-label">In Progress</p>
+            <h3 class="stat-value">@Model.InProgressTasks</h3>
+            <p class="stat-subtext">active tasks</p>
+            <span class="stat-icon"><i class="bi bi-graph-up-arrow"></i></span>
+        </article>
+        <article class="stat-card card-overdue">
+            <p class="stat-label">Overdue</p>
+            <h3 class="stat-value">@Model.OverdueTasks</h3>
+            <p class="stat-subtext">need attention</p>
+            <span class="stat-icon"><i class="bi bi-exclamation-triangle"></i></span>
+        </article>
+        <article class="stat-card card-pending-leaves">
+            <p class="stat-label">Approvals</p>
+            <h3 class="stat-value">@Model.ApprovalsPendingCount</h3>
+            <p class="stat-subtext">pending review</p>
+            <span class="stat-icon"><i class="bi bi-check2-circle"></i></span>
+        </article>
+    </section>
+
+    <section class="pm-main-grid">
+        <article class="panel-card">
+            <header class="panel-header">
+                <h5><i class="bi bi-folder2-open me-1"></i> Project Progress</h5>
+                <a asp-controller="Projects" asp-action="Projects" class="panel-link">View All <i class="bi bi-arrow-right"></i></a>
+            </header>
+            @if (Model.ProjectProgress.Count == 0)
+            {
+                <div class="empty-dashboard-state">No projects assigned.</div>
+            }
+            else
+            {
+                <div class="pm-progress-list">
+                    @foreach (var project in Model.ProjectProgress)
+                    {
+                        <div class="pm-progress-item">
+                            <div class="pm-progress-head">
+                                <span>@project.Name</span>
+                                <strong>@project.ProgressPercent%</strong>
+                            </div>
+                            <div class="pm-progress-track">
+                                <div class="pm-progress-fill" style="width:@project.ProgressPercent%;"></div>
+                            </div>
+                            <small>@project.Status</small>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="panel-card">
+            <header class="panel-header">
+                <h5><i class="bi bi-check2-square me-1"></i> Task Status Breakdown</h5>
+            </header>
+            @if (Model.TaskStatuses.Count == 0)
+            {
+                <div class="empty-dashboard-state">No tasks yet.</div>
+            }
+            else
+            {
+                <div class="pm-status-list">
+                    @foreach (var status in Model.TaskStatuses)
+                    {
+                        <div class="pm-status-item">
+                            <span>@status.Status</span>
+                            <strong>@status.Count</strong>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+    </section>
+
+    <section class="pm-main-grid mt-3">
+        <article class="panel-card">
+            <header class="panel-header">
+                <h5><i class="bi bi-people me-1"></i> Team Members</h5>
+                <a asp-controller="Employees" asp-action="Employees" class="panel-link">View All <i class="bi bi-arrow-right"></i></a>
+            </header>
+            @if (Model.TeamMembers.Count == 0)
+            {
+                <div class="empty-dashboard-state">No team members found.</div>
+            }
+            else
+            {
+                <div class="pm-team-grid">
+                    @foreach (var member in Model.TeamMembers)
+                    {
+                        <div class="pm-team-item">
+                            <span class="pm-avatar">@member.Initials</span>
+                            <div>
+                                <h6>@member.Name</h6>
+                                <p>@member.Role</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="panel-card">
+            <header class="panel-header">
+                <h5><i class="bi bi-calendar2-week me-1"></i> Pending Leave Requests</h5>
+                <a asp-controller="Approvals" asp-action="Approvals" class="panel-link">Review All <i class="bi bi-arrow-right"></i></a>
+            </header>
+            @if (Model.PendingLeaves.Count == 0)
+            {
+                <div class="empty-dashboard-state">No pending leave requests.</div>
+            }
+            else
+            {
+                <div class="pm-leave-list">
+                    @foreach (var request in Model.PendingLeaves)
+                    {
+                        <div class="pm-leave-item">
+                            <span class="pm-leave-name">@request.EmployeeName</span>
+                            <span class="pm-leave-meta">@request.LeaveType - @request.Days day@(request.Days == 1 ? "" : "s")</span>
+                            <span class="badge-status badge-pending">@request.Status</span>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+    </section>
+
+    <section class="panel-card mt-3">
+        <header class="panel-header">
+            <h5><i class="bi bi-kanban me-1"></i> My Projects</h5>
+            <a asp-controller="Projects" asp-action="Projects" class="panel-link">All Projects <i class="bi bi-arrow-right"></i></a>
+        </header>
+        @if (Model.MyProjects.Count == 0)
+        {
+            <div class="empty-dashboard-state">No projects assigned to you.</div>
+        }
+        else
+        {
+            <div class="pm-project-grid">
+                @foreach (var project in Model.MyProjects)
+                {
+                    <div class="pm-project-card">
+                        <h6>@project.Name</h6>
+                        <div class="pm-project-tags">
+                            <span class="badge-status badge-todo">@project.Status</span>
+                            <span class="badge-status badge-review">@project.Priority</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="pm-shortcuts">
+        <a asp-controller="Projects" asp-action="Projects" class="pm-shortcut-card">
+            <span class="pm-shortcut-icon projects"><i class="bi bi-folder2"></i></span>
+            <span>All Projects</span>
+        </a>
+        <a asp-controller="Tasks" asp-action="Tasks" class="pm-shortcut-card">
+            <span class="pm-shortcut-icon tasks"><i class="bi bi-clipboard-check"></i></span>
+            <span>Tasks Board</span>
+        </a>
+        <a asp-controller="Approvals" asp-action="Approvals" class="pm-shortcut-card">
+            <span class="pm-shortcut-icon approvals"><i class="bi bi-shield-check"></i></span>
+            <span>Approvals</span>
+        </a>
+        <a asp-controller="Reports" asp-action="Reports" class="pm-shortcut-card">
+            <span class="pm-shortcut-icon reports"><i class="bi bi-file-earmark-pdf"></i></span>
+            <span>Reports</span>
+        </a>
+    </section>
+</div>

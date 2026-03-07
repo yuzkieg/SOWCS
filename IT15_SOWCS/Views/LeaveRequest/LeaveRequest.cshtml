@@ -20,6 +20,33 @@
         <div class="alert alert-danger">@leaveError</div>
     }
 
+    <section class="leave-balance-grid">
+        <article class="leave-balance-card annual">
+            <div>
+                <p>Annual Leave</p>
+                <h4>@Model.AnnualLeaveBalance.ToString("0")</h4>
+                <span>days remaining</span>
+            </div>
+            <i class="bi bi-calendar-event"></i>
+        </article>
+        <article class="leave-balance-card sick">
+            <div>
+                <p>Sick Leave</p>
+                <h4>@Model.SickLeaveBalance.ToString("0")</h4>
+                <span>days remaining</span>
+            </div>
+            <i class="bi bi-calendar-event"></i>
+        </article>
+        <article class="leave-balance-card personal">
+            <div>
+                <p>Personal Leave</p>
+                <h4>@Model.PersonalLeaveBalance.ToString("0")</h4>
+                <span>days remaining</span>
+            </div>
+            <i class="bi bi-calendar-event"></i>
+        </article>
+    </section>
+
     <form asp-action="LeaveRequest" method="get" class="leave-controls">
         <select class="form-select status-filter shadow-sm" name="status" onchange="this.form.submit()">
             <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Status) || Model.Status == "All" ? "selected" : null)">All Requests</option>

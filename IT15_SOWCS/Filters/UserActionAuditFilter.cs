@@ -2,6 +2,7 @@ using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Globalization;
 
 namespace IT15_SOWCS.Filters
 {
@@ -34,9 +35,9 @@ namespace IT15_SOWCS.Filters
             var actionName = descriptor.ActionName;
             var route = $"{controller}/{actionName}";
             var actionLabel = ResolveActionLabel(method, actionName, context.ActionArguments);
+            var description = await ResolveDescriptionAsync(controller, actionName, actionLabel, context.ActionArguments, route, method, context.HttpContext.Response?.StatusCode ?? 0);
 
             var userEmail = context.HttpContext.User?.Identity?.Name ?? "anonymous@local";
-            var statusCode = context.HttpContext.Response?.StatusCode ?? 0;
 
             _context.AuditLogs.Add(new AuditLogEntry
             {
@@ -45,7 +46,7 @@ namespace IT15_SOWCS.Filters
                 user_name = userEmail,
                 action = actionLabel,
                 entity = controller,
-                description = $"{route} [{method}] responded {statusCode}"
+                description = description
             });
 
             await _context.SaveChangesAsync();
@@ -72,6 +73,16 @@ namespace IT15_SOWCS.Filters
             if (action.Contains("upload"))
             {
                 return "upload";
+            }
+
+            if (action.Contains("move"))
+            {
+                return "update";
+            }
+
+            if (action.Contains("toggle"))
+            {
+                return "update";
             }
 
             if (action.Contains("invite"))
@@ -118,6 +129,246 @@ namespace IT15_SOWCS.Filters
             }
 
             return method.ToLowerInvariant();
+        }
+
+        private async Task<string> ResolveDescriptionAsync(
+            string controller,
+            string actionName,
+            string actionLabel,
+            IDictionary<string, object?> args,
+            string route,
+            string method,
+            int statusCode)
+        {
+            if (controller.Equals("Approvals", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("UpdateLeaveStatus", StringComparison.OrdinalIgnoreCase))
+            {
+                var status = GetStringArg(args, "status");
+                var leaveId = GetIntArg(args, "id");
+                if (leaveId.HasValue)
+                {
+                    var leave = await _context.LeaveRequests.FindAsync(leaveId.Value);
+                    if (leave != null)
+                    {
+                        var decision = ToPastTense(status);
+                        if (!string.IsNullOrWhiteSpace(leave.leave_type) && !string.IsNullOrWhiteSpace(leave.employee_name))
+                        {
+                            return $"{decision} {leave.leave_type.ToLowerInvariant()} leave request for {leave.employee_name}";
+                        }
+                    }
+                }
+
+                return $"{ToPastTense(status)} leave request";
+            }
+
+            if (controller.Equals("Approvals", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("UpdateDocumentStatus", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{ToPastTense(GetStringArg(args, "status"))} document request";
+            }
+
+            if (controller.Equals("Projects", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("Create", StringComparison.OrdinalIgnoreCase))
+            {
+                var projectName = GetStringArg(args, "name");
+                return string.IsNullOrWhiteSpace(projectName)
+                    ? "Created new project"
+                    : $"Created new project: {projectName}";
+            }
+
+            if (controller.Equals("Employees", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("Update", StringComparison.OrdinalIgnoreCase))
+            {
+                var employeeId = GetIntArg(args, "employeeId");
+                var employee = employeeId.HasValue ? await _context.Employees.FindAsync(employeeId.Value) : null;
+                return employee == null
+                    ? "Updated employee record"
+                    : $"Updated employee role for {employee.full_name}";
+            }
+
+            if (controller.Equals("UserManagement", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("ToggleStatus", StringComparison.OrdinalIgnoreCase))
+            {
+                var isActive = GetBoolArg(args, "isActive");
+                return isActive.HasValue
+                    ? (isActive.Value ? "Activated user account" : "Deactivated user account")
+                    : "Updated user status";
+            }
+
+            if (controller.Equals("UserManagement", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("UpdateRole", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Updated user system role";
+            }
+
+            if (controller.Equals("Tasks", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("Move", StringComparison.OrdinalIgnoreCase))
+            {
+                var status = GetStringArg(args, "status");
+                return string.IsNullOrWhiteSpace(status)
+                    ? "Moved task status"
+                    : $"Moved task to {status}";
+            }
+
+            if (controller.Equals("UserManagement", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("InviteUser", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Invited new user";
+            }
+
+            if (controller.Equals("Documents", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("Upload", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Uploaded document";
+            }
+
+            if (controller.Equals("Archive", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("Restore", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Restored archived item";
+            }
+
+            if (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("Logout", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Logged out";
+            }
+
+            if (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("ExternalLogin", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Signed in with external login";
+            }
+
+            if (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("Login", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Logged in";
+            }
+
+            if (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("ChangePassword", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Changed account password";
+            }
+
+            if (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("VerifyEmail", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Sent password verification email";
+            }
+
+            if (controller.Equals("Notifications", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("MarkAsRead", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Marked notification as read";
+            }
+
+            if (controller.Equals("Notifications", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("MarkAsUnread", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Marked notification as unread";
+            }
+
+            if (controller.Equals("Notifications", StringComparison.OrdinalIgnoreCase) &&
+                actionName.Equals("ClearAll", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Cleared all notifications";
+            }
+
+            if (actionLabel.Equals("approved", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Approved {controller.ToLowerInvariant()} request";
+            }
+
+            if (actionLabel.Equals("rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Rejected {controller.ToLowerInvariant()} request";
+            }
+
+            if (actionLabel.Equals("create", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Created new {SplitPascal(controller).ToLowerInvariant()} record";
+            }
+
+            if (actionLabel.Equals("update", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Updated {SplitPascal(controller).ToLowerInvariant()} record";
+            }
+
+            if (actionLabel.Equals("archive", StringComparison.OrdinalIgnoreCase) || actionLabel.Equals("delete", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Archived {SplitPascal(controller).ToLowerInvariant()} record";
+            }
+
+            if (actionLabel.Equals("submit", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Submitted {SplitPascal(controller).ToLowerInvariant()} action";
+            }
+
+            return $"{route} [{method}] responded {statusCode}";
+        }
+
+        private static string? GetStringArg(IDictionary<string, object?> args, string key)
+        {
+            return args.TryGetValue(key, out var value) ? value?.ToString()?.Trim() : null;
+        }
+
+        private static int? GetIntArg(IDictionary<string, object?> args, string key)
+        {
+            if (!args.TryGetValue(key, out var value) || value == null)
+            {
+                return null;
+            }
+
+            if (value is int intValue)
+            {
+                return intValue;
+            }
+
+            return int.TryParse(value.ToString(), out var parsed) ? parsed : null;
+        }
+
+        private static bool? GetBoolArg(IDictionary<string, object?> args, string key)
+        {
+            if (!args.TryGetValue(key, out var value) || value == null)
+            {
+                return null;
+            }
+
+            if (value is bool boolValue)
+            {
+                return boolValue;
+            }
+
+            return bool.TryParse(value.ToString(), out var parsed) ? parsed : null;
+        }
+
+        private static string ToPastTense(string? status)
+        {
+            if (string.Equals(status, "approved", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Approved";
+            }
+
+            if (string.Equals(status, "rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Rejected";
+            }
+
+            return string.IsNullOrWhiteSpace(status)
+                ? "Updated"
+                : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(status.Trim().ToLowerInvariant());
+        }
+
+        private static string SplitPascal(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "record";
+            }
+
+            return string.Concat(value.Select((ch, index) => index > 0 && char.IsUpper(ch) ? $" {ch}" : ch.ToString()));
         }
     }
 }

@@ -168,7 +168,9 @@ namespace IT15_SOWCS.Controllers
                 type = "Document",
                 archived_by = User.Identity?.Name ?? "System",
                 date_archived = DateTime.UtcNow,
-                reason = "Archived from Documents module",
+                reason = string.IsNullOrWhiteSpace(document.review_notes)
+                    ? "Archived from Documents module"
+                    : $"Archived from Documents module. Feedback: {document.review_notes}",
                 serialized_data = JsonSerializer.Serialize(document)
             });
 

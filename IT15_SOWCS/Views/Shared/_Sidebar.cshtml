@@ -1,14 +1,33 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @inject UserManager<IT15_SOWCS.Models.Users> UserManager
+@inject IT15_SOWCS.Data.AppDbContext DbContext
 @{
     var user = await UserManager.GetUserAsync(User);
     var fullName = user?.FullName ?? "User";
     var rawRole = user?.Role ?? "user";
+    var rawEmployeeRole = user == null
+        ? string.Empty
+        : (await DbContext.Employees
+            .Where(employee => employee.user_id == user.Id)
+            .Select(employee => employee.employee_role)
+            .FirstOrDefaultAsync()) ?? string.Empty;
+
+    var normalizedRole = rawRole.Trim().ToLowerInvariant();
+    var normalizedEmployeeRole = rawEmployeeRole.Trim().ToLowerInvariant();
+    var isHrManager = normalizedEmployeeRole == "hr manager" || normalizedEmployeeRole == "hr";
+    var isProjectManager = normalizedEmployeeRole == "manager" || normalizedEmployeeRole == "project manager";
+    var isRegularEmployee = normalizedRole == "user" && !isHrManager && !isProjectManager;
+
     var role = rawRole.Equals("superadmin", StringComparison.OrdinalIgnoreCase)
         ? "Super Admin"
-        : string.IsNullOrWhiteSpace(rawRole)
-            ? "User"
-            : char.ToUpperInvariant(rawRole[0]) + rawRole.Substring(1);
+        : !string.IsNullOrWhiteSpace(rawEmployeeRole)
+            ? rawEmployeeRole
+            : rawRole.Equals("user", StringComparison.OrdinalIgnoreCase)
+                ? "Employee"
+                : string.IsNullOrWhiteSpace(rawRole)
+                    ? "User"
+                    : char.ToUpperInvariant(rawRole[0]) + rawRole.Substring(1);
 
     var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
@@ -37,83 +56,201 @@
                 <i class="bi bi-grid"></i> <span class="nav-text">Dashboard</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a asp-controller="Projects" asp-action="Projects"
-               class="nav-link @IsActive("Projects", "Projects")" title="Projects">
-                <i class="bi bi-folder"></i> <span class="nav-text">Projects</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Tasks" asp-action="Tasks"
-               class="nav-link @IsActive("Tasks", "Tasks")" title="My Tasks">
-                <i class="bi bi-clipboard-check"></i> <span class="nav-text">My Tasks</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Documents" asp-action="Documents"
-               class="nav-link @IsActive("Documents", "Documents")" title="Documents">
-                <i class="bi bi-file-earmark-text"></i> <span class="nav-text">Documents</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="LeaveRequest" asp-action="LeaveRequest"
-               class="nav-link @IsActive("LeaveRequest", "LeaveRequest")" title="LeaveRequests">
-                <i class="bi bi-calendar-event"></i> <span class="nav-text">Leave Requests</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Approvals" asp-action="Approvals"
-               class="nav-link @IsActive("Approvals", "Approvals")" title="Approvals">
-                <i class="bi bi-shield-check"></i> <span class="nav-text">Approvals</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Employees" asp-action="Employees"
-               class="nav-link @IsActive("Employees", "Employees")" title="Employees">
-                <i class="bi bi-people"></i> <span class="nav-text">Employees</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="UserManagement" asp-action="UserManagement"
-               class="nav-link @IsActive("UserManagement", "UserManagement")" title="User Management">
-                <i class="bi bi-person-gear"></i> <span class="nav-text">User Management</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="AuditLogs" asp-action="AuditLogs"
-               class="nav-link @IsActive("AuditLogs", "AuditLogs")" title="Audit Logs">
-                <i class="bi bi-file-earmark-bar-graph"></i> <span class="nav-text">Audit Logs</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Reports" asp-action="Reports"
-               class="nav-link @IsActive("Reports", "Reports")" title="Reports">
-                <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Archive" asp-action="Archive"
-               class="nav-link @IsActive("Archive", "Archive")" title="Archive">
-                <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
-            </a>
-        </li>
+        @if (isRegularEmployee)
+        {
+            <li class="nav-item">
+                <a asp-controller="Projects" asp-action="Projects"
+                   class="nav-link @IsActive("Projects", "Projects")" title="Projects">
+                    <i class="bi bi-folder"></i> <span class="nav-text">Projects</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Tasks" asp-action="Tasks"
+                   class="nav-link @IsActive("Tasks", "Tasks")" title="My Tasks">
+                    <i class="bi bi-clipboard-check"></i> <span class="nav-text">My Tasks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Documents" asp-action="Documents"
+                   class="nav-link @IsActive("Documents", "Documents")" title="Documents">
+                    <i class="bi bi-file-earmark-text"></i> <span class="nav-text">Documents</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="LeaveRequest" asp-action="LeaveRequest"
+                   class="nav-link @IsActive("LeaveRequest", "LeaveRequest")" title="LeaveRequests">
+                    <i class="bi bi-calendar-event"></i> <span class="nav-text">Leave Requests</span>
+                </a>
+            </li>
+        }
+        else if (isHrManager)
+        {
+            <li class="nav-item">
+                <a asp-controller="Projects" asp-action="Projects"
+                   class="nav-link @IsActive("Projects", "Projects")" title="Projects">
+                    <i class="bi bi-folder"></i> <span class="nav-text">Projects</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Tasks" asp-action="Tasks"
+                   class="nav-link @IsActive("Tasks", "Tasks")" title="My Tasks">
+                    <i class="bi bi-clipboard-check"></i> <span class="nav-text">My Tasks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Documents" asp-action="Documents"
+                   class="nav-link @IsActive("Documents", "Documents")" title="Documents">
+                    <i class="bi bi-file-earmark-text"></i> <span class="nav-text">Documents</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="LeaveRequest" asp-action="LeaveRequest"
+                   class="nav-link @IsActive("LeaveRequest", "LeaveRequest")" title="Leave Requests">
+                    <i class="bi bi-calendar-event"></i> <span class="nav-text">Leave Requests</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Approvals" asp-action="Approvals"
+                   class="nav-link @IsActive("Approvals", "Approvals")" title="Approvals">
+                    <i class="bi bi-shield-check"></i> <span class="nav-text">Approvals</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Employees" asp-action="Employees"
+                   class="nav-link @IsActive("Employees", "Employees")" title="Employees">
+                    <i class="bi bi-people"></i> <span class="nav-text">Employees</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Reports" asp-action="Reports"
+                   class="nav-link @IsActive("Reports", "Reports")" title="Reports">
+                    <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Archive" asp-action="Archive"
+                   class="nav-link @IsActive("Archive", "Archive")" title="Archive">
+                    <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
+                </a>
+            </li>
+        }
+        else if (isProjectManager)
+        {
+            <li class="nav-item">
+                <a asp-controller="Projects" asp-action="Projects"
+                   class="nav-link @IsActive("Projects", "Projects")" title="Projects">
+                    <i class="bi bi-folder"></i> <span class="nav-text">Projects</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Tasks" asp-action="Tasks"
+                   class="nav-link @IsActive("Tasks", "Tasks")" title="My Tasks">
+                    <i class="bi bi-clipboard-check"></i> <span class="nav-text">My Tasks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Documents" asp-action="Documents"
+                   class="nav-link @IsActive("Documents", "Documents")" title="Documents">
+                    <i class="bi bi-file-earmark-text"></i> <span class="nav-text">Documents</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="LeaveRequest" asp-action="LeaveRequest"
+                   class="nav-link @IsActive("LeaveRequest", "LeaveRequest")" title="Leave Requests">
+                    <i class="bi bi-calendar-event"></i> <span class="nav-text">Leave Requests</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Approvals" asp-action="Approvals"
+                   class="nav-link @IsActive("Approvals", "Approvals")" title="Approvals">
+                    <i class="bi bi-shield-check"></i> <span class="nav-text">Approvals</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Reports" asp-action="Reports"
+                   class="nav-link @IsActive("Reports", "Reports")" title="Reports">
+                    <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Archive" asp-action="Archive"
+                   class="nav-link @IsActive("Archive", "Archive")" title="Archive">
+                    <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
+                </a>
+            </li>
+        }
+        else
+        {
+            <li class="nav-item">
+                <a asp-controller="Projects" asp-action="Projects"
+                   class="nav-link @IsActive("Projects", "Projects")" title="Projects">
+                    <i class="bi bi-folder"></i> <span class="nav-text">Projects</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Tasks" asp-action="Tasks"
+                   class="nav-link @IsActive("Tasks", "Tasks")" title="My Tasks">
+                    <i class="bi bi-clipboard-check"></i> <span class="nav-text">My Tasks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Documents" asp-action="Documents"
+                   class="nav-link @IsActive("Documents", "Documents")" title="Documents">
+                    <i class="bi bi-file-earmark-text"></i> <span class="nav-text">Documents</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="LeaveRequest" asp-action="LeaveRequest"
+                   class="nav-link @IsActive("LeaveRequest", "LeaveRequest")" title="Leave Requests">
+                    <i class="bi bi-calendar-event"></i> <span class="nav-text">Leave Requests</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Approvals" asp-action="Approvals"
+                   class="nav-link @IsActive("Approvals", "Approvals")" title="Approvals">
+                    <i class="bi bi-shield-check"></i> <span class="nav-text">Approvals</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Employees" asp-action="Employees"
+                   class="nav-link @IsActive("Employees", "Employees")" title="Employees">
+                    <i class="bi bi-people"></i> <span class="nav-text">Employees</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="UserManagement" asp-action="UserManagement"
+                   class="nav-link @IsActive("UserManagement", "UserManagement")" title="User Management">
+                    <i class="bi bi-person-gear"></i> <span class="nav-text">User Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="AuditLogs" asp-action="AuditLogs"
+                   class="nav-link @IsActive("AuditLogs", "AuditLogs")" title="Audit Logs">
+                    <i class="bi bi-file-earmark-bar-graph"></i> <span class="nav-text">Audit Logs</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Reports" asp-action="Reports"
+                   class="nav-link @IsActive("Reports", "Reports")" title="Reports">
+                    <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Archive" asp-action="Archive"
+                   class="nav-link @IsActive("Archive", "Archive")" title="Archive">
+                    <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
+                </a>
+            </li>
+        }
     </ul>
 
     <div class="sidebar-footer">
-
         <div class="user-profile">
-
             <div class="user-avatar">GK</div>
-
             <div class="user-info text-truncate nav-text">
-
                 <span class="user-name">@fullName</span>
-
                 <span class="user-role">@role</span>
-
             </div>
-
         </div>
-
     </div>
 </div>

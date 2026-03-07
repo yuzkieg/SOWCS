@@ -26,6 +26,60 @@
     margin-bottom: 1.5rem;
 }
 
+.leave-balance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+}
+
+.leave-balance-card {
+    border-radius: 12px;
+    border: 1px solid transparent;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.leave-balance-card p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.leave-balance-card h4 {
+    margin: 0.2rem 0 0.1rem;
+    font-size: 2.3rem;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.leave-balance-card span {
+    font-size: 0.9rem;
+}
+
+.leave-balance-card i {
+    font-size: 1.9rem;
+}
+
+.leave-balance-card.annual {
+    background: #eef4ff;
+    border-color: #d3e0ff;
+    color: #2563eb;
+}
+
+.leave-balance-card.sick {
+    background: #fff7dc;
+    border-color: #f8e4a6;
+    color: #d97706;
+}
+
+.leave-balance-card.personal {
+    background: #f5edff;
+    border-color: #e6d4ff;
+    color: #9333ea;
+}
+
 .status-filter {
     border: 1px solid #e2e8f0;
     border-radius: 10px;
@@ -253,6 +307,10 @@
     }
 
     .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .leave-balance-grid {
         grid-template-columns: 1fr;
     }
 }

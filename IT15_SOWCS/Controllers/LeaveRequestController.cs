@@ -28,9 +28,10 @@ namespace IT15_SOWCS.Controllers
         public async Task<IActionResult> LeaveRequest(string? status)
         {
             var currentEmail = User.Identity?.Name;
+            Employee? employee = null;
             if (!string.IsNullOrWhiteSpace(currentEmail))
             {
-                await _leaveBalanceService.RecomputeBalanceForEmployeeAsync(currentEmail);
+                employee = await _leaveBalanceService.RecomputeBalanceForEmployeeAsync(currentEmail);
             }
 
             var query = _context.LeaveRequests.AsQueryable();
@@ -43,7 +44,10 @@ namespace IT15_SOWCS.Controllers
             var model = new LeaveRequestsPageViewModel
             {
                 Requests = await query.OrderByDescending(request => request.LR_id).ToListAsync(),
-                Status = status
+                Status = status,
+                AnnualLeaveBalance = employee?.annual_leave_balance ?? 0,
+                SickLeaveBalance = employee?.sick_leave_balance ?? 0,
+                PersonalLeaveBalance = employee?.personal_leave_balance ?? 0
             };
 
             return View(model);
@@ -171,7 +175,9 @@ namespace IT15_SOWCS.Controllers
                 type = "LeaveRequest",
                 archived_by = User.Identity?.Name ?? "System",
                 date_archived = DateTime.UtcNow,
-                reason = "Archived from Leave Requests module",
+                reason = string.IsNullOrWhiteSpace(leave.review_notes)
+                    ? "Archived from Leave Requests module"
+                    : $"Archived from Leave Requests module. Feedback: {leave.review_notes}",
                 serialized_data = JsonSerializer.Serialize(leave)
             });
 

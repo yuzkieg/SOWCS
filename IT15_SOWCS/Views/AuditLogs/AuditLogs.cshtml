@@ -12,22 +12,41 @@
         </div>
     </div>
 
-    <form asp-action="AuditLogs" method="get" class="audit-controls module-filters">
-        <div class="search-wrapper shadow-sm">
-            <i class="bi bi-search text-muted"></i>
-            <input type="text" name="search" placeholder="Search logs..." value="@Model.Search">
+    <form id="auditFilterForm" asp-action="AuditLogs" method="get" class="module-filters">
+        <div class="audit-date-filter">
+            <div class="audit-date-filter-left">
+                <i class="bi bi-funnel"></i>
+                <span class="audit-filter-title">Filter by Date</span>
+                <span class="audit-filter-label">From</span>
+                <input type="date" id="auditStartDate" name="from" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
+                <span class="audit-filter-label">To</span>
+                <input type="date" id="auditEndDate" name="to" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
+                <button type="button" id="auditClearDateBtn" class="btn btn-sm audit-clear-btn @(Model.StartDate.HasValue || Model.EndDate.HasValue ? string.Empty : "d-none")">
+                    <i class="bi bi-x-lg"></i> Clear
+                </button>
+            </div>
+            <div class="audit-date-filter-right">
+                <span>@Model.RecordsMatch records match</span>
+            </div>
         </div>
-        <select class="form-select status-filter shadow-sm" name="action" onchange="this.form.submit()">
-            <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Action) || Model.Action == "All" ? "selected" : null)">All Actions</option>
-            <option value="approved" selected="@(Model.Action=="approved" || Model.Action=="approve" ? "selected" : null)">Approve</option>
-            <option value="rejected" selected="@(Model.Action=="rejected" || Model.Action=="reject" ? "selected" : null)">Reject</option>
-            <option value="upload" selected="@(Model.Action=="upload" ? "selected" : null)">Upload</option>
-            <option value="invite" selected="@(Model.Action=="invite" ? "selected" : null)">Invite</option>
-            <option value="create" selected="@(Model.Action=="create" ? "selected" : null)">Create</option>
-            <option value="update" selected="@(Model.Action=="update" ? "selected" : null)">Update</option>
-            <option value="archive" selected="@(Model.Action=="archive" || Model.Action=="delete" ? "selected" : null)">Archive</option>
-            <option value="restore" selected="@(Model.Action=="restore" ? "selected" : null)">Restore</option>
-        </select>
+
+        <div class="audit-controls">
+            <div class="search-wrapper shadow-sm">
+                <i class="bi bi-search text-muted"></i>
+                <input type="text" name="search" placeholder="Search logs..." value="@Model.Search">
+            </div>
+            <select class="form-select status-filter shadow-sm" name="action" onchange="this.form.submit()">
+                <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Action) || Model.Action == "All" ? "selected" : null)">All Actions</option>
+                <option value="approved" selected="@(Model.Action=="approved" || Model.Action=="approve" ? "selected" : null)">Approve</option>
+                <option value="rejected" selected="@(Model.Action=="rejected" || Model.Action=="reject" ? "selected" : null)">Reject</option>
+                <option value="upload" selected="@(Model.Action=="upload" ? "selected" : null)">Upload</option>
+                <option value="invite" selected="@(Model.Action=="invite" ? "selected" : null)">Invite</option>
+                <option value="create" selected="@(Model.Action=="create" ? "selected" : null)">Create</option>
+                <option value="update" selected="@(Model.Action=="update" ? "selected" : null)">Update</option>
+                <option value="archive" selected="@(Model.Action=="archive" || Model.Action=="delete" ? "selected" : null)">Archive</option>
+                <option value="restore" selected="@(Model.Action=="restore" ? "selected" : null)">Restore</option>
+            </select>
+        </div>
     </form>
 
     <div class="audit-table-card">
@@ -73,3 +92,52 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('auditFilterForm');
+            const startDateInput = document.getElementById('auditStartDate');
+            const endDateInput = document.getElementById('auditEndDate');
+            const clearBtn = document.getElementById('auditClearDateBtn');
+            if (!form || !startDateInput || !endDateInput || !clearBtn) {
+                return;
+            }
+
+            function syncEndDateConstraint() {
+                const start = startDateInput.value;
+                endDateInput.min = start || '';
+                if (start && endDateInput.value && endDateInput.value < start) {
+                    endDateInput.value = start;
+                }
+            }
+
+            function syncClearButton() {
+                clearBtn.classList.toggle('d-none', !startDateInput.value && !endDateInput.value);
+            }
+
+            startDateInput.addEventListener('change', function () {
+                syncEndDateConstraint();
+                syncClearButton();
+                form.submit();
+            });
+
+            endDateInput.addEventListener('change', function () {
+                syncEndDateConstraint();
+                syncClearButton();
+                form.submit();
+            });
+
+            clearBtn.addEventListener('click', function () {
+                startDateInput.value = '';
+                endDateInput.value = '';
+                syncEndDateConstraint();
+                syncClearButton();
+                form.submit();
+            });
+
+            syncEndDateConstraint();
+            syncClearButton();
+        })();
+    </script>
+}

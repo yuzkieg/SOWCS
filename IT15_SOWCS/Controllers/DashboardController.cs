@@ -29,6 +29,137 @@ namespace IT15_SOWCS.Controllers
                 return View("SuperAdmin", superAdminModel);
             }
 
+            var isProjectManager = await _context.Employees
+                .AsNoTracking()
+                .AnyAsync(employee =>
+                    employee.user_id == user!.Id &&
+                    (employee.employee_role.ToLower() == "manager" || employee.employee_role.ToLower() == "project manager"));
+
+            var isHrManager = await _context.Employees
+                .AsNoTracking()
+                .AnyAsync(employee =>
+                    employee.user_id == user!.Id &&
+                    (employee.employee_role.ToLower() == "hr manager" || employee.employee_role.ToLower() == "hr"));
+
+            if (isProjectManager)
+            {
+                var managerModel = await BuildProjectManagerDashboardModelAsync(user);
+                return View("ProjectManager", managerModel);
+            }
+
+            if (isHrManager)
+            {
+                var hrModel = await BuildHrManagerDashboardModelAsync(user);
+                return View("HrManager", hrModel);
+            }
+
+            if (string.Equals(user?.Role, "user", StringComparison.OrdinalIgnoreCase))
+            {
+                var employeeModel = await BuildEmployeeDashboardModelAsync(user);
+                return View("Employee", employeeModel);
+            }
+
+            var adminModel = await BuildAdminDashboardModelAsync(user);
+            return View("Index", adminModel);
+        }
+
+        private async Task<DashboardViewModel> BuildEmployeeDashboardModelAsync(Users? user)
+        {
+            var userEmail = user?.Email ?? User.Identity?.Name ?? string.Empty;
+            var userId = user?.Id ?? string.Empty;
+
+            var employee = await _context.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.user_id == userId);
+
+            var employeeIds = employee == null
+                ? await _context.Employees
+                    .Where(item => item.user_id == userId)
+                    .Select(item => item.employee_id)
+                    .ToListAsync()
+                : new List<int> { employee.employee_id };
+
+            var assignedTasksQuery = _context.Tasks
+                .Include(task => task.Project)
+                .Where(task => task.assigned_to == userEmail || employeeIds.Contains(task.employee_id));
+
+            var myTasks = await assignedTasksQuery
+                .OrderBy(task => task.due_date)
+                .Take(8)
+                .ToListAsync();
+
+            var myTaskCount = await assignedTasksQuery.CountAsync();
+            var myCompletedTaskCount = await assignedTasksQuery.CountAsync(task => task.status == "Completed");
+            var overallProgressPercent = myTaskCount == 0
+                ? 0
+                : (int)Math.Round((myCompletedTaskCount * 100.0) / myTaskCount);
+
+            var recentDocuments = await _context.Documents
+                .OrderByDescending(document => document.uploaded_date)
+                .Take(8)
+                .ToListAsync();
+
+            var myPendingLeavesCount = await _context.LeaveRequests.CountAsync(request =>
+                request.employee_email == userEmail && request.status == "Pending");
+
+            var recentLeaves = await _context.LeaveRequests
+                .Where(request => request.employee_email == userEmail)
+                .OrderByDescending(request => request.reviewed_date ?? request.start_date)
+                .Take(4)
+                .ToListAsync();
+
+            var activities = new List<DashboardActivityItemViewModel>();
+            activities.AddRange(recentDocuments.Select(document => new DashboardActivityItemViewModel
+            {
+                Type = "Document",
+                Title = document.title,
+                Subtitle = $"Uploaded by {document.uploaded_by_email ?? "Unknown User"}",
+                Status = document.status,
+                Date = document.uploaded_date
+            }));
+            activities.AddRange(recentLeaves.Select(request => new DashboardActivityItemViewModel
+            {
+                Type = "Leave",
+                Title = $"{request.leave_type} Request",
+                Subtitle = $"{request.start_date:MMM d} - {request.end_date:MMM d}",
+                Status = request.status,
+                Date = request.reviewed_date ?? request.start_date
+            }));
+
+            var activeProjectsCount = await assignedTasksQuery
+                .Where(task => task.Project != null && task.Project.status != "Completed")
+                .Select(task => task.project_id)
+                .Distinct()
+                .CountAsync();
+
+            return new DashboardViewModel
+            {
+                FullName = string.IsNullOrWhiteSpace(user?.FullName) ? "Employee" : user!.FullName,
+                ActiveProjectsCount = activeProjectsCount,
+                MyTasksCount = myTaskCount,
+                CompletedTasksCount = myCompletedTaskCount,
+                DocumentsCount = await _context.Documents.CountAsync(),
+                PendingLeavesCount = myPendingLeavesCount,
+                AnnualLeaveBalance = employee?.annual_leave_balance ?? 0,
+                SickLeaveBalance = employee?.sick_leave_balance ?? 0,
+                PersonalLeaveBalance = employee?.personal_leave_balance ?? 0,
+                OverallProgressPercent = overallProgressPercent,
+                MyTasks = myTasks.Select(task => new DashboardTaskItemViewModel
+                {
+                    Title = task.title,
+                    ProjectName = task.Project?.name ?? task.project_name ?? "Project",
+                    Status = task.status,
+                    DueDate = task.due_date
+                }).ToList(),
+                RecentActivities = activities
+                    .OrderByDescending(activity => activity.Date)
+                    .Take(8)
+                    .ToList()
+            };
+        }
+
+        private async Task<DashboardViewModel> BuildAdminDashboardModelAsync(Users? user)
+        {
             var userEmail = user?.Email ?? User.Identity?.Name ?? string.Empty;
             var userId = user?.Id ?? string.Empty;
 
@@ -90,7 +221,7 @@ namespace IT15_SOWCS.Controllers
                 Date = request.reviewed_date ?? request.start_date
             }));
 
-            var model = new DashboardViewModel
+            return new DashboardViewModel
             {
                 FullName = string.IsNullOrWhiteSpace(user?.FullName) ? "User" : user!.FullName,
                 ActiveProjectsCount = await _context.Projects.CountAsync(project => project.status != "Completed"),
@@ -98,6 +229,9 @@ namespace IT15_SOWCS.Controllers
                 CompletedTasksCount = myCompletedTaskCount,
                 DocumentsCount = await _context.Documents.CountAsync(),
                 PendingLeavesCount = await _context.LeaveRequests.CountAsync(request => request.status == "Pending"),
+                AnnualLeaveBalance = 0,
+                SickLeaveBalance = 0,
+                PersonalLeaveBalance = 0,
                 OverallProgressPercent = overallProgressPercent,
                 MyTasks = myTasks.Select(task => new DashboardTaskItemViewModel
                 {
@@ -111,8 +245,180 @@ namespace IT15_SOWCS.Controllers
                     .Take(6)
                     .ToList()
             };
+        }
 
-            return View(model);
+        private async Task<HrManagerDashboardViewModel> BuildHrManagerDashboardModelAsync(Users? user)
+        {
+            var employees = await _context.Employees
+                .AsNoTracking()
+                .OrderByDescending(employee => employee.employee_id)
+                .ToListAsync();
+
+            var totalEmployees = employees.Count;
+            var pendingLeaves = await _context.LeaveRequests
+                .AsNoTracking()
+                .Where(request => request.status == "Pending")
+                .OrderByDescending(request => request.LR_id)
+                .Take(8)
+                .ToListAsync();
+
+            var departmentLoads = employees
+                .GroupBy(employee => string.IsNullOrWhiteSpace(employee.department) ? "Unassigned" : employee.department)
+                .Select(group => new HrDepartmentLoadItemViewModel
+                {
+                    Department = group.Key,
+                    Count = group.Count(),
+                    Percent = totalEmployees == 0 ? 0 : (int)Math.Round(group.Count() * 100.0 / totalEmployees)
+                })
+                .OrderByDescending(item => item.Count)
+                .Take(6)
+                .ToList();
+
+            return new HrManagerDashboardViewModel
+            {
+                FullName = string.IsNullOrWhiteSpace(user?.FullName) ? "HR Manager" : user!.FullName,
+                TotalEmployees = totalEmployees,
+                ActiveEmployees = employees.Count(employee => employee.is_active),
+                PendingLeaves = await _context.LeaveRequests.CountAsync(request => request.status == "Pending"),
+                ApprovedLeaves = await _context.LeaveRequests.CountAsync(request => request.status == "Approved"),
+                PendingLeaveRequests = pendingLeaves.Select(request => new HrPendingLeaveItemViewModel
+                {
+                    EmployeeName = request.employee_name,
+                    LeaveType = request.leave_type,
+                    Days = request.days_count,
+                    StartDate = request.start_date,
+                    EndDate = request.end_date,
+                    Status = request.status
+                }).ToList(),
+                DepartmentLoads = departmentLoads,
+                RecentEmployees = employees
+                    .Take(6)
+                    .Select(employee => new HrRecentEmployeeItemViewModel
+                    {
+                        Initials = GetInitials(employee.full_name),
+                        Name = employee.full_name,
+                        Role = employee.employee_role
+                    })
+                    .ToList()
+            };
+        }
+
+        private async Task<ProjectManagerDashboardViewModel> BuildProjectManagerDashboardModelAsync(Users? user)
+        {
+            var userEmail = user?.Email ?? User.Identity?.Name ?? string.Empty;
+
+            var managedProjects = await _context.Projects
+                .AsNoTracking()
+                .Where(project => project.manager_email == userEmail)
+                .OrderByDescending(project => project.project_id)
+                .ToListAsync();
+
+            var managedProjectIds = managedProjects.Select(project => project.project_id).ToList();
+
+            var tasks = managedProjectIds.Count == 0
+                ? new List<WorkTask>()
+                : await _context.Tasks
+                    .AsNoTracking()
+                    .Where(task => managedProjectIds.Contains(task.project_id))
+                    .ToListAsync();
+
+            var teamMemberNames = managedProjects
+                .SelectMany(project => (project.team_members ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(name => name.Trim()))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var teamMembers = teamMemberNames.Count == 0
+                ? new List<Employee>()
+                : await _context.Employees
+                    .AsNoTracking()
+                    .Where(employee => teamMemberNames.Contains(employee.full_name))
+                    .OrderBy(employee => employee.full_name)
+                    .Take(8)
+                    .ToListAsync();
+
+            var pendingLeaves = await _context.LeaveRequests
+                .AsNoTracking()
+                .Where(request => request.status == "Pending")
+                .OrderByDescending(request => request.LR_id)
+                .Take(5)
+                .ToListAsync();
+
+            var pendingDocumentsCount = await _context.Documents.CountAsync(document => document.status == "Pending");
+
+            var taskGroupByProject = tasks
+                .GroupBy(task => task.project_id)
+                .ToDictionary(
+                    group => group.Key,
+                    group =>
+                    {
+                        var total = group.Count();
+                        var completed = group.Count(task => string.Equals(task.status, "Completed", StringComparison.OrdinalIgnoreCase));
+                        var progress = total == 0 ? 0 : (int)Math.Round(completed * 100.0 / total);
+                        return progress;
+                    });
+
+            return new ProjectManagerDashboardViewModel
+            {
+                FullName = string.IsNullOrWhiteSpace(user?.FullName) ? "Project Manager" : user!.FullName,
+                ProjectsCount = managedProjects.Count,
+                TeamMembersCount = teamMemberNames.Count,
+                PendingLeavesCount = pendingLeaves.Count,
+                TotalTasks = tasks.Count,
+                InProgressTasks = tasks.Count(task => string.Equals(task.status, "In Progress", StringComparison.OrdinalIgnoreCase)),
+                OverdueTasks = tasks.Count(task =>
+                    task.due_date.Date < DateTime.Today &&
+                    !string.Equals(task.status, "Completed", StringComparison.OrdinalIgnoreCase)),
+                ApprovalsPendingCount = pendingLeaves.Count + pendingDocumentsCount,
+                ProjectProgress = managedProjects
+                    .Take(6)
+                    .Select(project => new ProjectManagerProjectProgressItemViewModel
+                    {
+                        Name = project.name,
+                        ProgressPercent = taskGroupByProject.TryGetValue(project.project_id, out var progress) ? progress : 0,
+                        Status = project.status
+                    })
+                    .ToList(),
+                TaskStatuses = tasks
+                    .GroupBy(task => string.IsNullOrWhiteSpace(task.status) ? "Unknown" : task.status)
+                    .Select(group => new ProjectManagerTaskStatusItemViewModel
+                    {
+                        Status = group.Key,
+                        Count = group.Count()
+                    })
+                    .OrderByDescending(item => item.Count)
+                    .ToList(),
+                TeamMembers = teamMembers
+                    .Select(member => new ProjectManagerTeamMemberItemViewModel
+                    {
+                        Initials = GetInitials(member.full_name),
+                        Name = member.full_name,
+                        Role = member.employee_role
+                    })
+                    .ToList(),
+                PendingLeaves = pendingLeaves
+                    .Select(request => new ProjectManagerPendingLeaveItemViewModel
+                    {
+                        EmployeeName = request.employee_name,
+                        LeaveType = request.leave_type,
+                        Days = request.days_count,
+                        StartDate = request.start_date,
+                        EndDate = request.end_date,
+                        Status = request.status
+                    })
+                    .ToList(),
+                MyProjects = managedProjects
+                    .Take(8)
+                    .Select(project => new ProjectManagerProjectItemViewModel
+                    {
+                        Name = project.name,
+                        Status = project.status,
+                        Priority = project.priority
+                    })
+                    .ToList()
+            };
         }
 
         private async Task<SuperAdminDashboardViewModel> BuildSuperAdminModelAsync(Users? user)
