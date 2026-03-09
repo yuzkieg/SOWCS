@@ -1,10 +1,21 @@
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @inject UserManager<IT15_SOWCS.Models.Users> UserManager
+@inject IT15_SOWCS.Data.AppDbContext DbContext
 @{
     var currentUser = await UserManager.GetUserAsync(User);
-    var fullName = currentUser?.FullName;
     var email = currentUser?.Email ?? User.Identity?.Name ?? "user";
-    var source = string.IsNullOrWhiteSpace(fullName) ? email : fullName!;
+    var employeeFullName = currentUser == null
+        ? null
+        : await DbContext.Employees
+            .Where(employee => employee.user_id == currentUser.Id)
+            .Select(employee => employee.full_name)
+            .FirstOrDefaultAsync();
+    var source = !string.IsNullOrWhiteSpace(employeeFullName)
+        ? employeeFullName!
+        : string.IsNullOrWhiteSpace(currentUser?.FullName)
+            ? email
+            : currentUser!.FullName;
     var initials = string.Join(
         string.Empty,
         source.Split(' ', StringSplitOptions.RemoveEmptyEntries)

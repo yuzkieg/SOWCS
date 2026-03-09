@@ -30,6 +30,10 @@
 
         <form asp-action="Login" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            @if (ViewData["InactiveNotice"] is string inactiveNotice && !string.IsNullOrWhiteSpace(inactiveNotice))
+            {
+                <div class="alert alert-warning py-2">@inactiveNotice</div>
+            }
 
             <div class="mb-3">
                 <label asp-for="Email" class="form-label">Email</label>
@@ -63,6 +67,25 @@
                 </p>
             </div>
         </form>
+
+        @{
+            var inactiveEmail = (ViewData["InactiveEmail"]?.ToString() ?? TempData["InactiveEmail"]?.ToString() ?? string.Empty).Trim();
+        }
+        @if (!string.IsNullOrWhiteSpace(inactiveEmail))
+        {
+            <div class="mt-4 p-3 border rounded-3 bg-light">
+                <h6 class="mb-2 fw-semibold">Account Inactive</h6>
+                <p class="mb-3 text-muted-small">Your account is inactive. Send a reactivation request to the administrator.</p>
+                <form asp-action="RequestReactivation" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="email" value="@inactiveEmail" />
+                    <div class="mb-2">
+                        <input type="text" name="message" class="form-control" placeholder="Reason for reactivation request" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Send Request</button>
+                </form>
+            </div>
+        }
     </div>
 </div>
 

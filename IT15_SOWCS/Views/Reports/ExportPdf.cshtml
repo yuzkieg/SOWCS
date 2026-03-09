@@ -3,6 +3,7 @@
     Layout = null;
     var generatedBy = ViewData["GeneratedBy"]?.ToString() ?? "System";
     var generatedAt = ViewData["GeneratedAt"] is DateTime value ? value : DateTime.Now;
+    var exportAll = ViewData["ExportAll"] is bool isAll && isAll;
     string reportTitle = Model.ActiveTab switch
     {
         "tasks" => "Tasks Summary Report",
@@ -10,6 +11,10 @@
         "leave" => "Leave Requests Report",
         _ => "Projects Overview Report"
     };
+    if (exportAll)
+    {
+        reportTitle = "All Reports";
+    }
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -31,6 +36,7 @@
         th, td { border-bottom: 1px solid #e5e7eb; font-size: 15px; padding: 9px 8px; text-align: left; }
         th { font-size: 13px; text-transform: uppercase; color: #475569; letter-spacing: 0.04em; background: #f8fafc; }
         .sum td { font-weight: 700; border-bottom: none; }
+        .page-break { page-break-before: always; break-before: page; margin-top: 10px; }
         @@media print { .sheet { margin: 0; width: auto; min-height: 0; } }
     </style>
 </head>
@@ -47,15 +53,8 @@
             </div>
         </div>
         <div class="content">
-            @if (Model.ActiveTab == "projects")
+            @if (exportAll || Model.ActiveTab == "projects")
             {
-                <div class="block">
-                    <div class="title">Summary</div>
-                    <table class="sum">
-                        <thead><tr><th>Total Projects</th><th>In Progress</th><th>Completed</th><th>On Hold</th></tr></thead>
-                        <tbody><tr><td>@Model.TotalProjects</td><td>@Model.ProjectsInProgress</td><td>@Model.ProjectsCompleted</td><td>@Model.ProjectsOnHold</td></tr></tbody>
-                    </table>
-                </div>
                 <div class="block">
                     <div class="title">Projects Overview</div>
                     <table>
@@ -65,16 +64,22 @@
                         </tbody>
                     </table>
                 </div>
-            }
-            else if (Model.ActiveTab == "tasks")
-            {
                 <div class="block">
                     <div class="title">Summary</div>
                     <table class="sum">
-                        <thead><tr><th>Total Tasks</th><th>Completed</th><th>In Progress</th><th>Pending Review</th></tr></thead>
-                        <tbody><tr><td>@Model.TotalTasks</td><td>@Model.TasksCompleted</td><td>@Model.TasksInProgress</td><td>@Model.TasksPendingReview</td></tr></tbody>
+                        <thead><tr><th>Total Projects</th><th>In Progress</th><th>Completed</th><th>On Hold</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalProjects</td><td>@Model.ProjectsInProgress</td><td>@Model.ProjectsCompleted</td><td>@Model.ProjectsOnHold</td></tr></tbody>
                     </table>
                 </div>
+            }
+
+            @if (exportAll)
+            {
+                <div class="page-break"></div>
+            }
+
+            @if (exportAll || Model.ActiveTab == "tasks")
+            {
                 <div class="block">
                     <div class="title">Tasks Summary</div>
                     <table>
@@ -84,16 +89,22 @@
                         </tbody>
                     </table>
                 </div>
-            }
-            else if (Model.ActiveTab == "employees")
-            {
                 <div class="block">
                     <div class="title">Summary</div>
                     <table class="sum">
-                        <thead><tr><th>Total Employees</th><th>Active</th><th>Departments</th><th>Managers</th></tr></thead>
-                        <tbody><tr><td>@Model.TotalEmployees</td><td>@Model.ActiveEmployees</td><td>@Model.TotalDepartments</td><td>@Model.TotalManagers</td></tr></tbody>
+                        <thead><tr><th>Total Tasks</th><th>Completed</th><th>In Progress</th><th>Pending Review</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalTasks</td><td>@Model.TasksCompleted</td><td>@Model.TasksInProgress</td><td>@Model.TasksPendingReview</td></tr></tbody>
                     </table>
                 </div>
+            }
+
+            @if (exportAll)
+            {
+                <div class="page-break"></div>
+            }
+
+            @if (exportAll || Model.ActiveTab == "employees")
+            {
                 <div class="block">
                     <div class="title">Employee Directory</div>
                     <table>
@@ -103,16 +114,22 @@
                         </tbody>
                     </table>
                 </div>
-            }
-            else
-            {
                 <div class="block">
                     <div class="title">Summary</div>
                     <table class="sum">
-                        <thead><tr><th>Total Requests</th><th>Pending</th><th>Approved</th><th>Rejected</th></tr></thead>
-                        <tbody><tr><td>@Model.TotalLeaveRequests</td><td>@Model.PendingLeaveRequests</td><td>@Model.ApprovedLeaveRequests</td><td>@Model.RejectedLeaveRequests</td></tr></tbody>
+                        <thead><tr><th>Total Employees</th><th>Active</th><th>Departments</th><th>Managers</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalEmployees</td><td>@Model.ActiveEmployees</td><td>@Model.TotalDepartments</td><td>@Model.TotalManagers</td></tr></tbody>
                     </table>
                 </div>
+            }
+
+            @if (exportAll)
+            {
+                <div class="page-break"></div>
+            }
+
+            @if (exportAll || Model.ActiveTab == "leave")
+            {
                 <div class="block">
                     <div class="title">Leave Requests</div>
                     <table>
@@ -120,6 +137,13 @@
                         <tbody>
                         @foreach (var row in Model.LeaveRows) { <tr><td>@row.Employee</td><td>@row.Type</td><td>@row.StartDate.ToString("MMM d, yyyy")</td><td>@row.EndDate.ToString("MMM d, yyyy")</td><td>@row.Days</td><td>@row.Status</td><td>@row.ReviewedBy</td></tr> }
                         </tbody>
+                    </table>
+                </div>
+                <div class="block">
+                    <div class="title">Summary</div>
+                    <table class="sum">
+                        <thead><tr><th>Total Requests</th><th>Pending</th><th>Approved</th><th>Rejected</th></tr></thead>
+                        <tbody><tr><td>@Model.TotalLeaveRequests</td><td>@Model.PendingLeaveRequests</td><td>@Model.ApprovedLeaveRequests</td><td>@Model.RejectedLeaveRequests</td></tr></tbody>
                     </table>
                 </div>
             }

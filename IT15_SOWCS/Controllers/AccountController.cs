@@ -1,9 +1,11 @@
 using IT15_SOWCS.Models;
 using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
+using IT15_SOWCS.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace IT15_SOWCS.Controllers
@@ -14,21 +16,29 @@ namespace IT15_SOWCS.Controllers
         private readonly UserManager<Users> userManager;
         private readonly IMemoryCache memoryCache;
         private readonly EmailService emailService;
+        private readonly AppDbContext _context;
 
         public AccountController(
             SignInManager<Users> signInManager,
             UserManager<Users> userManager,
             IMemoryCache memoryCache,
-            EmailService emailService)
+            EmailService emailService,
+            AppDbContext context)
         {
             this.signInManager = signInManager;
             this.userManager = userManager;
             this.memoryCache = memoryCache;
             this.emailService = emailService;
+            _context = context;
         }
 
-        public IActionResult Login()
+        public IActionResult Login(string? inactiveEmail = null)
         {
+            if (!string.IsNullOrWhiteSpace(inactiveEmail))
+            {
+                ViewData["InactiveEmail"] = inactiveEmail.Trim().ToLowerInvariant();
+                ViewData["InactiveNotice"] = "Your account has been inactive. Send a reactivation request below.";
+            }
             return View();
         }
 
@@ -41,6 +51,12 @@ namespace IT15_SOWCS.Controllers
                 if (result.Succeeded)
                 {
                     return RedirectToAction("Index", "Dashboard");
+                }
+                if (result.IsLockedOut)
+                {
+                    ViewData["InactiveEmail"] = model.Email?.Trim();
+                    ModelState.AddModelError("", "Your account has been inactive. Send a reactivation request below.");
+                    return View(model);
                 }
 
                 ModelState.AddModelError("", "Wrong email or password.");
@@ -232,6 +248,16 @@ namespace IT15_SOWCS.Controllers
                 returnUrl ??= Url.Action("Index", "Dashboard");
                 return LocalRedirect(returnUrl);
             }
+            if (result.IsLockedOut)
+            {
+                var lockedEmail = info.Principal.FindFirstValue(ClaimTypes.Email);
+                if (!string.IsNullOrWhiteSpace(lockedEmail))
+                {
+                    TempData["InactiveEmail"] = lockedEmail.Trim().ToLowerInvariant();
+                }
+                TempData["Error"] = "Your account has been inactive. Send a reactivation request below.";
+                return RedirectToAction(nameof(Login));
+            }
 
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
             if (email == null)
@@ -276,11 +302,146 @@ namespace IT15_SOWCS.Controllers
 
                 await userManager.AddLoginAsync(user, info);
             }
+            else if (await userManager.IsLockedOutAsync(user))
+            {
+                TempData["InactiveEmail"] = email.Trim().ToLowerInvariant();
+                TempData["Error"] = "Your account has been inactive. Send a reactivation request below.";
+                return RedirectToAction(nameof(Login));
+            }
 
             await signInManager.SignInAsync(user, isPersistent: false);
             await signInManager.UpdateExternalAuthenticationTokensAsync(info);
             returnUrl ??= Url.Action("Index", "Dashboard");
             return LocalRedirect(returnUrl);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AcceptInvitation(string token)
+        {
+            var normalizedToken = (token ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(normalizedToken))
+            {
+                TempData["Error"] = "Invalid invitation link.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var invitation = await _context.PendingInvitations
+                .FirstOrDefaultAsync(item => item.token == normalizedToken && item.accepted_at == null);
+            if (invitation == null || invitation.expires_at < DateTime.UtcNow)
+            {
+                TempData["Error"] = "Invitation link is invalid or expired.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            ViewData["InviteToken"] = normalizedToken;
+            return View(new RegisterViewModel
+            {
+                Email = invitation.email,
+                FullName = string.Empty
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptInvitation(string token, RegisterViewModel model)
+        {
+            var normalizedToken = (token ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(normalizedToken))
+            {
+                ModelState.AddModelError("", "Invalid invitation token.");
+                ViewData["InviteToken"] = normalizedToken;
+                return View(model);
+            }
+
+            var invitation = await _context.PendingInvitations
+                .FirstOrDefaultAsync(item => item.token == normalizedToken && item.accepted_at == null);
+
+            if (invitation == null || invitation.expires_at < DateTime.UtcNow)
+            {
+                ModelState.AddModelError("", "This invitation is invalid or already expired.");
+                ViewData["InviteToken"] = normalizedToken;
+                return View(model);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.Email = invitation.email;
+                ViewData["InviteToken"] = normalizedToken;
+                return View(model);
+            }
+
+            var normalizedEmail = invitation.email.Trim().ToLowerInvariant();
+            var existing = await userManager.FindByEmailAsync(normalizedEmail);
+            if (existing != null)
+            {
+                ModelState.AddModelError("", "This invitation has already been used.");
+                model.Email = normalizedEmail;
+                ViewData["InviteToken"] = normalizedToken;
+                return View(model);
+            }
+
+            var user = new Users
+            {
+                UserName = normalizedEmail,
+                Email = normalizedEmail,
+                FullName = string.IsNullOrWhiteSpace(model.FullName) ? normalizedEmail.Split('@')[0] : model.FullName.Trim(),
+                Role = string.IsNullOrWhiteSpace(invitation.role) ? "user" : invitation.role.Trim().ToLowerInvariant(),
+                EmailConfirmed = true,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            };
+
+            var createResult = await userManager.CreateAsync(user, model.Password);
+            if (!createResult.Succeeded)
+            {
+                foreach (var error in createResult.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+                model.Email = normalizedEmail;
+                ViewData["InviteToken"] = normalizedToken;
+                return View(model);
+            }
+
+            invitation.accepted_at = DateTime.UtcNow;
+            _context.PendingInvitations.Update(invitation);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Invitation accepted. You can now sign in.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestReactivation(string email, string message)
+        {
+            var normalizedEmail = (email ?? string.Empty).Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(normalizedEmail))
+            {
+                TempData["Error"] = "Email is required.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var superAdminEmail = await userManager.Users
+                .Where(user => user.Role != null && user.Role.ToLower() == "superadmin")
+                .Select(user => user.Email)
+                .FirstOrDefaultAsync();
+
+            var targetEmail = string.IsNullOrWhiteSpace(superAdminEmail) ? "yuzkiega@gmail.com" : superAdminEmail;
+            var notes = string.IsNullOrWhiteSpace(message) ? "Please reactivate my account." : message.Trim();
+
+            var sent = await emailService.SendAccountReactivationRequestAsync(targetEmail, normalizedEmail, notes);
+            TempData["SuccessMessage"] = sent
+                ? "Reactivation request sent successfully."
+                : "Unable to send reactivation request email right now.";
+            TempData["InactiveEmail"] = normalizedEmail;
+            return RedirectToAction(nameof(Login));
+        }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View();
         }
 
         [HttpPost]

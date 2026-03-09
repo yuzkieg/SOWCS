@@ -1,0 +1,53 @@
+@model IT15_SOWCS.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Accept Invitation";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+    var inviteToken = ViewData["InviteToken"]?.ToString() ?? string.Empty;
+}
+
+<div class="account-container">
+    <div class="account-box">
+        <h2 class="text-center">Accept Invitation</h2>
+        <p class="text-center text-muted-small mb-4">Create your account to join Syncora.</p>
+
+        <form asp-action="AcceptInvitation" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="token" value="@inviteToken" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Email</label>
+                <input asp-for="Email" class="form-control" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label">Full Name</label>
+                <input asp-for="FullName" class="form-control" required />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">Password</label>
+                <input asp-for="Password" class="form-control" required />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
+                <input asp-for="ConfirmPassword" class="form-control" required />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-2">Accept Invitation</button>
+            <div class="text-center mt-3">
+                <a asp-action="Login" class="account-link">Back to sign in</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
+    }
+}

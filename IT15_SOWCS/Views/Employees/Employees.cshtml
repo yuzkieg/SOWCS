@@ -4,10 +4,11 @@
 @{
     Layout = "_EmployeesLayout";
     ViewData["Title"] = "Employees";
-    var departmentOptions = new[] { "Human Resource", "Project Management", "Regular Employee" };
-    var roleOptions = new[] { "Employee", "Manager", "HR manager" };
+    var departmentOptions = new[] { "Human Resource", "Project Management", "Production" };
+    var roleOptions = new[] { "Employee", "Project Manager", "HR manager" };
     var currentUser = await UserManager.GetUserAsync(User);
     var canArchive = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
+    var canEditLeaveBalances = string.Equals(currentUser?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="employees-container">
@@ -166,17 +167,60 @@
                         <div class="row g-3">
                             <div class="col-4">
                                 <span class="text-muted-small">Annual</span>
-                                <input class="form-control" type="number" step="1" min="0" name="annualLeave" value="@employee.annual_leave_balance.ToString("0")" />
+                                @if (canEditLeaveBalances)
+                                {
+                                    <input class="form-control"
+                                           type="number"
+                                           step="1"
+                                           min="0"
+                                           name="annualLeave"
+                                           value="@employee.annual_leave_balance.ToString("0")" />
+                                }
+                                else
+                                {
+                                    <input class="form-control" type="text" value="@employee.annual_leave_balance.ToString("0")" readonly aria-readonly="true" />
+                                    <input type="hidden" name="annualLeave" value="@employee.annual_leave_balance.ToString("0")" />
+                                }
                             </div>
                             <div class="col-4">
                                 <span class="text-muted-small">Sick</span>
-                                <input class="form-control" type="number" step="1" min="0" name="sickLeave" value="@employee.sick_leave_balance.ToString("0")" />
+                                @if (canEditLeaveBalances)
+                                {
+                                    <input class="form-control"
+                                           type="number"
+                                           step="1"
+                                           min="0"
+                                           name="sickLeave"
+                                           value="@employee.sick_leave_balance.ToString("0")" />
+                                }
+                                else
+                                {
+                                    <input class="form-control" type="text" value="@employee.sick_leave_balance.ToString("0")" readonly aria-readonly="true" />
+                                    <input type="hidden" name="sickLeave" value="@employee.sick_leave_balance.ToString("0")" />
+                                }
                             </div>
                             <div class="col-4">
                                 <span class="text-muted-small">Personal</span>
-                                <input class="form-control" type="number" step="1" min="0" name="personalLeave" value="@employee.personal_leave_balance.ToString("0")" />
+                                @if (canEditLeaveBalances)
+                                {
+                                    <input class="form-control"
+                                           type="number"
+                                           step="1"
+                                           min="0"
+                                           name="personalLeave"
+                                           value="@employee.personal_leave_balance.ToString("0")" />
+                                }
+                                else
+                                {
+                                    <input class="form-control" type="text" value="@employee.personal_leave_balance.ToString("0")" readonly aria-readonly="true" />
+                                    <input type="hidden" name="personalLeave" value="@employee.personal_leave_balance.ToString("0")" />
+                                }
                             </div>
                         </div>
+                        @if (!canEditLeaveBalances)
+                        {
+                            <div class="form-text mt-2">Only Super Admin can edit leave balances.</div>
+                        }
 
                         <input type="hidden" name="isActive" value="@(employee.is_active ? "true" : "false")" />
                         <div class="d-flex justify-content-end gap-2 mt-4">

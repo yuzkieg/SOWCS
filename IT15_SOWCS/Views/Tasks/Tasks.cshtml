@@ -44,9 +44,10 @@
         </select>
         <select class="form-select status-filter shadow-sm" name="priority" onchange="this.form.submit()">
             <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Priority) || Model.Priority == "All" ? "selected" : null)">All Priority</option>
-            <option value="High" selected="@(Model.Priority=="High" ? "selected" : null)">High</option>
-            <option value="Medium" selected="@(Model.Priority=="Medium" ? "selected" : null)">Medium</option>
-            <option value="Low" selected="@(Model.Priority=="Low" ? "selected" : null)">Low</option>
+            <option value="low" selected="@(string.Equals(Model.Priority, "low", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">low - No rush</option>
+            <option value="medium" selected="@(string.Equals(Model.Priority, "medium", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">medium - Normal pace</option>
+            <option value="high" selected="@(string.Equals(Model.Priority, "high", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">high - Top priority</option>
+            <option value="urgent" selected="@(string.Equals(Model.Priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">urgent - Immediate action</option>
         </select>
     </form>
 
@@ -133,9 +134,9 @@
                         </div>
                         <div class="task-card-footer">
                             <span class="priority-pill @(
-                                task.priority == "High" ? "priority-high" :
-                                task.priority == "Medium" ? "priority-medium" :
-                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                             )">@task.priority</span>
                             <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
                         </div>
@@ -213,9 +214,9 @@
                         </div>
                         <div class="task-card-footer">
                             <span class="priority-pill @(
-                                task.priority == "High" ? "priority-high" :
-                                task.priority == "Medium" ? "priority-medium" :
-                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                             )">@task.priority</span>
                             <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
                         </div>
@@ -293,9 +294,9 @@
                         </div>
                         <div class="task-card-footer">
                             <span class="priority-pill @(
-                                task.priority == "High" ? "priority-high" :
-                                task.priority == "Medium" ? "priority-medium" :
-                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                             )">@task.priority</span>
                             <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
                         </div>
@@ -373,9 +374,9 @@
                         </div>
                         <div class="task-card-footer">
                             <span class="priority-pill @(
-                                task.priority == "High" ? "priority-high" :
-                                task.priority == "Medium" ? "priority-medium" :
-                                task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                             )">@task.priority</span>
                             <span class="task-date"><i class="bi bi-calendar-event"></i> @task.due_date.ToString("MMM d")</span>
                         </div>
@@ -420,9 +421,10 @@
                         <div class="col-6">
                             <label class="form-label fw-semibold">Priority</label>
                             <select name="priority" id="editTaskPriority" class="form-select custom-input" required>
-                                <option value="Low">Low</option>
-                                <option value="Medium">Medium</option>
-                                <option value="High">High</option>
+                                <option value="low">low - No rush</option>
+                                <option value="medium">medium - Normal pace</option>
+                                <option value="high">high - Top priority</option>
+                                <option value="urgent">urgent - Immediate action</option>
                             </select>
                         </div>
                     </div>
@@ -675,7 +677,7 @@
             document.getElementById('editTaskTitle').value = button.getAttribute('data-title') || '';
             document.getElementById('editTaskDescription').value = button.getAttribute('data-description') || '';
             document.getElementById('editTaskEmployeeId').value = button.getAttribute('data-employee-id') || '';
-            document.getElementById('editTaskPriority').value = button.getAttribute('data-priority') || 'Medium';
+            document.getElementById('editTaskPriority').value = (button.getAttribute('data-priority') || 'medium').toLowerCase();
             document.getElementById('editTaskDueDate').value = button.getAttribute('data-due-date') || '';
             document.getElementById('editTaskStatus').value = button.getAttribute('data-status') || 'Pending';
         });
@@ -683,6 +685,7 @@
 
     enableTasksDragDrop();
 </script>
+
 
 
 

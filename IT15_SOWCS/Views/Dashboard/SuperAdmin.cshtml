@@ -2,7 +2,6 @@
 @{
     ViewData["Title"] = "Dashboard";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-    var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 }
 
 <div class="sa-page">
@@ -71,58 +70,6 @@
                 </div>
             }
         </article>
-    </section>
-
-    <section class="sa-chart-grid">
-        <article class="sa-panel">
-            <header><h5><i class="bi bi-fire"></i> Productivity Heatmap</h5></header>
-            <div class="sa-heatmap">
-                @for (var row = 0; row < 5; row++)
-                {
-                    <div class="hm-row">
-                        @for (var col = 0; col < 9; col++)
-                        {
-                            var value = Model.Heatmap[row, col];
-                            var opacity = Math.Min(1, (value + 1) / 6.0);
-                            <span style="opacity:@opacity"></span>
-                        }
-                    </div>
-                }
-            </div>
-        </article>
-        <article class="sa-panel">
-            <header><h5><i class="bi bi-bullseye"></i> Reject Correlation Plot</h5></header>
-            <div class="sa-corr-plot">
-                @foreach (var point in Model.CorrelationPoints)
-                {
-                    var left = Math.Clamp(point.Tasks * 8, 2, 96);
-                    var top = Math.Clamp(100 - point.Reject, 4, 96);
-                    <span class="dot" style="left:@left%;top:@top%;"></span>
-                }
-                <div class="risk-line"></div>
-            </div>
-        </article>
-    </section>
-
-    <section class="sa-panel">
-        <header><h5><i class="bi bi-graph-up-arrow"></i> Predictive Trend Lines</h5></header>
-        <div class="sa-trend-grid">
-            @for (var i = 0; i < months.Length; i++)
-            {
-                var actual = i < Model.PredictiveActual.Count ? Model.PredictiveActual[i] : (int?)null;
-                var projected = i < Model.PredictiveProjected.Count ? Model.PredictiveProjected[i] : 0;
-                <div class="month-col">
-                    <span>@months[i]</span>
-                    <div class="bar">
-                        @if (actual.HasValue)
-                        {
-                            <div class="actual" style="height:@actual.Value%"></div>
-                        }
-                        <div class="predicted" style="height:@projected%"></div>
-                    </div>
-                </div>
-            }
-        </div>
     </section>
 
     <div class="sa-caption">Automated Next-Step Suggestions</div>

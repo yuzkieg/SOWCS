@@ -4,14 +4,28 @@
 @inject IT15_SOWCS.Data.AppDbContext DbContext
 @{
     var user = await UserManager.GetUserAsync(User);
-    var fullName = user?.FullName ?? "User";
     var rawRole = user?.Role ?? "user";
-    var rawEmployeeRole = user == null
-        ? string.Empty
-        : (await DbContext.Employees
+    var employeeProfile = user == null
+        ? null
+        : await DbContext.Employees
             .Where(employee => employee.user_id == user.Id)
-            .Select(employee => employee.employee_role)
-            .FirstOrDefaultAsync()) ?? string.Empty;
+            .Select(employee => new { employee.full_name, employee.employee_role })
+            .FirstOrDefaultAsync();
+    var rawEmployeeRole = employeeProfile?.employee_role ?? string.Empty;
+    var displayName = !string.IsNullOrWhiteSpace(employeeProfile?.full_name)
+        ? employeeProfile.full_name
+        : !string.IsNullOrWhiteSpace(user?.FullName)
+            ? user!.FullName
+            : (user?.Email ?? "User");
+    var initials = string.Concat(
+        displayName
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => char.ToUpperInvariant(part[0]))
+            .Take(2));
+    if (string.IsNullOrWhiteSpace(initials))
+    {
+        initials = "U";
+    }
 
     var normalizedRole = rawRole.Trim().ToLowerInvariant();
     var normalizedEmployeeRole = rawEmployeeRole.Trim().ToLowerInvariant();
@@ -238,9 +252,9 @@
 
     <div class="sidebar-footer">
         <div class="user-profile">
-            <div class="user-avatar">GK</div>
+            <div class="user-avatar">@initials</div>
             <div class="user-info text-truncate nav-text">
-                <span class="user-name">@fullName</span>
+                <span class="user-name">@displayName</span>
                 <span class="user-role">@role</span>
             </div>
         </div>

@@ -51,6 +51,10 @@
     font-size: 0.75rem;
 }
 
+.profile-role-badges {
+    margin-top: 5px;
+}
+
 .contact-info-card {
     border-radius: 10px;
 }

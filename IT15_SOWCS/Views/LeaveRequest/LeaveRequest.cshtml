@@ -85,10 +85,10 @@
                         </div>
                         <div class="leave-date">@request.start_date.ToString("MMM d, yyyy") - @request.end_date.ToString("MMM d, yyyy")</div>
                         <div class="leave-note">Note: @request.reason</div>
-                        @if (request.status == "Rejected")
+                        @if (!string.IsNullOrWhiteSpace(request.review_notes))
                         {
                             <div class="leave-feedback">
-                                Feedback: @(string.IsNullOrWhiteSpace(request.review_notes) ? "No feedback provided." : request.review_notes)
+                                Feedback: @request.review_notes
                             </div>
                         }
                     </div>

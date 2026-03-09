@@ -220,6 +220,14 @@
     border-bottom: 1px solid #f1f5f9;
 }
 
+#reportsExportModal .reports-export-modal-content {
+    min-height: 0 !important;
+}
+
+#reportsExportModal .modal-body {
+    padding-bottom: 0.9rem !important;
+}
+
 @media (max-width: 1100px) {
     .report-tab-grid,
     .reports-stat-grid {

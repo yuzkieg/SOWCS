@@ -119,7 +119,7 @@
                                 <span class="badge-status @statusClass">@doc.status</span>
                                 <span class="badge-category">@doc.category</span>
                             </div>
-                            @if (doc.status == "Rejected" && !string.IsNullOrWhiteSpace(doc.review_notes))
+                            @if (!string.IsNullOrWhiteSpace(doc.review_notes))
                             {
                                 <div class="doc-feedback">Feedback: @doc.review_notes</div>
                             }

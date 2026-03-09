@@ -461,11 +461,36 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.65rem;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 0.5rem 0.65rem;
     font-size: 0.82rem;
     color: #1e293b;
+}
+
+.pm-status-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.pm-status-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pm-status-project {
+    margin-top: 0.1rem;
+    font-size: 0.7rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .pm-team-grid {
@@ -617,7 +642,7 @@
 }
 
 .hr-welcome-banner {
-    background: linear-gradient(115deg, #5b21b6 0%, #6d28d9 50%, #7c3aed 100%);
+    background: linear-gradient(115deg, #111827 0%, #1e1b4b 55%, #0f4c81 100%);
     border-radius: 12px;
     padding: 1.2rem 1.25rem;
     color: #fff;

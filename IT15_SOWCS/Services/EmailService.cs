@@ -110,6 +110,31 @@ namespace IT15_SOWCS.Services
             return await SendAsync(toEmail, "Reset your Syncora password", body);
         }
 
+        public async Task<bool> SendAccountReactivationRequestAsync(string toEmail, string requesterEmail, string message)
+        {
+            var safeRequesterEmail = HtmlEncoder.Default.Encode(requesterEmail);
+            var safeMessage = HtmlEncoder.Default.Encode(message);
+
+            var body = $"""
+                <div style="font-family:Arial,sans-serif;background:#f5f7fb;padding:24px;">
+                    <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;">
+                        <div style="background:#eef2f7;padding:28px;text-align:center;font-size:36px;font-weight:600;color:#111827;">
+                            Account Reactivation Request
+                        </div>
+                        <div style="padding:24px;">
+                            <p style="margin:0 0 12px 0;color:#111827;"><strong>Requester:</strong> {safeRequesterEmail}</p>
+                            <p style="margin:0 0 8px 0;color:#111827;"><strong>Message:</strong></p>
+                            <div style="border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;padding:14px;color:#334155;">
+                                {safeMessage}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """;
+
+            return await SendAsync(toEmail, "Syncora account reactivation request", body);
+        }
+
         private async Task<bool> SendAsync(string toEmail, string subject, string htmlBody)
         {
             var smtpHost = _configuration["EmailSettings:SmtpHost"];

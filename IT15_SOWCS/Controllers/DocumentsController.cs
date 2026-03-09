@@ -75,6 +75,10 @@ namespace IT15_SOWCS.Controllers
             var fullPath = ResolveDocumentPath(document);
             if (string.IsNullOrWhiteSpace(fullPath))
             {
+                if (!string.IsNullOrWhiteSpace(document.file_path) && document.file_path.StartsWith("/"))
+                {
+                    return Redirect(document.file_path);
+                }
                 return NotFound();
             }
 
@@ -99,6 +103,10 @@ namespace IT15_SOWCS.Controllers
             var fullPath = ResolveDocumentPath(document);
             if (string.IsNullOrWhiteSpace(fullPath))
             {
+                if (!string.IsNullOrWhiteSpace(document.file_path) && document.file_path.StartsWith("/"))
+                {
+                    return Redirect(document.file_path);
+                }
                 return NotFound();
             }
 
@@ -244,6 +252,7 @@ namespace IT15_SOWCS.Controllers
 
             _context.Documents.Remove(document);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Document archived successfully.";
 
             return RedirectToAction(nameof(Documents));
         }
@@ -251,30 +260,65 @@ namespace IT15_SOWCS.Controllers
         private string? ResolveDocumentPath(DocumentRecord document)
         {
             var uploadsDirectory = Path.Combine(_environment.WebRootPath, "uploads");
-            if (!Directory.Exists(uploadsDirectory))
+            var contentUploadsDirectory = Path.Combine(_environment.ContentRootPath, "uploads");
+
+            static string DecodeValue(string value)
             {
-                return null;
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return string.Empty;
+                }
+
+                try
+                {
+                    return Uri.UnescapeDataString(value);
+                }
+                catch
+                {
+                    return value;
+                }
             }
 
             var candidates = new List<string>();
             if (!string.IsNullOrWhiteSpace(document.file_path))
             {
                 var normalizedPath = document.file_path.Trim();
-                if (Path.IsPathRooted(normalizedPath))
+                var decodedPath = DecodeValue(normalizedPath);
+
+                if (Uri.TryCreate(decodedPath, UriKind.Absolute, out var parsedUri))
                 {
-                    candidates.Add(normalizedPath);
+                    if (parsedUri.IsFile)
+                    {
+                        var localFilePath = parsedUri.LocalPath;
+                        if (!string.IsNullOrWhiteSpace(localFilePath))
+                        {
+                            candidates.Add(localFilePath);
+                        }
+                    }
+                    else
+                    {
+                        decodedPath = parsedUri.LocalPath;
+                    }
+                }
+
+                if (Path.IsPathRooted(decodedPath) && System.IO.File.Exists(decodedPath))
+                {
+                    candidates.Add(decodedPath);
                 }
                 else
                 {
-                    var webRelative = normalizedPath.TrimStart('~', '/').Replace('/', Path.DirectorySeparatorChar);
+                    var webRelative = decodedPath.TrimStart('~', '/').Replace('/', Path.DirectorySeparatorChar);
                     candidates.Add(Path.Combine(_environment.WebRootPath, webRelative));
-                    candidates.Add(Path.Combine(uploadsDirectory, Path.GetFileName(normalizedPath)));
+                    candidates.Add(Path.Combine(uploadsDirectory, Path.GetFileName(decodedPath)));
+                    candidates.Add(Path.Combine(contentUploadsDirectory, Path.GetFileName(decodedPath)));
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(document.file_name))
             {
-                candidates.Add(Path.Combine(uploadsDirectory, Path.GetFileName(document.file_name)));
+                var decodedFileName = DecodeValue(document.file_name);
+                candidates.Add(Path.Combine(uploadsDirectory, Path.GetFileName(decodedFileName)));
+                candidates.Add(Path.Combine(contentUploadsDirectory, Path.GetFileName(decodedFileName)));
             }
 
             foreach (var candidate in candidates.Where(candidate => !string.IsNullOrWhiteSpace(candidate)))
@@ -285,16 +329,40 @@ namespace IT15_SOWCS.Controllers
                 }
             }
 
-            var safeFileName = Path.GetFileName(document.file_name ?? string.Empty);
-            if (string.IsNullOrWhiteSpace(safeFileName))
+            var safeFileName = Path.GetFileName(DecodeValue(document.file_name ?? string.Empty));
+            if (string.IsNullOrWhiteSpace(safeFileName) || string.IsNullOrWhiteSpace(Path.GetExtension(safeFileName)))
             {
                 return null;
             }
 
-            var matchedFiles = Directory.GetFiles(uploadsDirectory, $"*_{safeFileName}");
-            if (matchedFiles.Length == 0)
+            var matchedFiles = new List<string>();
+            if (Directory.Exists(uploadsDirectory))
+            {
+                matchedFiles.AddRange(Directory.GetFiles(uploadsDirectory, $"*_{safeFileName}"));
+                matchedFiles.AddRange(Directory.GetFiles(uploadsDirectory, $"*{Path.GetExtension(safeFileName)}"));
+            }
+            if (Directory.Exists(contentUploadsDirectory))
+            {
+                matchedFiles.AddRange(Directory.GetFiles(contentUploadsDirectory, $"*_{safeFileName}"));
+                matchedFiles.AddRange(Directory.GetFiles(contentUploadsDirectory, $"*{Path.GetExtension(safeFileName)}"));
+            }
+
+            if (matchedFiles.Count == 0)
             {
                 return null;
+            }
+
+            var preferred = matchedFiles
+                .Where(file =>
+                {
+                    var baseName = Path.GetFileName(file);
+                    return baseName.Contains(Path.GetFileNameWithoutExtension(safeFileName), StringComparison.OrdinalIgnoreCase);
+                })
+                .ToList();
+
+            if (preferred.Count > 0)
+            {
+                matchedFiles = preferred;
             }
 
             return matchedFiles

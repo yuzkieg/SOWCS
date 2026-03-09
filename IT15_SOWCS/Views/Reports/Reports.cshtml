@@ -10,15 +10,46 @@
             <h2>Reports</h2>
             <p>Generate and export reports as PDF</p>
         </div>
-        <a class="btn reports-export-btn"
-           asp-action="ExportPdf"
-           asp-route-tab="@Model.ActiveTab"
-           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
-           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
-           target="_blank"
-           rel="noopener">
+        <button type="button" class="btn reports-export-btn" data-bs-toggle="modal" data-bs-target="#reportsExportModal">
             <i class="bi bi-download me-2"></i>Export PDF
-        </a>
+        </button>
+    </div>
+
+    <div class="modal fade" id="reportsExportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg reports-export-modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Export Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <p class="text-muted mb-3">Choose what you want to export.</p>
+                    <div class="d-grid gap-2">
+                        <a id="reportsExportCurrentLink"
+                           class="btn btn-save"
+                           asp-action="ExportPdf"
+                           asp-route-tab="@Model.ActiveTab"
+                           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+                           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+                           target="_blank"
+                           rel="noopener">
+                            Export Only Current Tab
+                        </a>
+                        <a id="reportsExportAllLink"
+                           class="btn btn-cancel"
+                           asp-action="ExportPdf"
+                           asp-route-tab="@Model.ActiveTab"
+                           asp-route-from="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+                           asp-route-to="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+                           asp-route-all="true"
+                           target="_blank"
+                           rel="noopener">
+                            Export All Tabs (One PDF)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <form id="reportsDateFilterForm" asp-action="Reports" method="get" class="reports-date-filter">
@@ -240,7 +271,10 @@
             const tabLinks = Array.from(document.querySelectorAll('[data-report-tab-link="true"]'));
             const tabContent = document.getElementById('reportsTabContent');
             const recordsLabel = document.querySelector('.reports-filter-right span');
-            const exportButton = document.querySelector('.reports-export-btn');
+            const exportCurrentLink = document.getElementById('reportsExportCurrentLink');
+            const exportAllLink = document.getElementById('reportsExportAllLink');
+            const realtimeIntervalMs = 15000;
+            let realtimeTimerId = null;
 
             async function loadTab(link, pushHistory) {
                 if (!tabContent) {
@@ -248,7 +282,8 @@
                 }
 
                 const response = await fetch(link.href, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store'
                 });
                 if (!response.ok) {
                     window.location.href = link.href;
@@ -272,14 +307,93 @@
                     recordsLabel.textContent = nextRecords.textContent || '';
                 }
 
-                const nextExport = doc.querySelector('.reports-export-btn');
-                if (nextExport && exportButton) {
-                    exportButton.setAttribute('href', nextExport.getAttribute('href') || exportButton.getAttribute('href') || '#');
-                }
+                syncExportLinksFromActiveTab();
 
                 if (pushHistory) {
                     window.history.pushState({ reportsTabUrl: link.href }, '', link.href);
                 }
+            }
+
+            function syncExportLinksFromActiveTab() {
+                const activeLink = tabLinks.find(function (link) {
+                    return link.classList.contains('active');
+                }) || tabLinks[0];
+
+                if (!activeLink || !exportCurrentLink || !exportAllLink) {
+                    return;
+                }
+
+                const activeUrl = new URL(activeLink.href, window.location.origin);
+                const tab = activeUrl.searchParams.get('tab') || 'projects';
+                const from = activeUrl.searchParams.get('from') || '';
+                const to = activeUrl.searchParams.get('to') || '';
+
+                const currentExportUrl = new URL('@Url.Action("ExportPdf", "Reports")', window.location.origin);
+                currentExportUrl.searchParams.set('tab', tab);
+                if (from) {
+                    currentExportUrl.searchParams.set('from', from);
+                }
+                if (to) {
+                    currentExportUrl.searchParams.set('to', to);
+                }
+
+                const allExportUrl = new URL(currentExportUrl.toString());
+                allExportUrl.searchParams.set('all', 'true');
+
+                exportCurrentLink.setAttribute('href', currentExportUrl.toString());
+                exportAllLink.setAttribute('href', allExportUrl.toString());
+            }
+
+            async function refreshActiveTabRealtime() {
+                if (document.hidden || !tabContent) {
+                    return;
+                }
+
+                const activeLink = tabLinks.find(function (link) {
+                    return link.classList.contains('active');
+                }) || tabLinks[0];
+
+                if (!activeLink) {
+                    return;
+                }
+
+                const refreshUrl = new URL(activeLink.href, window.location.origin);
+                refreshUrl.searchParams.set('_rt', Date.now().toString());
+
+                try {
+                    const response = await fetch(refreshUrl.toString(), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        cache: 'no-store'
+                    });
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const html = await response.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const nextTabContent = doc.getElementById('reportsTabContent');
+                    if (!nextTabContent) {
+                        return;
+                    }
+
+                    tabContent.innerHTML = nextTabContent.innerHTML;
+
+                    const nextRecords = doc.querySelector('.reports-filter-right span');
+                    if (nextRecords && recordsLabel) {
+                        recordsLabel.textContent = nextRecords.textContent || '';
+                    }
+                    syncExportLinksFromActiveTab();
+                } catch {
+                    // Keep UI stable on transient network errors.
+                }
+            }
+
+            function startRealtimeRefresh() {
+                if (realtimeTimerId !== null) {
+                    window.clearInterval(realtimeTimerId);
+                }
+
+                realtimeTimerId = window.setInterval(refreshActiveTabRealtime, realtimeIntervalMs);
             }
 
             tabLinks.forEach(function (link) {
@@ -298,8 +412,16 @@
                 }
             });
 
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    refreshActiveTabRealtime();
+                }
+            });
+
             syncEndDateConstraint();
             syncClearButton();
+            syncExportLinksFromActiveTab();
+            startRealtimeRefresh();
         })();
     </script>
 }

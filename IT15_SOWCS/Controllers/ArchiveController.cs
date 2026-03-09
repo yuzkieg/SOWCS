@@ -107,16 +107,45 @@ namespace IT15_SOWCS.Controllers
                         var project = JsonSerializer.Deserialize<Projects>(item.serialized_data);
                         if (project != null)
                         {
+                            var originalProjectId = project.project_id;
                             project.project_id = 0;
                             _context.Projects.Add(project);
+                            await _context.SaveChangesAsync();
+
+                            var linkedTaskArchiveReason = $"Archived with project:{originalProjectId}";
+                            var linkedTaskArchives = await _context.ArchiveItems
+                                .Where(archive =>
+                                    !archive.is_restored &&
+                                    archive.source_type == "Task" &&
+                                    archive.reason == linkedTaskArchiveReason)
+                                .ToListAsync();
+
+                            foreach (var taskArchive in linkedTaskArchives)
+                            {
+                                if (string.IsNullOrWhiteSpace(taskArchive.serialized_data))
+                                {
+                                    continue;
+                                }
+
+                                var restoredTask = JsonSerializer.Deserialize<WorkTask>(taskArchive.serialized_data);
+                                if (restoredTask == null)
+                                {
+                                    continue;
+                                }
+
+                                restoredTask.task_id = 0;
+                                restoredTask.project_id = project.project_id;
+                                _context.Tasks.Add(restoredTask);
+                                taskArchive.is_restored = true;
+                            }
                         }
                         break;
                     case "Task":
-                        var task = JsonSerializer.Deserialize<WorkTask>(item.serialized_data);
-                        if (task != null)
+                        var taskItem = JsonSerializer.Deserialize<WorkTask>(item.serialized_data);
+                        if (taskItem != null)
                         {
-                            task.task_id = 0;
-                            _context.Tasks.Add(task);
+                            taskItem.task_id = 0;
+                            _context.Tasks.Add(taskItem);
                         }
                         break;
                     case "LeaveRequest":

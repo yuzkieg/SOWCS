@@ -19,6 +19,24 @@ namespace IT15_SOWCS.Controllers
             _notificationService = notificationService;
         }
 
+        private static string NormalizePriority(string? priority)
+        {
+            return (priority ?? string.Empty).Trim().ToLowerInvariant() switch
+            {
+                "low" => "low",
+                "medium" => "medium",
+                "high" => "high",
+                "urgent" => "urgent",
+                _ => "medium"
+            };
+        }
+
+        private static bool IsAssignableTeamRole(string? employeeRole)
+        {
+            var normalized = (employeeRole ?? string.Empty).Trim().ToLowerInvariant();
+            return normalized == "employee" || normalized == "project manager" || normalized == "manager";
+        }
+
         private async Task<bool> IsSuperAdminAsync()
         {
             var currentEmail = User.Identity?.Name;
@@ -41,6 +59,10 @@ namespace IT15_SOWCS.Controllers
                 .Include(task => task.Project)
                 .AsQueryable();
 
+            var normalizedPriority = string.IsNullOrWhiteSpace(priority)
+                ? string.Empty
+                : NormalizePriority(priority);
+
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(task =>
@@ -55,17 +77,26 @@ namespace IT15_SOWCS.Controllers
 
             if (!string.IsNullOrWhiteSpace(priority) && !priority.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(task => task.priority == priority);
+                query = query.Where(task =>
+                    task.priority != null &&
+                    task.priority.ToLower() == normalizedPriority);
             }
 
             var model = new TasksPageViewModel
             {
                 Tasks = await query.OrderByDescending(task => task.task_id).ToListAsync(),
-                Employees = await _context.Employees.OrderBy(employee => employee.full_name).ToListAsync(),
+                Employees = await _context.Employees
+                    .Where(employee =>
+                        employee.employee_role != null &&
+                        (employee.employee_role.ToLower() == "employee" ||
+                         employee.employee_role.ToLower() == "project manager" ||
+                         employee.employee_role.ToLower() == "manager"))
+                    .OrderBy(employee => employee.full_name)
+                    .ToListAsync(),
                 Projects = await _context.Projects.OrderBy(project => project.name).ToListAsync(),
                 Search = search,
                 Status = status,
-                Priority = priority
+                Priority = string.IsNullOrWhiteSpace(priority) ? priority : normalizedPriority
             };
 
             return View(model);
@@ -92,6 +123,17 @@ namespace IT15_SOWCS.Controllers
                 return RedirectToAction(nameof(Tasks));
             }
 
+            if (!IsAssignableTeamRole(employee.employee_role))
+            {
+                TempData["TasksError"] = "Only Project Manager or Employee can be assigned to tasks.";
+                if (redirectProjectId.HasValue)
+                {
+                    return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
+                }
+
+                return RedirectToAction(nameof(Tasks));
+            }
+
             if (dueDate.Date < DateTime.Today)
             {
                 TempData["TasksError"] = "Due date cannot be in the past.";
@@ -110,7 +152,7 @@ namespace IT15_SOWCS.Controllers
                 title = title.Trim(),
                 description = description?.Trim(),
                 status = status,
-                priority = priority,
+                priority = NormalizePriority(priority),
                 due_date = dueDate,
                 project_name = project.name,
                 assigned_to = employee.User?.Email ?? string.Empty,
@@ -156,7 +198,7 @@ namespace IT15_SOWCS.Controllers
             task.title = title.Trim();
             task.description = description?.Trim();
             task.status = status;
-            task.priority = priority;
+            task.priority = NormalizePriority(priority);
             task.due_date = dueDate;
             task.completed_date = status == "Completed" ? DateTime.UtcNow : null;
 
@@ -169,6 +211,17 @@ namespace IT15_SOWCS.Controllers
 
                 if (employee != null)
                 {
+                    if (!IsAssignableTeamRole(employee.employee_role))
+                    {
+                        TempData["TasksError"] = "Only Project Manager or Employee can be assigned to tasks.";
+                        if (redirectProjectId.HasValue)
+                        {
+                            return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
+                        }
+
+                        return RedirectToAction(nameof(Tasks));
+                    }
+
                     task.employee_id = employee.employee_id;
                     task.assigned_name = employee.full_name;
                     task.assigned_to = employee.User?.Email ?? string.Empty;

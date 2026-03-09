@@ -74,15 +74,15 @@ namespace IT15_SOWCS.ViewModels
         public string FullName { get; set; } = "Project Manager";
         public int ProjectsCount { get; set; }
         public int TeamMembersCount { get; set; }
-        public int PendingLeavesCount { get; set; }
+        public int PendingDocumentsCount { get; set; }
         public int TotalTasks { get; set; }
         public int InProgressTasks { get; set; }
         public int OverdueTasks { get; set; }
         public int ApprovalsPendingCount { get; set; }
         public List<ProjectManagerProjectProgressItemViewModel> ProjectProgress { get; set; } = new();
-        public List<ProjectManagerTaskStatusItemViewModel> TaskStatuses { get; set; } = new();
+        public List<ProjectManagerTaskBreakdownItemViewModel> TaskBreakdownItems { get; set; } = new();
         public List<ProjectManagerTeamMemberItemViewModel> TeamMembers { get; set; } = new();
-        public List<ProjectManagerPendingLeaveItemViewModel> PendingLeaves { get; set; } = new();
+        public List<ProjectManagerPendingDocumentItemViewModel> PendingDocuments { get; set; } = new();
         public List<ProjectManagerProjectItemViewModel> MyProjects { get; set; } = new();
     }
 
@@ -93,10 +93,11 @@ namespace IT15_SOWCS.ViewModels
         public string Status { get; set; } = string.Empty;
     }
 
-    public class ProjectManagerTaskStatusItemViewModel
+    public class ProjectManagerTaskBreakdownItemViewModel
     {
-        public string Status { get; set; } = string.Empty;
-        public int Count { get; set; }
+        public string TaskTitle { get; set; } = string.Empty;
+        public string ProjectName { get; set; } = string.Empty;
+        public string Status { get; set; } = "To Do";
     }
 
     public class ProjectManagerTeamMemberItemViewModel
@@ -106,13 +107,12 @@ namespace IT15_SOWCS.ViewModels
         public string Role { get; set; } = string.Empty;
     }
 
-    public class ProjectManagerPendingLeaveItemViewModel
+    public class ProjectManagerPendingDocumentItemViewModel
     {
-        public string EmployeeName { get; set; } = string.Empty;
-        public string LeaveType { get; set; } = string.Empty;
-        public int Days { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string UploadedBy { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public DateTime UploadedDate { get; set; }
         public string Status { get; set; } = "Pending";
     }
 

@@ -2,16 +2,21 @@ using IT15_SOWCS.Data;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace IT15_SOWCS.Controllers
 {
     public class ReportsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public ReportsController(AppDbContext context)
+        public ReportsController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         [HttpGet]
@@ -22,12 +27,346 @@ namespace IT15_SOWCS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ExportPdf(string? tab, DateTime? from, DateTime? to)
+        public async Task<IActionResult> ExportPdf(string? tab, DateTime? from, DateTime? to, bool all = false)
         {
             var model = await BuildModelAsync(tab, from, to, previewOnly: false);
-            ViewData["GeneratedBy"] = User.Identity?.Name ?? "System";
-            ViewData["GeneratedAt"] = DateTime.Now;
-            return View(model);
+            var generatedByEmail = User.Identity?.Name ?? "system@local";
+            var generatedByUser = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(user => user.Email == generatedByEmail);
+            var generatedByEmployeeName = generatedByUser == null
+                ? null
+                : await _context.Employees
+                    .AsNoTracking()
+                    .Where(employee => employee.user_id == generatedByUser.Id)
+                    .Select(employee => employee.full_name)
+                    .FirstOrDefaultAsync();
+            var generatedByName = !string.IsNullOrWhiteSpace(generatedByEmployeeName)
+                ? generatedByEmployeeName
+                : generatedByUser?.FullName;
+            var generatedBy = string.IsNullOrWhiteSpace(generatedByName)
+                ? generatedByEmail
+                : $"{generatedByName} ({generatedByEmail})";
+            var generatedAt = DateTime.Now;
+            var logoBytes = GetLogoBytes();
+
+            QuestPDF.Settings.License = LicenseType.Community;
+            var pdfBytes = GeneratePdf(model, all, generatedBy, generatedAt, logoBytes);
+
+            var fileNamePrefix = all ? "All-Reports" : $"{NormalizeTab(tab)}-Report";
+            var fileName = $"{fileNamePrefix}-{generatedAt:yyyyMMdd-HHmmss}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+
+        private byte[]? GetLogoBytes()
+        {
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "SOWCS.png");
+            if (!System.IO.File.Exists(logoPath))
+            {
+                return null;
+            }
+
+            return System.IO.File.ReadAllBytes(logoPath);
+        }
+
+        private static byte[] GeneratePdf(ReportsPageViewModel model, bool exportAll, string generatedBy, DateTime generatedAt, byte[]? logoBytes)
+        {
+            var sections = exportAll
+                ? new[] { "projects", "tasks", "employees", "leave" }
+                : new[] { model.ActiveTab };
+
+            return Document.Create(document =>
+            {
+                foreach (var section in sections)
+                {
+                    document.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(20);
+                        page.DefaultTextStyle(text => text.FontSize(10));
+
+                        page.Header().Element(header =>
+                        {
+                            header.Background("#1f2d49").Padding(12).Row(row =>
+                            {
+                                row.RelativeItem().Column(column =>
+                                {
+                                    column.Item().Text("Syncora").FontSize(20).Bold().FontColor(Colors.White);
+                                    column.Item().Text(GetSectionTitle(section)).FontSize(13).FontColor(Colors.White);
+                                    column.Item().Text($"Generated: {generatedAt:MMMM d, yyyy}   By: {generatedBy}")
+                                        .FontSize(9)
+                                        .FontColor(Colors.White);
+                                });
+
+                                row.ConstantItem(70).AlignMiddle().AlignRight().Element(container =>
+                                {
+                                    if (logoBytes != null && logoBytes.Length > 0)
+                                    {
+                                        container.Height(54).Image(logoBytes);
+                                    }
+                                    else
+                                    {
+                                        container.Height(54).Width(54);
+                                    }
+                                });
+                            });
+                        });
+
+                        page.Content().PaddingTop(8).Column(column =>
+                        {
+                            RenderSectionTable(column, section, model);
+                            column.Item().PaddingTop(10);
+                            RenderSectionSummary(column, section, model);
+                        });
+                    });
+                }
+            }).GeneratePdf();
+        }
+
+        private static string GetSectionTitle(string section) => section switch
+        {
+            "tasks" => "Tasks Summary",
+            "employees" => "Employee Directory",
+            "leave" => "Leave Requests",
+            _ => "Projects Overview"
+        };
+
+        private static string CellValue(object? value) => value?.ToString() ?? "-";
+
+        private static void RenderSectionTable(ColumnDescriptor column, string section, ReportsPageViewModel model)
+        {
+            column.Item().Text(GetSectionTitle(section)).FontSize(12).Bold().FontColor("#4f46e5");
+            column.Item().PaddingTop(6).Table(table =>
+            {
+                switch (section)
+                {
+                    case "tasks":
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn(3);
+                            cols.RelativeColumn(3);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Title");
+                            header.Cell().Element(HeaderCellStyle).Text("Project");
+                            header.Cell().Element(HeaderCellStyle).Text("Status");
+                            header.Cell().Element(HeaderCellStyle).Text("Priority");
+                        });
+
+                        foreach (var row in model.TaskRows)
+                        {
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Title));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Project));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Status));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Priority));
+                        }
+                        break;
+
+                    case "employees":
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn(3);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Name");
+                            header.Cell().Element(HeaderCellStyle).Text("Department");
+                            header.Cell().Element(HeaderCellStyle).Text("Position");
+                            header.Cell().Element(HeaderCellStyle).Text("Role");
+                        });
+
+                        foreach (var row in model.EmployeeRows)
+                        {
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Name));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Department));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Position));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Role));
+                        }
+                        break;
+
+                    case "leave":
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn(3);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(1);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Employee");
+                            header.Cell().Element(HeaderCellStyle).Text("Type");
+                            header.Cell().Element(HeaderCellStyle).Text("Start Date");
+                            header.Cell().Element(HeaderCellStyle).Text("End Date");
+                            header.Cell().Element(HeaderCellStyle).Text("Days");
+                            header.Cell().Element(HeaderCellStyle).Text("Status");
+                            header.Cell().Element(HeaderCellStyle).Text("Reviewed By");
+                        });
+
+                        foreach (var row in model.LeaveRows)
+                        {
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Employee));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Type));
+                            table.Cell().Element(BodyCellStyle).Text(row.StartDate.ToString("MMM d, yyyy"));
+                            table.Cell().Element(BodyCellStyle).Text(row.EndDate.ToString("MMM d, yyyy"));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Days));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Status));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.ReviewedBy));
+                        }
+                        break;
+
+                    default:
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn(3);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                            cols.RelativeColumn(2);
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Project Name");
+                            header.Cell().Element(HeaderCellStyle).Text("Status");
+                            header.Cell().Element(HeaderCellStyle).Text("Priority");
+                            header.Cell().Element(HeaderCellStyle).Text("Progress");
+                        });
+
+                        foreach (var row in model.ProjectRows)
+                        {
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Name));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Status));
+                            table.Cell().Element(BodyCellStyle).Text(CellValue(row.Priority));
+                            table.Cell().Element(BodyCellStyle).Text($"{row.Progress}%");
+                        }
+                        break;
+                }
+            });
+        }
+
+        private static void RenderSectionSummary(ColumnDescriptor column, string section, ReportsPageViewModel model)
+        {
+            column.Item().Text("Summary").FontSize(12).Bold().FontColor("#4f46e5");
+            column.Item().PaddingTop(6).Table(table =>
+            {
+                switch (section)
+                {
+                    case "tasks":
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                        });
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Total Tasks");
+                            header.Cell().Element(HeaderCellStyle).Text("Completed");
+                            header.Cell().Element(HeaderCellStyle).Text("In Progress");
+                            header.Cell().Element(HeaderCellStyle).Text("Pending Review");
+                        });
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TotalTasks));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TasksCompleted));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TasksInProgress));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TasksPendingReview));
+                        break;
+
+                    case "employees":
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                        });
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Total Employees");
+                            header.Cell().Element(HeaderCellStyle).Text("Active");
+                            header.Cell().Element(HeaderCellStyle).Text("Departments");
+                            header.Cell().Element(HeaderCellStyle).Text("Managers");
+                        });
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TotalEmployees));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.ActiveEmployees));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TotalDepartments));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TotalManagers));
+                        break;
+
+                    case "leave":
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                        });
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Total Requests");
+                            header.Cell().Element(HeaderCellStyle).Text("Pending");
+                            header.Cell().Element(HeaderCellStyle).Text("Approved");
+                            header.Cell().Element(HeaderCellStyle).Text("Rejected");
+                        });
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TotalLeaveRequests));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.PendingLeaveRequests));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.ApprovedLeaveRequests));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.RejectedLeaveRequests));
+                        break;
+
+                    default:
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                            cols.RelativeColumn();
+                        });
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderCellStyle).Text("Total Projects");
+                            header.Cell().Element(HeaderCellStyle).Text("In Progress");
+                            header.Cell().Element(HeaderCellStyle).Text("Completed");
+                            header.Cell().Element(HeaderCellStyle).Text("On Hold");
+                        });
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.TotalProjects));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.ProjectsInProgress));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.ProjectsCompleted));
+                        table.Cell().Element(BodyCellStyle).Text(CellValue(model.ProjectsOnHold));
+                        break;
+                }
+            });
+        }
+
+        private static IContainer HeaderCellStyle(IContainer container)
+        {
+            return container
+                .Background("#f8fafc")
+                .BorderBottom(1)
+                .BorderColor("#e5e7eb")
+                .Padding(6)
+                .DefaultTextStyle(text => text.SemiBold().FontSize(9).FontColor("#475569"));
+        }
+
+        private static IContainer BodyCellStyle(IContainer container)
+        {
+            return container
+                .BorderBottom(1)
+                .BorderColor("#f1f5f9")
+                .Padding(6)
+                .DefaultTextStyle(text => text.FontSize(9).FontColor("#0f172a"));
         }
 
         private async Task<ReportsPageViewModel> BuildModelAsync(string? tab, DateTime? from, DateTime? to, bool previewOnly)
@@ -62,6 +401,22 @@ namespace IT15_SOWCS.Controllers
             var projects = await projectsQuery
                 .OrderByDescending(project => project.project_id)
                 .ToListAsync();
+
+            var projectIds = projects.Select(project => project.project_id).ToList();
+            var projectProgressById = projectIds.Count == 0
+                ? new Dictionary<int, int>()
+                : await _context.Tasks
+                    .Where(task => projectIds.Contains(task.project_id))
+                    .GroupBy(task => task.project_id)
+                    .Select(group => new
+                    {
+                        ProjectId = group.Key,
+                        Total = group.Count(),
+                        Completed = group.Count(task => task.status == "Completed")
+                    })
+                    .ToDictionaryAsync(
+                        item => item.ProjectId,
+                        item => item.Total == 0 ? 0 : (int)Math.Round((item.Completed * 100.0) / item.Total));
 
             var tasksQuery = _context.Tasks
                 .Include(task => task.Project)
@@ -146,7 +501,9 @@ namespace IT15_SOWCS.Controllers
                     Name = project.name,
                     Status = project.status,
                     Priority = project.priority,
-                    Progress = project.progress
+                    Progress = projectProgressById.TryGetValue(project.project_id, out var liveProgress)
+                        ? liveProgress
+                        : 0
                 })
                 .ToList();
 
@@ -156,7 +513,7 @@ namespace IT15_SOWCS.Controllers
                 {
                     Title = task.title,
                     Project = task.Project?.name ?? task.project_name ?? "-",
-                    Status = task.status,
+                    Status = string.Equals(task.status, "Pending", StringComparison.OrdinalIgnoreCase) ? "To Do" : task.status,
                     Priority = task.priority
                 })
                 .ToList();

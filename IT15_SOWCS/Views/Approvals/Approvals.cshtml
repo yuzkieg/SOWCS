@@ -11,15 +11,21 @@
     </div>
 
     <div class="approvals-tabs">
-        <button class="tab-btn active" id="btn-leave">
-            <i class="bi bi-calendar-event"></i> Leave Requests <span class="badge-count">@Model.PendingLeaveRequests.Count</span>
-        </button>
-        <button class="tab-btn" id="btn-docs">
-            <i class="bi bi-file-earmark-text"></i> Documents <span class="badge-count">@Model.PendingDocuments.Count</span>
-        </button>
+        @if (Model.ShowLeaveApprovals)
+        {
+            <button class="tab-btn @(Model.ActiveTab == "leave" ? "active" : string.Empty)" id="btn-leave">
+                <i class="bi bi-calendar-event"></i> Leave Requests <span class="badge-count">@Model.PendingLeaveRequests.Count</span>
+            </button>
+        }
+        @if (Model.ShowDocumentApprovals)
+        {
+            <button class="tab-btn @(Model.ActiveTab == "docs" ? "active" : string.Empty)" id="btn-docs">
+                <i class="bi bi-file-earmark-text"></i> Documents <span class="badge-count">@Model.PendingDocuments.Count</span>
+            </button>
+        }
     </div>
 
-    <div id="leave-section">
+    <div id="leave-section" style="@(Model.ActiveTab == "leave" ? string.Empty : "display: none;")">
         @if (Model.PendingLeaveRequests.Count == 0)
         {
             <div class="approval-card"><div class="text-muted">No pending leave requests.</div></div>
@@ -66,7 +72,7 @@
         }
     </div>
 
-    <div id="doc-section" style="display: none;">
+    <div id="doc-section" style="@(Model.ActiveTab == "docs" ? string.Empty : "display: none;")">
         @if (Model.PendingDocuments.Count == 0)
         {
             <div class="approval-card"><div class="text-muted">No pending documents.</div></div>
@@ -86,7 +92,11 @@
                     </div>
                 </div>
                 <div class="action-group">
-                    <a class="btn-view" href="@doc.file_path" target="_blank">View</a>
+                    <a class="btn-view"
+                       asp-controller="Documents"
+                       asp-action="Preview"
+                       asp-route-documentId="@doc.document_id"
+                       target="_blank">View</a>
                     <button class="btn-reject open-doc-action-modal"
                             type="button"
                             data-bs-toggle="modal"
@@ -186,14 +196,14 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            $('#btn-leave').click(function () {
+            $('#btn-leave').on('click', function () {
                 $('.tab-btn').removeClass('active');
                 $(this).addClass('active');
                 $('#leave-section').show();
                 $('#doc-section').hide();
             });
 
-            $('#btn-docs').click(function () {
+            $('#btn-docs').on('click', function () {
                 $('.tab-btn').removeClass('active');
                 $(this).addClass('active');
                 $('#leave-section').hide();

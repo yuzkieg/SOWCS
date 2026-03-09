@@ -41,6 +41,20 @@
         </div>
     </div>
 
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div id="moduleSuccessToast" class="syncora-toast">
+            <i class="bi bi-check-circle me-2"></i>@successMessage
+        </div>
+    }
+
+    @if (TempData["DocumentsError"] is string documentsError)
+    {
+        <div id="moduleErrorToast" class="syncora-toast syncora-toast-error">
+            <i class="bi bi-exclamation-circle me-2"></i>@documentsError
+        </div>
+    }
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

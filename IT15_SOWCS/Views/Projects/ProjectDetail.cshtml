@@ -30,9 +30,9 @@
         <div class="project-detail-badges">
             <span class="status-pill">@Model.Project.status</span>
             <span class="priority-pill @(
-                Model.Project.priority == "High" ? "priority-high" :
-                Model.Project.priority == "Medium" ? "priority-medium" :
-                Model.Project.priority == "Urgent" ? "priority-critical" : "priority-low"
+                string.Equals(Model.Project.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                string.Equals(Model.Project.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                string.Equals(Model.Project.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
             )">@Model.Project.priority</span>
         </div>
     </div>
@@ -73,11 +73,15 @@
                 @foreach (var member in Model.TeamMembers)
                 {
                     var initials = string.Concat(member.full_name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0])).Take(1));
+                    var normalizedRole = (member.employee_role ?? string.Empty).Trim().ToLowerInvariant();
+                    var memberRoleLabel = normalizedRole == "project manager" || normalizedRole == "manager"
+                        ? "Team Leader"
+                        : "Employee";
                     <div class="team-member-row">
                         <div class="member-avatar">@initials</div>
                         <div>
                             <div class="member-name">@member.full_name</div>
-                            <div class="member-role">@member.position</div>
+                            <div class="member-role">@memberRoleLabel</div>
                         </div>
                     </div>
                 }
@@ -158,9 +162,9 @@
                             <div class="task-card-title">@task.title</div>
                             <div class="task-card-meta">
                                 <span class="priority-pill @(
-                                    task.priority == "High" ? "priority-high" :
-                                    task.priority == "Medium" ? "priority-medium" :
-                                    task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                    string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                    string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                    string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                                 )">@task.priority</span>
                                 <span class="task-assignee">@(string.IsNullOrWhiteSpace(task.assigned_name) ? "?" : task.assigned_name[0])</span>
                             </div>
@@ -233,9 +237,9 @@
                             <div class="task-card-title">@task.title</div>
                             <div class="task-card-meta">
                                 <span class="priority-pill @(
-                                    task.priority == "High" ? "priority-high" :
-                                    task.priority == "Medium" ? "priority-medium" :
-                                    task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                    string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                    string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                    string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                                 )">@task.priority</span>
                                 <span class="task-assignee">@(string.IsNullOrWhiteSpace(task.assigned_name) ? "?" : task.assigned_name[0])</span>
                             </div>
@@ -308,9 +312,9 @@
                             <div class="task-card-title">@task.title</div>
                             <div class="task-card-meta">
                                 <span class="priority-pill @(
-                                    task.priority == "High" ? "priority-high" :
-                                    task.priority == "Medium" ? "priority-medium" :
-                                    task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                    string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                    string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                    string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                                 )">@task.priority</span>
                                 <span class="task-assignee">@(string.IsNullOrWhiteSpace(task.assigned_name) ? "?" : task.assigned_name[0])</span>
                             </div>
@@ -383,9 +387,9 @@
                             <div class="task-card-title">@task.title</div>
                             <div class="task-card-meta">
                                 <span class="priority-pill @(
-                                    task.priority == "High" ? "priority-high" :
-                                    task.priority == "Medium" ? "priority-medium" :
-                                    task.priority == "Urgent" ? "priority-critical" : "priority-low"
+                                    string.Equals(task.priority, "high", StringComparison.OrdinalIgnoreCase) ? "priority-high" :
+                                    string.Equals(task.priority, "medium", StringComparison.OrdinalIgnoreCase) ? "priority-medium" :
+                                    string.Equals(task.priority, "urgent", StringComparison.OrdinalIgnoreCase) ? "priority-critical" : "priority-low"
                                 )">@task.priority</span>
                                 <span class="task-assignee">@(string.IsNullOrWhiteSpace(task.assigned_name) ? "?" : task.assigned_name[0])</span>
                             </div>
@@ -432,9 +436,10 @@
                         <div class="col-6">
                             <label class="form-label fw-semibold">Priority</label>
                             <select name="priority" id="editTaskPriority" class="form-select custom-input" required>
-                                <option value="Low">Low</option>
-                                <option value="Medium">Medium</option>
-                                <option value="High">High</option>
+                                <option value="low">low - No rush</option>
+                                <option value="medium">medium - Normal pace</option>
+                                <option value="high">high - Top priority</option>
+                                <option value="urgent">urgent - Immediate action</option>
                             </select>
                         </div>
                     </div>
@@ -488,9 +493,10 @@
                         <div class="col-6">
                             <label class="form-label small fw-bold text-muted">Priority</label>
                             <select name="priority" class="form-select custom-input">
-                                <option>Low</option>
-                                <option selected>Medium</option>
-                                <option>High</option>
+                                <option value="low">low - No rush</option>
+                                <option value="medium" selected>medium - Normal pace</option>
+                                <option value="high">high - Top priority</option>
+                                <option value="urgent">urgent - Immediate action</option>
                             </select>
                         </div>
                     </div>
@@ -759,7 +765,7 @@
             document.getElementById('editTaskTitle').value = button.getAttribute('data-title') || '';
             document.getElementById('editTaskDescription').value = button.getAttribute('data-description') || '';
             document.getElementById('editTaskEmployeeId').value = button.getAttribute('data-employee-id') || '';
-            document.getElementById('editTaskPriority').value = button.getAttribute('data-priority') || 'Medium';
+            document.getElementById('editTaskPriority').value = (button.getAttribute('data-priority') || 'medium').toLowerCase();
             document.getElementById('editTaskDueDate').value = button.getAttribute('data-due-date') || '';
             document.getElementById('editTaskStatus').value = button.getAttribute('data-status') || 'Pending';
         });
@@ -767,6 +773,7 @@
 
     enableTaskDragDrop();
 </script>
+
 
 
 

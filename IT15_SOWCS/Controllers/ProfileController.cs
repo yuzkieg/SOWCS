@@ -1,21 +1,25 @@
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Data;
 using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.EntityFrameworkCore;
 
 namespace IT15_SOWCS.Controllers
 {
     public class ProfileController : Controller
     {
         private readonly UserManager<Users> _userManager;
+        private readonly AppDbContext _context;
         private readonly EmailService _emailService;
         private readonly IMemoryCache _memoryCache;
 
-        public ProfileController(UserManager<Users> userManager, EmailService emailService, IMemoryCache memoryCache)
+        public ProfileController(UserManager<Users> userManager, AppDbContext context, EmailService emailService, IMemoryCache memoryCache)
         {
             _userManager = userManager;
+            _context = context;
             _emailService = emailService;
             _memoryCache = memoryCache;
         }
@@ -32,6 +36,7 @@ namespace IT15_SOWCS.Controllers
             var model = new ProfilePageViewModel
             {
                 User = user,
+                Employee = await _context.Employees.FirstOrDefaultAsync(employee => employee.user_id == user.Id),
                 HasPassword = await _userManager.HasPasswordAsync(user),
                 OpenSetPasswordModal = false,
                 ResetToken = null

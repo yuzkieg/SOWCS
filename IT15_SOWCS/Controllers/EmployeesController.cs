@@ -121,14 +121,20 @@ namespace IT15_SOWCS.Controllers
                 return NotFound();
             }
 
+            var isSuperAdmin = await IsSuperAdminAsync();
+
             employee.department = department;
             employee.position = position;
             employee.contact_number = contactNumber;
             employee.employee_role = employeeRole;
-            employee.annual_leave_balance = annualLeave;
-            employee.sick_leave_balance = sickLeave;
-            employee.personal_leave_balance = personalLeave;
             employee.is_active = isActive;
+
+            if (isSuperAdmin)
+            {
+                employee.annual_leave_balance = Math.Max(0, annualLeave);
+                employee.sick_leave_balance = Math.Max(0, sickLeave);
+                employee.personal_leave_balance = Math.Max(0, personalLeave);
+            }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Employees));

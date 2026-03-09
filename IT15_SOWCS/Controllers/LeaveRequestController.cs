@@ -186,6 +186,22 @@ namespace IT15_SOWCS.Controllers
                 return NotFound();
             }
 
+            var leaveSnapshot = new
+            {
+                leave.LR_id,
+                leave.employee_email,
+                leave.employee_name,
+                leave.leave_type,
+                leave.start_date,
+                leave.end_date,
+                leave.days_count,
+                leave.reason,
+                leave.status,
+                leave.review_notes,
+                leave.reviewed_by,
+                leave.reviewed_date
+            };
+
             _context.ArchiveItems.Add(new ArchiveItem
             {
                 source_id = leave.LR_id,
@@ -197,11 +213,12 @@ namespace IT15_SOWCS.Controllers
                 reason = string.IsNullOrWhiteSpace(leave.review_notes)
                     ? "Archived from Leave Requests module"
                     : $"Archived from Leave Requests module. Feedback: {leave.review_notes}",
-                serialized_data = JsonSerializer.Serialize(leave)
+                serialized_data = JsonSerializer.Serialize(leaveSnapshot)
             });
 
             _context.LeaveRequests.Remove(leave);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Leave request archived successfully.";
             return RedirectToAction(nameof(LeaveRequest));
         }
     }

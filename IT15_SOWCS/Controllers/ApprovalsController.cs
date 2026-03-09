@@ -13,6 +13,13 @@ namespace IT15_SOWCS.Controllers
         private readonly NotificationService _notificationService;
         private readonly LeaveBalanceService _leaveBalanceService;
 
+        private enum ApprovalScope
+        {
+            Both,
+            LeaveOnly,
+            DocumentsOnly
+        }
+
         public ApprovalsController(
             AppDbContext context,
             NotificationService notificationService,
@@ -23,21 +30,76 @@ namespace IT15_SOWCS.Controllers
             _leaveBalanceService = leaveBalanceService;
         }
 
+        private async Task<ApprovalScope> GetApprovalScopeAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return ApprovalScope.Both;
+            }
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Email == currentEmail);
+
+            if (user == null)
+            {
+                return ApprovalScope.Both;
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.Role) &&
+                string.Equals(user.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
+            {
+                return ApprovalScope.Both;
+            }
+
+            var employeeRole = await _context.Employees
+                .AsNoTracking()
+                .Where(item => item.user_id == user.Id)
+                .Select(item => item.employee_role)
+                .FirstOrDefaultAsync();
+
+            if (string.Equals(employeeRole, "hr manager", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(employeeRole, "hr", StringComparison.OrdinalIgnoreCase))
+            {
+                return ApprovalScope.LeaveOnly;
+            }
+
+            if (string.Equals(employeeRole, "project manager", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(employeeRole, "manager", StringComparison.OrdinalIgnoreCase))
+            {
+                return ApprovalScope.DocumentsOnly;
+            }
+
+            return ApprovalScope.Both;
+        }
+
         [HttpGet]
         public async Task<IActionResult> Approvals()
         {
             await _leaveBalanceService.RecomputeAllBalancesAsync();
 
+            var approvalScope = await GetApprovalScopeAsync();
+            var showLeaveApprovals = approvalScope != ApprovalScope.DocumentsOnly;
+            var showDocumentApprovals = approvalScope != ApprovalScope.LeaveOnly;
+
             var model = new ApprovalsPageViewModel
             {
-                PendingLeaveRequests = await _context.LeaveRequests
-                    .Where(request => request.status == "Pending")
-                    .OrderByDescending(request => request.LR_id)
-                    .ToListAsync(),
-                PendingDocuments = await _context.Documents
-                    .Where(document => document.status == "Pending")
-                    .OrderByDescending(document => document.document_id)
-                    .ToListAsync()
+                PendingLeaveRequests = showLeaveApprovals
+                    ? await _context.LeaveRequests
+                        .Where(request => request.status == "Pending")
+                        .OrderByDescending(request => request.LR_id)
+                        .ToListAsync()
+                    : new List<LeaveRequest>(),
+                PendingDocuments = showDocumentApprovals
+                    ? await _context.Documents
+                        .Where(document => document.status == "Pending")
+                        .OrderByDescending(document => document.document_id)
+                        .ToListAsync()
+                    : new List<DocumentRecord>(),
+                ShowLeaveApprovals = showLeaveApprovals,
+                ShowDocumentApprovals = showDocumentApprovals,
+                ActiveTab = showLeaveApprovals ? "leave" : "docs"
             };
 
             return View("Approvals", model);
@@ -47,6 +109,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateLeaveStatus(int id, string status, string? notes)
         {
+            var approvalScope = await GetApprovalScopeAsync();
+            if (approvalScope == ApprovalScope.DocumentsOnly)
+            {
+                return Forbid();
+            }
+
             var leave = await _context.LeaveRequests.FindAsync(id);
             if (leave == null)
             {
@@ -101,6 +169,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateDocumentStatus(int id, string status, string? notes)
         {
+            var approvalScope = await GetApprovalScopeAsync();
+            if (approvalScope == ApprovalScope.LeaveOnly)
+            {
+                return Forbid();
+            }
+
             var document = await _context.Documents.FindAsync(id);
             if (document == null)
             {

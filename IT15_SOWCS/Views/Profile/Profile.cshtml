@@ -3,7 +3,13 @@
 @{
     Layout = "_ProfileLayout";
     ViewData["Title"] = "Profile Settings";
-    var fullName = string.IsNullOrWhiteSpace(Model.User.FullName) ? (Model.User.Email ?? "User") : Model.User.FullName;
+    var employee = Model.Employee;
+    var fullName = !string.IsNullOrWhiteSpace(employee?.full_name)
+        ? employee.full_name
+        : (string.IsNullOrWhiteSpace(Model.User.FullName) ? (Model.User.Email ?? "User") : Model.User.FullName);
+    var employeeRole = string.IsNullOrWhiteSpace(employee?.employee_role) ? "Team Member" : employee!.employee_role;
+    var employeeDepartment = string.IsNullOrWhiteSpace(employee?.department) ? "Not Assigned" : employee!.department;
+    var phoneNumber = string.IsNullOrWhiteSpace(employee?.contact_number) ? "Not Provided" : employee!.contact_number;
     var initials = string.Concat(fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0])).Take(2));
 }
 
@@ -16,10 +22,9 @@
             </div>
             <div class="profile-text-details">
                 <h4 class="fw-bold mb-0 text-uppercase">@fullName</h4>
-                <p class="text-muted mb-2">Team Member</p>
-                <div class="d-flex gap-2">
-                    <span class="badge badge-employee">Team Member</span>
-                    <span class="badge badge-dept">Not Assigned</span>
+                <div class="d-flex gap-2 profile-role-badges">
+                    <span class="badge badge-employee">@employeeRole</span>
+                    <span class="badge badge-dept">@employeeDepartment</span>
                 </div>
             </div>
         </div>
@@ -47,14 +52,14 @@
                     <label class="form-label text-muted small fw-bold">Phone Number</label>
                     <div class="input-group-custom">
                         <i class="bi bi-telephone"></i>
-                        <input type="text" class="form-control-plaintext" value="Not Provided" readonly>
+                        <input type="text" class="form-control-plaintext" value="@phoneNumber" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-muted small fw-bold">Department</label>
                     <div class="input-group-custom">
                         <i class="bi bi-building"></i>
-                        <input type="text" class="form-control-plaintext" value="Not Assigned" readonly>
+                        <input type="text" class="form-control-plaintext" value="@employeeDepartment" readonly>
                     </div>
                 </div>
             </div>

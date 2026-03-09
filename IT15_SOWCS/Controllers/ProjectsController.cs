@@ -16,6 +16,18 @@ namespace IT15_SOWCS.Controllers
             _context = context;
         }
 
+        private static string NormalizePriority(string? priority)
+        {
+            return (priority ?? string.Empty).Trim().ToLowerInvariant() switch
+            {
+                "low" => "low",
+                "medium" => "medium",
+                "high" => "high",
+                "urgent" => "urgent",
+                _ => "medium"
+            };
+        }
+
         private async Task<bool> IsSuperAdminAsync()
         {
             var currentEmail = User.Identity?.Name;
@@ -70,7 +82,14 @@ namespace IT15_SOWCS.Controllers
             var model = new ProjectsPageViewModel
             {
                 Projects = projects,
-                Employees = await _context.Employees.OrderBy(employee => employee.full_name).ToListAsync(),
+                Employees = await _context.Employees
+                    .Where(employee =>
+                        employee.employee_role != null &&
+                        (employee.employee_role.ToLower() == "employee" ||
+                         employee.employee_role.ToLower() == "project manager" ||
+                         employee.employee_role.ToLower() == "manager"))
+                    .OrderBy(employee => employee.full_name)
+                    .ToListAsync(),
                 ProgressByProjectId = progressByProjectId,
                 Search = search,
                 Status = status
@@ -96,7 +115,12 @@ namespace IT15_SOWCS.Controllers
                 .ToList();
 
             var teamMembers = await _context.Employees
-                .Where(employee => teamNames.Contains(employee.full_name))
+                .Where(employee =>
+                    teamNames.Contains(employee.full_name) &&
+                    employee.employee_role != null &&
+                    (employee.employee_role.ToLower() == "employee" ||
+                     employee.employee_role.ToLower() == "project manager" ||
+                     employee.employee_role.ToLower() == "manager"))
                 .OrderBy(employee => employee.full_name)
                 .ToListAsync();
 
@@ -143,17 +167,37 @@ namespace IT15_SOWCS.Controllers
                 .Select(user => string.IsNullOrWhiteSpace(user.FullName) ? user.Email! : user.FullName)
                 .FirstOrDefaultAsync() ?? managerEmail;
 
+            var allowedTeamMemberNames = await _context.Employees
+                .Where(employee =>
+                    employee.employee_role != null &&
+                    (employee.employee_role.ToLower() == "employee" ||
+                     employee.employee_role.ToLower() == "project manager" ||
+                     employee.employee_role.ToLower() == "manager"))
+                .Select(employee => employee.full_name)
+                .ToListAsync();
+
+            var allowedTeamMemberNameSet = allowedTeamMemberNames
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var sanitizedTeamMembers = (teamMembers ?? Array.Empty<string>())
+                .Where(member => !string.IsNullOrWhiteSpace(member))
+                .Select(member => member.Trim())
+                .Where(member => allowedTeamMemberNameSet.Contains(member))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
             var project = new Projects
             {
                 name = name.Trim(),
                 description = description?.Trim(),
                 status = status,
-                priority = priority,
+                priority = NormalizePriority(priority),
                 manager_email = managerEmail,
                 manager_name = managerName,
                 start_date = DateTime.UtcNow.Date,
                 due_date = DateTime.UtcNow.Date.AddDays(30),
-                team_members = string.Join(", ", (teamMembers ?? Array.Empty<string>()).Where(member => !string.IsNullOrWhiteSpace(member))),
+                team_members = string.Join(", ", sanitizedTeamMembers),
                 progress = 0
             };
 
@@ -183,9 +227,30 @@ namespace IT15_SOWCS.Controllers
             project.name = name.Trim();
             project.description = description?.Trim();
             project.status = status;
-            project.priority = priority;
+            project.priority = NormalizePriority(priority);
             project.progress = Math.Clamp(progress, 0, 100);
-            project.team_members = string.Join(", ", (teamMembers ?? Array.Empty<string>()).Where(member => !string.IsNullOrWhiteSpace(member)));
+
+            var allowedTeamMemberNames = await _context.Employees
+                .Where(employee =>
+                    employee.employee_role != null &&
+                    (employee.employee_role.ToLower() == "employee" ||
+                     employee.employee_role.ToLower() == "project manager" ||
+                     employee.employee_role.ToLower() == "manager"))
+                .Select(employee => employee.full_name)
+                .ToListAsync();
+
+            var allowedTeamMemberNameSet = allowedTeamMemberNames
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var sanitizedTeamMembers = (teamMembers ?? Array.Empty<string>())
+                .Where(member => !string.IsNullOrWhiteSpace(member))
+                .Select(member => member.Trim())
+                .Where(member => allowedTeamMemberNameSet.Contains(member))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            project.team_members = string.Join(", ", sanitizedTeamMembers);
 
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Project updated successfully.";
@@ -207,6 +272,57 @@ namespace IT15_SOWCS.Controllers
                 return NotFound();
             }
 
+            var relatedTasks = await _context.Tasks
+                .Where(task => task.project_id == projectId)
+                .ToListAsync();
+
+            var projectSnapshot = new
+            {
+                project.project_id,
+                project.name,
+                project.description,
+                project.status,
+                project.priority,
+                project.progress,
+                project.team_members,
+                project.manager_name,
+                project.manager_email,
+                project.start_date,
+                project.due_date
+            };
+
+            var taskArchiveReason = $"Archived with project:{project.project_id}";
+            foreach (var task in relatedTasks)
+            {
+                var taskSnapshot = new
+                {
+                    task.task_id,
+                    task.project_id,
+                    task.employee_id,
+                    task.title,
+                    task.description,
+                    task.project_name,
+                    task.assigned_to,
+                    task.assigned_name,
+                    task.priority,
+                    task.status,
+                    task.due_date,
+                    task.completed_date
+                };
+
+                _context.ArchiveItems.Add(new ArchiveItem
+                {
+                    source_id = task.task_id,
+                    source_type = "Task",
+                    title = task.title,
+                    type = "Task",
+                    archived_by = User.Identity?.Name ?? "System",
+                    date_archived = DateTime.UtcNow,
+                    reason = taskArchiveReason,
+                    serialized_data = JsonSerializer.Serialize(taskSnapshot)
+                });
+            }
+
             _context.ArchiveItems.Add(new ArchiveItem
             {
                 source_id = project.project_id,
@@ -216,7 +332,7 @@ namespace IT15_SOWCS.Controllers
                 archived_by = User.Identity?.Name ?? "System",
                 date_archived = DateTime.UtcNow,
                 reason = "Archived from Projects module",
-                serialized_data = JsonSerializer.Serialize(project)
+                serialized_data = JsonSerializer.Serialize(projectSnapshot)
             });
 
             _context.Projects.Remove(project);

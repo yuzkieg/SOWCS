@@ -9,9 +9,11 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<UserActionAuditFilter>();
+builder.Services.AddScoped<ModuleAccessFilter>();
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.AddService<UserActionAuditFilter>();
+    options.Filters.AddService<ModuleAccessFilter>();
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -58,7 +60,21 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var app = builder.Build();
+// Add this block here
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
+// The rest of your existing middleware
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -79,6 +95,23 @@ BEGIN
     );
     CREATE INDEX [IX_NotificationItem_recipient_email_is_read_created_at]
     ON [NotificationItem]([recipient_email], [is_read], [created_at]);
+END");
+
+    dbContext.Database.ExecuteSqlRaw(@"
+IF OBJECT_ID(N'[PendingInvitation]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [PendingInvitation] (
+        [invitation_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [email] NVARCHAR(450) NOT NULL,
+        [role] NVARCHAR(40) NOT NULL,
+        [token] NVARCHAR(120) NOT NULL,
+        [invited_by_email] NVARCHAR(450) NOT NULL,
+        [created_at] DATETIME2 NOT NULL,
+        [expires_at] DATETIME2 NOT NULL,
+        [accepted_at] DATETIME2 NULL
+    );
+    CREATE UNIQUE INDEX [IX_PendingInvitation_token] ON [PendingInvitation]([token]);
+    CREATE INDEX [IX_PendingInvitation_email_accepted_at] ON [PendingInvitation]([email], [accepted_at]);
 END");
 
     var superAdminUser = await userManager.FindByEmailAsync("yuzkiega@gmail.com");

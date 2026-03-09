@@ -20,6 +20,12 @@ namespace IT15_SOWCS.Controllers
             _userManager = userManager;
         }
 
+        private static bool IsProjectManagerRole(string? role)
+        {
+            var normalized = (role ?? string.Empty).Trim().ToLowerInvariant();
+            return normalized == "project manager" || normalized == "manager";
+        }
+
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -306,6 +312,13 @@ namespace IT15_SOWCS.Controllers
         private async Task<ProjectManagerDashboardViewModel> BuildProjectManagerDashboardModelAsync(Users? user)
         {
             var userEmail = user?.Email ?? User.Identity?.Name ?? string.Empty;
+            var employeeFullName = user == null
+                ? null
+                : await _context.Employees
+                    .AsNoTracking()
+                    .Where(employee => employee.user_id == user.Id)
+                    .Select(employee => employee.full_name)
+                    .FirstOrDefaultAsync();
 
             var managedProjects = await _context.Projects
                 .AsNoTracking()
@@ -330,23 +343,32 @@ namespace IT15_SOWCS.Controllers
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var teamMembers = teamMemberNames.Count == 0
-                ? new List<Employee>()
-                : await _context.Employees
+            var eligibleTeamMembersQuery = teamMemberNames.Count == 0
+                ? _context.Employees
                     .AsNoTracking()
-                    .Where(employee => teamMemberNames.Contains(employee.full_name))
-                    .OrderBy(employee => employee.full_name)
-                    .Take(8)
-                    .ToListAsync();
+                    .Where(employee => false)
+                : _context.Employees
+                    .AsNoTracking()
+                    .Where(employee =>
+                        teamMemberNames.Contains(employee.full_name) &&
+                        employee.employee_role != null &&
+                        (employee.employee_role.ToLower() == "employee" ||
+                         employee.employee_role.ToLower() == "project manager" ||
+                         employee.employee_role.ToLower() == "manager"));
 
-            var pendingLeaves = await _context.LeaveRequests
-                .AsNoTracking()
-                .Where(request => request.status == "Pending")
-                .OrderByDescending(request => request.LR_id)
-                .Take(5)
+            var teamMembersCount = await eligibleTeamMembersQuery.CountAsync();
+            var teamMembers = await eligibleTeamMembersQuery
+                .OrderBy(employee => employee.full_name)
+                .Take(8)
                 .ToListAsync();
 
             var pendingDocumentsCount = await _context.Documents.CountAsync(document => document.status == "Pending");
+            var pendingDocuments = await _context.Documents
+                .AsNoTracking()
+                .Where(document => document.status == "Pending")
+                .OrderByDescending(document => document.document_id)
+                .Take(5)
+                .ToListAsync();
 
             var taskGroupByProject = tasks
                 .GroupBy(task => task.project_id)
@@ -362,16 +384,18 @@ namespace IT15_SOWCS.Controllers
 
             return new ProjectManagerDashboardViewModel
             {
-                FullName = string.IsNullOrWhiteSpace(user?.FullName) ? "Project Manager" : user!.FullName,
+                FullName = !string.IsNullOrWhiteSpace(employeeFullName)
+                    ? employeeFullName
+                    : string.IsNullOrWhiteSpace(user?.FullName) ? "Project Manager" : user!.FullName,
                 ProjectsCount = managedProjects.Count,
-                TeamMembersCount = teamMemberNames.Count,
-                PendingLeavesCount = pendingLeaves.Count,
+                TeamMembersCount = teamMembersCount,
+                PendingDocumentsCount = pendingDocumentsCount,
                 TotalTasks = tasks.Count,
                 InProgressTasks = tasks.Count(task => string.Equals(task.status, "In Progress", StringComparison.OrdinalIgnoreCase)),
                 OverdueTasks = tasks.Count(task =>
                     task.due_date.Date < DateTime.Today &&
                     !string.Equals(task.status, "Completed", StringComparison.OrdinalIgnoreCase)),
-                ApprovalsPendingCount = pendingLeaves.Count + pendingDocumentsCount,
+                ApprovalsPendingCount = pendingDocumentsCount,
                 ProjectProgress = managedProjects
                     .Take(6)
                     .Select(project => new ProjectManagerProjectProgressItemViewModel
@@ -381,32 +405,36 @@ namespace IT15_SOWCS.Controllers
                         Status = project.status
                     })
                     .ToList(),
-                TaskStatuses = tasks
-                    .GroupBy(task => string.IsNullOrWhiteSpace(task.status) ? "Unknown" : task.status)
-                    .Select(group => new ProjectManagerTaskStatusItemViewModel
+                TaskBreakdownItems = tasks
+                    .OrderByDescending(task => string.Equals(task.status, "Completed", StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(task => task.due_date)
+                    .Take(8)
+                    .Select(task => new ProjectManagerTaskBreakdownItemViewModel
                     {
-                        Status = group.Key,
-                        Count = group.Count()
+                        TaskTitle = task.title,
+                        ProjectName = managedProjects
+                            .FirstOrDefault(project => project.project_id == task.project_id)?.name
+                            ?? task.project_name
+                            ?? "Unknown Project",
+                        Status = string.IsNullOrWhiteSpace(task.status) ? "To Do" : task.status
                     })
-                    .OrderByDescending(item => item.Count)
                     .ToList(),
                 TeamMembers = teamMembers
                     .Select(member => new ProjectManagerTeamMemberItemViewModel
                     {
                         Initials = GetInitials(member.full_name),
                         Name = member.full_name,
-                        Role = member.employee_role
+                        Role = IsProjectManagerRole(member.employee_role) ? "Team Leader" : "Employee"
                     })
                     .ToList(),
-                PendingLeaves = pendingLeaves
-                    .Select(request => new ProjectManagerPendingLeaveItemViewModel
+                PendingDocuments = pendingDocuments
+                    .Select(document => new ProjectManagerPendingDocumentItemViewModel
                     {
-                        EmployeeName = request.employee_name,
-                        LeaveType = request.leave_type,
-                        Days = request.days_count,
-                        StartDate = request.start_date,
-                        EndDate = request.end_date,
-                        Status = request.status
+                        Title = document.title,
+                        UploadedBy = document.uploaded_by_email ?? "Unknown",
+                        Category = document.category,
+                        UploadedDate = document.uploaded_date,
+                        Status = document.status
                     })
                     .ToList(),
                 MyProjects = managedProjects

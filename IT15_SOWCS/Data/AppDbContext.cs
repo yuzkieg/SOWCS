@@ -18,6 +18,7 @@ namespace IT15_SOWCS.Data
         public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
         public DbSet<ArchiveItem> ArchiveItems => Set<ArchiveItem>();
         public DbSet<NotificationItem> Notifications => Set<NotificationItem>();
+        public DbSet<PendingInvitation> PendingInvitations => Set<PendingInvitation>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -36,6 +37,7 @@ namespace IT15_SOWCS.Data
             builder.Entity<AuditLogEntry>().ToTable("AuditLog");
             builder.Entity<ArchiveItem>().ToTable("ArchiveItem");
             builder.Entity<NotificationItem>().ToTable("NotificationItem");
+            builder.Entity<PendingInvitation>().ToTable("PendingInvitation");
 
             builder.Entity<Employee>()
                 .Property(employee => employee.annual_leave_balance)
@@ -111,6 +113,13 @@ namespace IT15_SOWCS.Data
                     notification.is_read,
                     notification.created_at
                 });
+
+            builder.Entity<PendingInvitation>()
+                .HasIndex(invitation => invitation.token)
+                .IsUnique();
+
+            builder.Entity<PendingInvitation>()
+                .HasIndex(invitation => new { invitation.email, invitation.accepted_at });
         }
     }
 }

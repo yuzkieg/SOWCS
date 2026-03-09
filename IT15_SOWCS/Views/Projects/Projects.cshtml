@@ -149,10 +149,10 @@
                                         <div class="col-6">
                                             <label class="form-label fw-semibold">Priority</label>
                                             <select class="form-select custom-input" name="priority">
-                                                <option value="Low" selected="@(project.priority == "Low")">Low</option>
-                                                <option value="Medium" selected="@(project.priority == "Medium")">Medium</option>
-                                                <option value="High" selected="@(project.priority == "High")">High</option>
-                                                <option value="Urgent" selected="@(project.priority == "Urgent")">Urgent</option>
+                                                <option value="low" selected="@(string.Equals(project.priority, "low", StringComparison.OrdinalIgnoreCase))">low - No rush</option>
+                                                <option value="medium" selected="@(string.Equals(project.priority, "medium", StringComparison.OrdinalIgnoreCase))">medium - Normal pace</option>
+                                                <option value="high" selected="@(string.Equals(project.priority, "high", StringComparison.OrdinalIgnoreCase))">high - Top priority</option>
+                                                <option value="urgent" selected="@(string.Equals(project.priority, "urgent", StringComparison.OrdinalIgnoreCase))">urgent - Immediate action</option>
                                             </select>
                                         </div>
                                     </div>
@@ -246,10 +246,10 @@
                         <div class="col-6">
                             <label class="form-label fw-semibold">Priority</label>
                             <select class="form-select custom-input" name="priority">
-                                <option>Low</option>
-                                <option selected>Medium</option>
-                                <option>High</option>
-                                <option>Urgent</option>
+                                <option value="low">low - No rush</option>
+                                <option value="medium" selected>medium - Normal pace</option>
+                                <option value="high">high - Top priority</option>
+                                <option value="urgent">urgent - Immediate action</option>
                             </select>
                         </div>
                     </div>

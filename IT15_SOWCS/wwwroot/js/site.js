@@ -200,9 +200,130 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function isDocumentDownloadNavigation(anchor) {
+        if (!anchor) {
+            return false;
+        }
+
+        try {
+            const url = new URL(anchor.href, window.location.origin);
+            const path = (url.pathname || "").toLowerCase();
+            return path.includes("/documents/download");
+        } catch {
+            return false;
+        }
+    }
+
+    function showDownloadToast(message, isError) {
+        const existing = document.getElementById("documentDownloadToast");
+        if (existing) {
+            existing.remove();
+        }
+
+        const toast = document.createElement("div");
+        toast.id = "documentDownloadToast";
+        toast.className = isError ? "syncora-toast syncora-toast-error" : "syncora-toast";
+        toast.innerHTML = '<i class="bi ' + (isError ? 'bi-exclamation-circle' : 'bi-check-circle') + '"></i>' + message;
+        document.body.appendChild(toast);
+
+        setTimeout(function () {
+            toast.remove();
+        }, 3200);
+    }
+
+    function getDownloadFileName(response, fallbackFileName) {
+        const contentDisposition = response.headers.get("Content-Disposition") || "";
+        const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf8Match && utf8Match[1]) {
+            try {
+                return decodeURIComponent(utf8Match[1]);
+            } catch {
+                return utf8Match[1];
+            }
+        }
+
+        const basicMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+        if (basicMatch && basicMatch[1]) {
+            return basicMatch[1];
+        }
+
+        return fallbackFileName || "document";
+    }
+
+    async function handleDocumentDownload(anchor) {
+        try {
+            const url = new URL(anchor.href, window.location.origin);
+            const fallbackFileName = (url.searchParams.get("filename") || "document").trim();
+            const response = await fetch(url.toString(), {
+                method: "GET",
+                credentials: "same-origin"
+            });
+
+            if (!response.ok) {
+                throw new Error("Download failed.");
+            }
+
+            const blob = await response.blob();
+            const fileName = getDownloadFileName(response, fallbackFileName);
+            const objectUrl = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = objectUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(function () {
+                URL.revokeObjectURL(objectUrl);
+            }, 1000);
+
+            showDownloadToast("Document downloaded successfully.", false);
+        } catch {
+            showDownloadToast("Unable to download document.", true);
+        }
+    }
+
+    function isFilterNavigation(anchor) {
+        if (!anchor) {
+            return false;
+        }
+
+        if (anchor.matches("[data-report-tab-link=\"true\"], .report-tab-card")) {
+            return true;
+        }
+
+        if (anchor.matches("[data-um-filter-card], .stat-filter-card")) {
+            return true;
+        }
+
+        if (anchor.closest(".module-filters, .date-filter-toolbar, .report-date-filter, .audit-filters")) {
+            return true;
+        }
+
+        try {
+            const targetUrl = new URL(anchor.href, window.location.origin);
+            if (targetUrl.origin !== window.location.origin) {
+                return false;
+            }
+
+            const samePath = targetUrl.pathname === window.location.pathname;
+            const queryChanged = targetUrl.search !== window.location.search;
+            return samePath && queryChanged;
+        } catch {
+            return false;
+        }
+    }
+
     document.addEventListener("click", function (event) {
         const anchor = event.target.closest("a[href]");
-        if (!anchor || !isInternalNavigation(anchor)) {
+        if (!anchor || !isInternalNavigation(anchor) || isFilterNavigation(anchor)) {
+            return;
+        }
+
+        if (isDocumentDownloadNavigation(anchor)) {
+            event.preventDefault();
+            handleDocumentDownload(anchor);
             return;
         }
 
@@ -215,14 +336,23 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        if (form.classList.contains("archive-confirm-form") || form.classList.contains("logout-confirm-form")) {
+            return;
+        }
+
         if (form.target === "_blank") {
             return;
         }
 
-        showLoading();
-    });
+        const method = (form.getAttribute("method") || "get").toLowerCase();
+        if (method === "get") {
+            return;
+        }
 
-    window.addEventListener("beforeunload", function () {
+        if (form.closest(".module-filters, .date-filter-toolbar, .report-date-filter, .audit-filters")) {
+            return;
+        }
+
         showLoading();
     });
 });

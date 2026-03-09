@@ -2,6 +2,7 @@ using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
 using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using System.Text.Json;
 
 namespace IT15_SOWCS.Controllers
 {
+    [Authorize]
     public class UserManagementController : Controller
     {
         private readonly AppDbContext _context;
@@ -28,9 +30,26 @@ namespace IT15_SOWCS.Controllers
             return string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
         }
 
+        private async Task<bool> IsAdminOrSuperAdminAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return false;
+            }
+
+            return string.Equals(user.Role, "admin", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(user.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
+        }
+
         [HttpGet]
         public async Task<IActionResult> UserManagement(string? search, string? filter = "all")
         {
+            if (!await IsAdminOrSuperAdminAsync())
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             var usersQuery = _context.Users.AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -77,6 +96,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> InviteUser(string email, string role)
         {
+            if (!await IsAdminOrSuperAdminAsync())
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             if (string.IsNullOrWhiteSpace(email))
             {
                 TempData["UserManagementError"] = "Email is required.";
@@ -84,6 +108,13 @@ namespace IT15_SOWCS.Controllers
             }
 
             var normalizedEmail = email.Trim().ToLowerInvariant();
+            var normalizedRole = string.IsNullOrWhiteSpace(role) ? "user" : role.Trim().ToLowerInvariant();
+            if (normalizedRole != "user" && normalizedRole != "admin")
+            {
+                TempData["UserManagementError"] = "Invalid role selected.";
+                return RedirectToAction(nameof(UserManagement));
+            }
+
             var existing = await _userManager.FindByEmailAsync(normalizedEmail);
             if (existing != null)
             {
@@ -91,29 +122,34 @@ namespace IT15_SOWCS.Controllers
                 return RedirectToAction(nameof(UserManagement));
             }
 
-            var fullName = normalizedEmail.Split('@')[0];
-            var user = new Users
+            var hasPendingInvite = await _context.PendingInvitations.AnyAsync(invitation =>
+                invitation.email == normalizedEmail &&
+                invitation.accepted_at == null &&
+                invitation.expires_at > DateTime.UtcNow);
+            if (hasPendingInvite)
             {
-                UserName = normalizedEmail,
-                Email = normalizedEmail,
-                FullName = fullName,
-                Role = role.ToLowerInvariant(),
-                EmailConfirmed = true,
-                CreatedDate = DateTime.UtcNow,
-                UpdatedDate = DateTime.UtcNow
-            };
-
-            var result = await _userManager.CreateAsync(user, "TempPass123!");
-            if (!result.Succeeded)
-            {
-                TempData["UserManagementError"] = string.Join(" ", result.Errors.Select(error => error.Description));
+                TempData["UserManagementError"] = "A pending invitation already exists for this email.";
                 return RedirectToAction(nameof(UserManagement));
             }
 
             var inviter = await _userManager.GetUserAsync(User);
             var inviterName = inviter?.FullName ?? inviter?.Email ?? "Syncora Admin";
             var inviterEmail = inviter?.Email ?? "admin@syncora.local";
-            var joinLink = Url.Action("Login", "Account", null, Request.Scheme) ?? string.Empty;
+            var inviteToken = Guid.NewGuid().ToString("N");
+            var pendingInvite = new PendingInvitation
+            {
+                email = normalizedEmail,
+                role = normalizedRole,
+                token = inviteToken,
+                invited_by_email = inviterEmail,
+                created_at = DateTime.UtcNow,
+                expires_at = DateTime.UtcNow.AddDays(7)
+            };
+            _context.PendingInvitations.Add(pendingInvite);
+            await _context.SaveChangesAsync();
+
+            var fullName = normalizedEmail.Split('@')[0];
+            var joinLink = Url.Action("AcceptInvitation", "Account", new { token = inviteToken }, Request.Scheme) ?? string.Empty;
             var inviteSent = await _emailService.SendInviteEmailAsync(
                 normalizedEmail,
                 fullName,
@@ -122,8 +158,8 @@ namespace IT15_SOWCS.Controllers
                 joinLink);
 
             TempData["SuccessMessage"] = inviteSent
-                ? "User invited successfully. Invitation email has been sent."
-                : "User created, but invitation email could not be sent. Check EmailSettings.";
+                ? "Invitation sent. User record will be created after the invite is accepted."
+                : "Invitation saved, but email could not be sent. Check EmailSettings.";
 
             return RedirectToAction(nameof(UserManagement));
         }
@@ -132,6 +168,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateRole(string userId, string role)
         {
+            if (!await IsAdminOrSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
@@ -300,6 +341,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(string userId, bool isActive)
         {
+            if (!await IsAdminOrSuperAdminAsync())
+            {
+                return Forbid();
+            }
+
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
