@@ -23,10 +23,15 @@ namespace IT15_SOWCS.ViewModels
         public List<CorrelationPoint> CorrelationPoints { get; set; } = new();
         public List<int> PredictiveActual { get; set; } = new();
         public List<int> PredictiveProjected { get; set; } = new();
+
+        public string PredictionPeriod { get; set; } = "month";
+        public bool PredictionModelReady { get; set; }
+        public List<SuperAdminPredictionRow> PredictionRows { get; set; } = new();
     }
 
     public class SuperAdminEmployeeModel
     {
+        public int EmployeeId { get; set; }
         public string Initials { get; set; } = "U";
         public string Name { get; set; } = string.Empty;
         public string RoleLabel { get; set; } = string.Empty;
@@ -43,10 +48,14 @@ namespace IT15_SOWCS.ViewModels
         public string Type { get; set; } = "risk";
         public string Message { get; set; } = string.Empty;
         public string ActionLabel { get; set; } = string.Empty;
+        public int EmployeeId { get; set; }
+        public string EmployeeName { get; set; } = string.Empty;
+        public string PredictionLabel { get; set; } = "Stable";
     }
 
     public class SuperAdminEmployeeAnalyticsRow
     {
+        public int EmployeeId { get; set; }
         public string Initials { get; set; } = "U";
         public string Name { get; set; } = string.Empty;
         public string RoleLabel { get; set; } = string.Empty;
@@ -62,5 +71,16 @@ namespace IT15_SOWCS.ViewModels
     {
         public int Tasks { get; set; }
         public int Reject { get; set; }
+    }
+
+    public class SuperAdminPredictionRow
+    {
+        public string Name { get; set; } = string.Empty;
+        public string RoleLabel { get; set; } = string.Empty;
+        public int TotalRequests { get; set; }
+        public int TotalApproved { get; set; }
+        public int TotalRejected { get; set; }
+        public string Prediction { get; set; } = "Stable";
+        public double Confidence { get; set; }
     }
 }

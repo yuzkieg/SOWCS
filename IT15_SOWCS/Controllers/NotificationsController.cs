@@ -86,5 +86,47 @@ namespace IT15_SOWCS.Controllers
 
             return Json(new { success = true });
         }
+
+        [HttpPost("{id:int}/unread")]
+        public async Task<IActionResult> MarkUnread(int id)
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return Unauthorized();
+            }
+
+            var affectedRows = await _context.Notifications
+                .Where(item => item.notification_id == id && item.recipient_email == email)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.is_read, false));
+
+            if (affectedRows == 0)
+            {
+                return NotFound(new { success = false });
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost("{id:int}/delete")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return Unauthorized();
+            }
+
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(item => item.notification_id == id && item.recipient_email == email);
+            if (notification == null)
+            {
+                return NotFound(new { success = false });
+            }
+
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
     }
 }

@@ -36,6 +36,28 @@ namespace IT15_SOWCS.Controllers
                 user.Role.ToLower() == "superadmin");
         }
 
+        private async Task<bool> IsEmployeeUploaderAsync(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return false;
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(item => item.Email == email);
+            if (user == null)
+            {
+                return false;
+            }
+
+            var role = await _context.Employees
+                .Where(employee => employee.user_id == user.Id)
+                .Select(employee => employee.employee_role)
+                .FirstOrDefaultAsync();
+
+            return !string.IsNullOrWhiteSpace(role) &&
+                   role.Trim().Equals("employee", StringComparison.OrdinalIgnoreCase);
+        }
+
         [HttpGet]
         public async Task<IActionResult> Documents(string? search, string? category)
         {
@@ -153,8 +175,18 @@ namespace IT15_SOWCS.Controllers
             };
 
             _context.Documents.Add(document);
-            await _notificationService.AddForRoleAsync(
-                "manager",
+            if (await IsEmployeeUploaderAsync(document.uploaded_by_email))
+            {
+                await _notificationService.AddForRoleGroupAsync(
+                    "project manager",
+                    "New Document Submission",
+                    $"{document.title} was uploaded and is waiting for approval.",
+                    "DocumentApproval",
+                    "/Approvals/Approvals");
+            }
+
+            await _notificationService.AddForRoleGroupAsync(
+                "superadmin",
                 "New Document Submission",
                 $"{document.title} was uploaded and is waiting for approval.",
                 "DocumentApproval",
@@ -209,8 +241,18 @@ namespace IT15_SOWCS.Controllers
             document.reviewed_by = null;
             document.reviewed_date = null;
 
-            await _notificationService.AddForRoleAsync(
-                "manager",
+            if (await IsEmployeeUploaderAsync(document.uploaded_by_email))
+            {
+                await _notificationService.AddForRoleGroupAsync(
+                    "project manager",
+                    "Document Updated",
+                    $"{document.title} was updated and needs approval review.",
+                    "DocumentApproval",
+                    "/Approvals/Approvals");
+            }
+
+            await _notificationService.AddForRoleGroupAsync(
+                "superadmin",
                 "Document Updated",
                 $"{document.title} was updated and needs approval review.",
                 "DocumentApproval",

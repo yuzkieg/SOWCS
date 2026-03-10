@@ -1,4 +1,5 @@
 using IT15_SOWCS.Data;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,13 @@ namespace IT15_SOWCS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly NotificationService _notificationService;
 
-        public ReportsController(AppDbContext context, IWebHostEnvironment environment)
+        public ReportsController(AppDbContext context, IWebHostEnvironment environment, NotificationService notificationService)
         {
             _context = context;
             _environment = environment;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -55,6 +58,30 @@ namespace IT15_SOWCS.Controllers
 
             var fileNamePrefix = all ? "All-Reports" : $"{NormalizeTab(tab)}-Report";
             var fileName = $"{fileNamePrefix}-{generatedAt:yyyyMMdd-HHmmss}.pdf";
+
+            if (generatedByUser != null)
+            {
+                var employeeRole = await _context.Employees
+                    .AsNoTracking()
+                    .Where(employee => employee.user_id == generatedByUser.Id)
+                    .Select(employee => employee.employee_role)
+                    .FirstOrDefaultAsync();
+
+                if (!string.IsNullOrWhiteSpace(employeeRole) &&
+                    (string.Equals(employeeRole, "project manager", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(employeeRole, "manager", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(employeeRole, "hr manager", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(employeeRole, "hr", StringComparison.OrdinalIgnoreCase)))
+                {
+                    await _notificationService.AddForRoleGroupAsync(
+                        "superadmin",
+                        "Report Exported",
+                        $"{generatedBy} exported reports ({(all ? "All Tabs" : NormalizeTab(tab))}).",
+                        "Reports",
+                        "/Reports/Reports");
+                }
+            }
+
             return File(pdfBytes, "application/pdf", fileName);
         }
 

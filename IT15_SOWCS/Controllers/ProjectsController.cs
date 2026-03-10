@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,12 @@ namespace IT15_SOWCS.Controllers
     public class ProjectsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly NotificationService _notificationService;
 
-        public ProjectsController(AppDbContext context)
+        public ProjectsController(AppDbContext context, NotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         private static string NormalizePriority(string? priority)
@@ -40,6 +43,35 @@ namespace IT15_SOWCS.Controllers
                 user.Email == currentEmail &&
                 user.Role != null &&
                 user.Role.ToLower() == "superadmin");
+        }
+
+        private async Task<bool> IsEmployeeAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(item => item.Email == currentEmail);
+            if (user == null)
+            {
+                return false;
+            }
+
+            var employeeRole = await _context.Employees
+                .Where(employee => employee.user_id == user.Id)
+                .Select(employee => employee.employee_role)
+                .FirstOrDefaultAsync();
+
+            if (!string.IsNullOrWhiteSpace(employeeRole) &&
+                employeeRole.Trim().Equals("employee", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return !string.IsNullOrWhiteSpace(user.Role) &&
+                   user.Role.Trim().Equals("employee", StringComparison.OrdinalIgnoreCase);
         }
 
         [HttpGet]
@@ -92,7 +124,8 @@ namespace IT15_SOWCS.Controllers
                     .ToListAsync(),
                 ProgressByProjectId = progressByProjectId,
                 Search = search,
-                Status = status
+                Status = status,
+                CanManageProjects = !await IsEmployeeAsync()
             };
 
             ViewData["Title"] = "Projects";
@@ -133,7 +166,8 @@ namespace IT15_SOWCS.Controllers
             {
                 Project = project,
                 TeamMembers = teamMembers,
-                Tasks = tasks
+                Tasks = tasks,
+                CanManageTasks = !await IsEmployeeAsync()
             };
 
             ViewData["Title"] = "Project Detail";
@@ -149,6 +183,11 @@ namespace IT15_SOWCS.Controllers
             string priority,
             string[]? teamMembers)
         {
+            if (await IsEmployeeAsync())
+            {
+                return Forbid();
+            }
+
             if (string.IsNullOrWhiteSpace(name))
             {
                 TempData["ProjectsError"] = "Project name is required.";
@@ -203,6 +242,38 @@ namespace IT15_SOWCS.Controllers
 
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
+
+            await _notificationService.AddForRoleGroupAsync(
+                "superadmin",
+                "New Project Created",
+                $"{project.name} was created and added to the projects list.",
+                "Project",
+                "/Projects/Projects");
+
+            if (sanitizedTeamMembers.Count > 0)
+            {
+                var teamMemberEmails = await _context.Employees
+                    .Join(_context.Users,
+                        employee => employee.user_id,
+                        user => user.Id,
+                        (employee, user) => new { employee.full_name, user.Email })
+                    .Where(item => item.Email != null &&
+                                   sanitizedTeamMembers.Contains(item.full_name))
+                    .Select(item => item.Email!)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (var email in teamMemberEmails)
+                {
+                    await _notificationService.AddForUserAsync(
+                        email,
+                        "New Project Assignment",
+                        $"You were added to project \"{project.name}\".",
+                        "Project",
+                        $"/Projects/Detail/{project.project_id}");
+                }
+            }
+
             TempData["SuccessMessage"] = "Project created successfully.";
             return RedirectToAction(nameof(Projects));
         }
@@ -218,6 +289,11 @@ namespace IT15_SOWCS.Controllers
             int progress,
             string[]? teamMembers)
         {
+            if (await IsEmployeeAsync())
+            {
+                return Forbid();
+            }
+
             var project = await _context.Projects.FindAsync(projectId);
             if (project == null)
             {

@@ -9,5 +9,6 @@ namespace IT15_SOWCS.ViewModels
         public Dictionary<int, int> ProgressByProjectId { get; set; } = new();
         public string? Search { get; set; }
         public string? Status { get; set; }
+        public bool CanManageProjects { get; set; }
     }
 }

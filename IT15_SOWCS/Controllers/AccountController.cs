@@ -245,8 +245,10 @@ namespace IT15_SOWCS.Controllers
             if (result.Succeeded)
             {
                 await signInManager.UpdateExternalAuthenticationTokensAsync(info);
-                returnUrl ??= Url.Action("Index", "Dashboard");
-                return LocalRedirect(returnUrl);
+                var safeRedirectUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                    ? returnUrl
+                    : Url.Action("Index", "Dashboard") ?? "/";
+                return LocalRedirect(safeRedirectUrl);
             }
             if (result.IsLockedOut)
             {
@@ -311,8 +313,10 @@ namespace IT15_SOWCS.Controllers
 
             await signInManager.SignInAsync(user, isPersistent: false);
             await signInManager.UpdateExternalAuthenticationTokensAsync(info);
-            returnUrl ??= Url.Action("Index", "Dashboard");
-            return LocalRedirect(returnUrl);
+            var finalRedirectUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : Url.Action("Index", "Dashboard") ?? "/";
+            return LocalRedirect(finalRedirectUrl);
         }
 
         [HttpGet]

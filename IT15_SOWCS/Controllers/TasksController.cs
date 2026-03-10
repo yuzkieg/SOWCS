@@ -51,6 +51,35 @@ namespace IT15_SOWCS.Controllers
                 user.Role.ToLower() == "superadmin");
         }
 
+        private async Task<bool> IsEmployeeAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(item => item.Email == currentEmail);
+            if (user == null)
+            {
+                return false;
+            }
+
+            var employeeRole = await _context.Employees
+                .Where(employee => employee.user_id == user.Id)
+                .Select(employee => employee.employee_role)
+                .FirstOrDefaultAsync();
+
+            if (!string.IsNullOrWhiteSpace(employeeRole) &&
+                employeeRole.Trim().Equals("employee", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return !string.IsNullOrWhiteSpace(user.Role) &&
+                   user.Role.Trim().Equals("employee", StringComparison.OrdinalIgnoreCase);
+        }
+
         [HttpGet]
         public async Task<IActionResult> Tasks(string? search, string? status, string? priority)
         {
@@ -114,6 +143,11 @@ namespace IT15_SOWCS.Controllers
             DateTime dueDate,
             int? redirectProjectId)
         {
+            if (await IsEmployeeAsync())
+            {
+                return Forbid();
+            }
+
             var employee = await _context.Employees.Include(item => item.User).FirstOrDefaultAsync(item => item.employee_id == employeeId);
             var project = await _context.Projects.FirstOrDefaultAsync(item => item.project_id == projectId);
 

@@ -19,6 +19,7 @@ namespace IT15_SOWCS.Data
         public DbSet<ArchiveItem> ArchiveItems => Set<ArchiveItem>();
         public DbSet<NotificationItem> Notifications => Set<NotificationItem>();
         public DbSet<PendingInvitation> PendingInvitations => Set<PendingInvitation>();
+        public DbSet<PredictionAction> PredictionActions => Set<PredictionAction>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -38,6 +39,7 @@ namespace IT15_SOWCS.Data
             builder.Entity<ArchiveItem>().ToTable("ArchiveItem");
             builder.Entity<NotificationItem>().ToTable("NotificationItem");
             builder.Entity<PendingInvitation>().ToTable("PendingInvitation");
+            builder.Entity<PredictionAction>().ToTable("PredictionAction");
 
             builder.Entity<Employee>()
                 .Property(employee => employee.annual_leave_balance)

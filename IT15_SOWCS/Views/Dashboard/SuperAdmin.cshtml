@@ -77,11 +77,18 @@
         @foreach (var suggestion in Model.Suggestions)
         {
             var css = suggestion.Type == "positive" ? "positive" : "risk";
-            <article class="sa-suggestion @css">
+            <article class="sa-suggestion @css"
+                     data-employee-id="@suggestion.EmployeeId"
+                     data-employee-name="@suggestion.EmployeeName"
+                     data-prediction-label="@suggestion.PredictionLabel">
                 <p>@suggestion.Message</p>
                 <div>
-                    <button type="button">@suggestion.ActionLabel</button>
-                    <a href="#">Dismiss</a>
+                    <button type="button"
+                            class="sa-suggestion-action"
+                            data-action="@(suggestion.Type == "positive" ? "nominate" : "review")">
+                        @suggestion.ActionLabel
+                    </button>
+                    <button type="button" class="sa-suggestion-dismiss">Dismiss</button>
                 </div>
             </article>
         }
@@ -101,7 +108,7 @@
                             <td><div class="sa-emp"><span>@row.Initials</span><div><strong>@row.Name</strong><small>@row.RoleLabel</small></div></div></td>
                             <td>@row.Tasks</td>
                             <td>@row.CompletionPercent%</td>
-                            <td>@row.RejectPercent%</td>
+                            <td data-reject="@row.RejectPercent" data-classification="@row.Classification">@row.RejectPercent%</td>
                             <td>@(row.WoWPercent >= 0 ? "+" : "")@row.WoWPercent%</td>
                             <td><div class="sa-collab"><em style="width:@Math.Clamp(row.CollaborationScore, 0, 100)%"></em>@row.CollaborationScore</div></td>
                             <td><span class="pill @(row.Classification == "Reward Milestone" ? "ok" : row.Classification == "Stable" ? "stable" : "warn")">@row.Classification</span></td>
@@ -111,4 +118,121 @@
             </table>
         </div>
     </section>
+
+    <section class="sa-panel mt-4">
+        <div id="predictionPanel">
+            @await Html.PartialAsync("_SuperAdminPredictions", Model)
+        </div>
+    </section>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const panel = document.getElementById("predictionPanel");
+        if (!panel) {
+            return;
+        }
+
+        function attachPredictionHandler() {
+            const select = document.getElementById("predictionPeriodSelect");
+            if (!select) {
+                return;
+            }
+
+            select.addEventListener("change", async function () {
+                const period = select.value === "year" ? "year" : "month";
+                const response = await fetch(`/Dashboard/SuperAdminPredictions?predictionPeriod=${period}`, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const html = await response.text();
+                panel.innerHTML = html;
+                attachPredictionHandler();
+            });
+        }
+
+        attachPredictionHandler();
+
+        function showToast(message) {
+            const toast = document.createElement("div");
+            toast.className = "syncora-toast";
+            toast.innerHTML = '<i class="bi bi-info-circle"></i>' + message;
+            document.body.appendChild(toast);
+            setTimeout(function () { toast.remove(); }, 3000);
+        }
+
+        async function recordSuggestionAction(card, actionType) {
+            const employeeId = card?.getAttribute("data-employee-id") || "";
+            const employeeName = card?.getAttribute("data-employee-name") || "";
+            const predictionLabel = card?.getAttribute("data-prediction-label") || "Stable";
+            const periodSelect = document.getElementById("predictionPeriodSelect");
+            const periodType = periodSelect?.value === "year" ? "year" : "month";
+
+            const formData = new URLSearchParams();
+            formData.append("employeeId", employeeId);
+            formData.append("employeeName", employeeName);
+            formData.append("predictionLabel", predictionLabel);
+            formData.append("actionType", actionType);
+            formData.append("periodType", periodType);
+
+            try {
+                const response = await fetch("/PredictionInsights/RecordAction", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData.toString()
+                });
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
+
+        document.querySelectorAll(".sa-suggestion-dismiss").forEach(function (btn) {
+            btn.addEventListener("click", async function () {
+                const card = btn.closest(".sa-suggestion");
+                if (!card) {
+                    return;
+                }
+
+                await recordSuggestionAction(card, "dismiss");
+                card.remove();
+            });
+        });
+
+        document.querySelectorAll(".sa-suggestion-action").forEach(function (btn) {
+            btn.addEventListener("click", async function () {
+                const card = btn.closest(".sa-suggestion");
+                const action = btn.getAttribute("data-action");
+                if (action === "review") {
+                    const table = document.querySelector(".sa-table");
+                    if (!table) {
+                        showToast("Analytics table not available.");
+                        return;
+                    }
+
+                    table.scrollIntoView({ behavior: "smooth", block: "start" });
+                    table.querySelectorAll("td[data-reject]").forEach(function (cell) {
+                        const reject = parseInt(cell.getAttribute("data-reject") || "0", 10);
+                        const isRisk = reject >= 18;
+                        cell.closest("tr")?.classList.toggle("table-warning", isRisk);
+                    });
+                    if (card) {
+                        await recordSuggestionAction(card, "review_rejections");
+                        card.remove();
+                    }
+                    showToast("Highlighted high reject-rate employees.");
+                } else if (action === "nominate") {
+                    if (card) {
+                        await recordSuggestionAction(card, "nominate");
+                        card.remove();
+                    }
+                    showToast("Nomination recorded.");
+                }
+            });
+        });
+    });
+</script>

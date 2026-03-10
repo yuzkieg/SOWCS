@@ -16,12 +16,14 @@ namespace IT15_SOWCS.Controllers
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
         private readonly EmailService _emailService;
+        private readonly NotificationService _notificationService;
 
-        public UserManagementController(AppDbContext context, UserManager<Users> userManager, EmailService emailService)
+        public UserManagementController(AppDbContext context, UserManager<Users> userManager, EmailService emailService, NotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
             _emailService = emailService;
+            _notificationService = notificationService;
         }
 
         private async Task<bool> IsSuperAdminAsync()
@@ -156,6 +158,13 @@ namespace IT15_SOWCS.Controllers
                 inviterName,
                 inviterEmail,
                 joinLink);
+
+            await _notificationService.AddForRoleGroupAsync(
+                "hr manager",
+                "New User Invitation",
+                $"{normalizedEmail} was invited and is ready for employee registration.",
+                "UserInvite",
+                "/Employees/Employees");
 
             TempData["SuccessMessage"] = inviteSent
                 ? "Invitation sent. User record will be created after the invite is accepted."

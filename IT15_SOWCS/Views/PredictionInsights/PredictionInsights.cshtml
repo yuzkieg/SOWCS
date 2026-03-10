@@ -1,0 +1,104 @@
+@model IT15_SOWCS.ViewModels.PredictionInsightsViewModel
+@{
+    ViewData["Title"] = "Prediction Insights";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var period = Model.Period == "year" ? "year" : "month";
+    var tab = string.IsNullOrWhiteSpace(Model.ActiveTab) ? "all" : Model.ActiveTab;
+}
+
+<div class="insights-page">
+    <div class="insights-header">
+        <div>
+            <h2>Prediction Insights</h2>
+            <p>Review model classifications and recommended next steps per employee.</p>
+        </div>
+        <div class="insights-filter">
+            <label for="insightsPeriodSelect">Period</label>
+            <select id="insightsPeriodSelect" class="form-select">
+                <option value="month" selected="@(period == "month")">Month</option>
+                <option value="year" selected="@(period == "year")">Year</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="insights-tabs">
+        <button type="button" class="insights-tab @(tab == "all" ? "active" : "")" data-tab="all">All</button>
+        <button type="button" class="insights-tab @(tab == "skill_gap" ? "active" : "")" data-tab="skill_gap">Skill Gap</button>
+        <button type="button" class="insights-tab @(tab == "stable" ? "active" : "")" data-tab="stable">Stable</button>
+        <button type="button" class="insights-tab @(tab == "reward_milestone" ? "active" : "")" data-tab="reward_milestone">Reward Milestone</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table insights-table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Role</th>
+                    <th>Total Requests</th>
+                    <th>Approved</th>
+                    <th>Rejected</th>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                    <th>Suggested Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-muted text-center py-4">No predictions available for this period.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>
+                                <div class="insights-employee">
+                                    <strong>@row.Name</strong>
+                                </div>
+                            </td>
+                            <td>@row.RoleLabel</td>
+                            <td>@row.TotalRequests</td>
+                            <td>@row.TotalApproved</td>
+                            <td>@row.TotalRejected</td>
+                            <td><span class="insights-pill">@row.Prediction</span></td>
+                            <td>@row.Confidence.ToString("P0")</td>
+                            <td>@row.SuggestedAction</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const periodSelect = document.getElementById("insightsPeriodSelect");
+        const tabButtons = document.querySelectorAll(".insights-tab");
+
+        function navigate(nextPeriod, nextTab) {
+            const period = nextPeriod || "month";
+            const tab = nextTab || "all";
+            window.location.href = `/PredictionInsights/PredictionInsights?period=${encodeURIComponent(period)}&tab=${encodeURIComponent(tab)}`;
+        }
+
+        if (periodSelect) {
+            periodSelect.addEventListener("change", function () {
+                const activeTab = document.querySelector(".insights-tab.active")?.getAttribute("data-tab") || "all";
+                navigate(periodSelect.value, activeTab);
+            });
+        }
+
+        tabButtons.forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                const nextTab = btn.getAttribute("data-tab") || "all";
+                const nextPeriod = periodSelect?.value || "month";
+                navigate(nextPeriod, nextTab);
+            });
+        });
+    });
+</script>

@@ -74,6 +74,20 @@ namespace IT15_SOWCS.Controllers
             return ApprovalScope.Both;
         }
 
+        private async Task<bool> IsSuperAdminApproverAsync()
+        {
+            var currentEmail = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                return false;
+            }
+
+            return await _context.Users.AnyAsync(user =>
+                user.Email == currentEmail &&
+                user.Role != null &&
+                user.Role.ToLower() == "superadmin");
+        }
+
         [HttpGet]
         public async Task<IActionResult> Approvals()
         {
@@ -151,6 +165,16 @@ namespace IT15_SOWCS.Controllers
                 $"Your {leave.leave_type} request was {status.ToLowerInvariant()}.{(string.IsNullOrWhiteSpace(notes) ? string.Empty : $" Feedback: {notes}")}",
                 "Leave",
                 "/LeaveRequest/LeaveRequest");
+
+            if (await IsSuperAdminApproverAsync())
+            {
+                await _notificationService.AddForRoleGroupAsync(
+                    "hr manager",
+                    status == "Approved" ? "Leave Request Approved" : "Leave Request Rejected",
+                    $"{leave.employee_name}'s {leave.leave_type} request was {status.ToLowerInvariant()}.",
+                    "Leave",
+                    "/Approvals/Approvals");
+            }
             await _context.SaveChangesAsync();
 
             if (string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase))

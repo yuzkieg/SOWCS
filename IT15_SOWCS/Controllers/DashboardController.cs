@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,11 +14,13 @@ namespace IT15_SOWCS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
+        private readonly ApprovalPredictionService _predictionService;
 
-        public DashboardController(AppDbContext context, UserManager<Users> userManager)
+        public DashboardController(AppDbContext context, UserManager<Users> userManager, ApprovalPredictionService predictionService)
         {
             _context = context;
             _userManager = userManager;
+            _predictionService = predictionService;
         }
 
         private static bool IsProjectManagerRole(string? role)
@@ -26,12 +29,12 @@ namespace IT15_SOWCS.Controllers
             return normalized == "project manager" || normalized == "manager";
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? predictionPeriod)
         {
             var user = await _userManager.GetUserAsync(User);
             if (string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
             {
-                var superAdminModel = await BuildSuperAdminModelAsync(user);
+                var superAdminModel = await BuildSuperAdminModelAsync(user, predictionPeriod);
                 return View("SuperAdmin", superAdminModel);
             }
 
@@ -67,6 +70,19 @@ namespace IT15_SOWCS.Controllers
 
             var adminModel = await BuildAdminDashboardModelAsync(user);
             return View("Index", adminModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SuperAdminPredictions(string? predictionPeriod)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (!string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var model = await BuildSuperAdminModelAsync(user, predictionPeriod);
+            return PartialView("_SuperAdminPredictions", model);
         }
 
         private async Task<DashboardViewModel> BuildEmployeeDashboardModelAsync(Users? user)
@@ -449,11 +465,21 @@ namespace IT15_SOWCS.Controllers
             };
         }
 
-        private async Task<SuperAdminDashboardViewModel> BuildSuperAdminModelAsync(Users? user)
+        private async Task<SuperAdminDashboardViewModel> BuildSuperAdminModelAsync(Users? user, string? predictionPeriod)
         {
             var employees = await _context.Employees.OrderBy(employee => employee.full_name).ToListAsync();
             var tasks = await _context.Tasks.ToListAsync();
             var leaves = await _context.LeaveRequests.ToListAsync();
+            var documents = await _context.Documents.ToListAsync();
+
+            var employeeUsers = await _context.Users
+                .AsNoTracking()
+                .Select(dbUser => new { dbUser.Id, dbUser.Role })
+                .ToListAsync();
+
+            var employeeUsersById = employeeUsers
+                .Where(item => !string.IsNullOrWhiteSpace(item.Id))
+                .ToDictionary(item => item.Id, item => item.Role ?? string.Empty);
 
             var completedTasks = tasks.Count(task => string.Equals(task.status, "Completed", StringComparison.OrdinalIgnoreCase));
             var totalTasks = tasks.Count;
@@ -475,6 +501,12 @@ namespace IT15_SOWCS.Controllers
             var analyticsRows = new List<SuperAdminEmployeeAnalyticsRow>();
             foreach (var employee in employees)
             {
+                if (employeeUsersById.TryGetValue(employee.user_id, out var role) &&
+                    string.Equals(role, "superadmin", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 var employeeTasks = tasks.Where(task => task.employee_id == employee.employee_id).ToList();
                 var taskCount = employeeTasks.Count;
                 var employeeCompleted = employeeTasks.Count(task => string.Equals(task.status, "Completed", StringComparison.OrdinalIgnoreCase));
@@ -491,6 +523,7 @@ namespace IT15_SOWCS.Controllers
 
                 analyticsRows.Add(new SuperAdminEmployeeAnalyticsRow
                 {
+                    EmployeeId = employee.employee_id,
                     Initials = GetInitials(employee.full_name),
                     Name = employee.full_name,
                     RoleLabel = $"{employee.department} - {employee.employee_role}",
@@ -509,6 +542,7 @@ namespace IT15_SOWCS.Controllers
                 .Take(5)
                 .Select(row => new SuperAdminEmployeeModel
                 {
+                    EmployeeId = row.EmployeeId,
                     Initials = row.Initials,
                     Name = row.Name,
                     RoleLabel = row.RoleLabel,
@@ -527,6 +561,7 @@ namespace IT15_SOWCS.Controllers
                 .Take(3)
                 .Select(row => new SuperAdminEmployeeModel
                 {
+                    EmployeeId = row.EmployeeId,
                     Initials = row.Initials,
                     Name = row.Name,
                     RoleLabel = row.RoleLabel,
@@ -544,13 +579,19 @@ namespace IT15_SOWCS.Controllers
             {
                 Type = "risk",
                 Message = $"{row.Name} has a {row.RejectRatePercent}% reject rate this month. Would you like to review the most common rejection reasons?",
-                ActionLabel = "Review Rejections"
+                ActionLabel = "Review Rejections",
+                EmployeeId = row.EmployeeId,
+                EmployeeName = row.Name,
+                PredictionLabel = "Skill Gap"
             }));
             suggestions.AddRange(topRows.Take(3).Select(row => new SuperAdminSuggestionModel
             {
                 Type = "positive",
                 Message = $"{row.Name} has high monthly KPIs and collaboration score. Nominate for Employee of the Month?",
-                ActionLabel = "Nominate"
+                ActionLabel = "Nominate",
+                EmployeeId = row.EmployeeId,
+                EmployeeName = row.Name,
+                PredictionLabel = "Reward Milestone"
             }));
 
             var heatmap = BuildHeatmap(tasks);
@@ -562,6 +603,110 @@ namespace IT15_SOWCS.Controllers
 
             var actual = new List<int> { 20, 22, 17 };
             var projected = new List<int> { 20, 22, 17, 20, 23, 25, 26, 28, 30, 32, 34, 36 };
+
+            var periodKey = string.IsNullOrWhiteSpace(predictionPeriod) ? "month" : predictionPeriod.Trim().ToLowerInvariant();
+            if (periodKey != "year")
+            {
+                periodKey = "month";
+            }
+
+            var periodStart = periodKey == "year"
+                ? new DateTime(DateTime.Today.Year, 1, 1)
+                : new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var periodEnd = periodKey == "year"
+                ? new DateTime(DateTime.Today.Year, 12, 31)
+                : periodStart.AddMonths(1).AddDays(-1);
+
+            var userDirectory = await _context.Users
+                .AsNoTracking()
+                .Select(dbUser => new
+                {
+                    dbUser.Id,
+                    dbUser.Email,
+                    FullName = string.IsNullOrWhiteSpace(dbUser.FullName) ? dbUser.Email : dbUser.FullName,
+                    Role = dbUser.Role
+                })
+                .ToListAsync();
+
+            var employeeProfiles = await _context.Employees
+                .AsNoTracking()
+                .Select(employee => new
+                {
+                    employee.user_id,
+                    employee.full_name,
+                    employee.department,
+                    employee.employee_role
+                })
+                .ToListAsync();
+
+            var predictionRows = new List<SuperAdminPredictionRow>();
+            if (_predictionService.IsReady)
+            {
+                foreach (var userEntry in userDirectory.Where(item =>
+                             !string.IsNullOrWhiteSpace(item.Email) &&
+                             !string.Equals(item.Role, "superadmin", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var email = userEntry.Email!;
+
+                    var leaveItems = leaves.Where(leave =>
+                        string.Equals(leave.employee_email, email, StringComparison.OrdinalIgnoreCase) &&
+                        leave.start_date.Date >= periodStart &&
+                        leave.start_date.Date <= periodEnd).ToList();
+
+                    var docItems = documents.Where(doc =>
+                        string.Equals(doc.uploaded_by_email, email, StringComparison.OrdinalIgnoreCase) &&
+                        doc.uploaded_date.Date >= periodStart &&
+                        doc.uploaded_date.Date <= periodEnd).ToList();
+
+                    var leaveTotal = leaveItems.Count;
+                    var leaveApproved = leaveItems.Count(item => string.Equals(item.status, "Approved", StringComparison.OrdinalIgnoreCase));
+                    var leaveRejected = leaveItems.Count(item => string.Equals(item.status, "Rejected", StringComparison.OrdinalIgnoreCase));
+
+                    var docTotal = docItems.Count;
+                    var docApproved = docItems.Count(item => string.Equals(item.status, "Approved", StringComparison.OrdinalIgnoreCase));
+                    var docRejected = docItems.Count(item => string.Equals(item.status, "Rejected", StringComparison.OrdinalIgnoreCase));
+
+                    var totalRequests = leaveTotal + docTotal;
+                    var totalApproved = leaveApproved + docApproved;
+                    var totalRejected = leaveRejected + docRejected;
+
+                    var approvalRate = totalRequests == 0 ? 0 : (double)totalApproved / totalRequests;
+                    var rejectRate = totalRequests == 0 ? 0 : (double)totalRejected / totalRequests;
+
+                    var features = new ApprovalPredictionFeatures
+                    {
+                        WindowType = periodKey,
+                        LeaveTotal = leaveTotal,
+                        LeaveApproved = leaveApproved,
+                        LeaveRejected = leaveRejected,
+                        DocTotal = docTotal,
+                        DocApproved = docApproved,
+                        DocRejected = docRejected,
+                        TotalRequests = totalRequests,
+                        TotalApproved = totalApproved,
+                        TotalRejected = totalRejected,
+                        OverallApprovalRate = approvalRate,
+                        OverallRejectRate = rejectRate
+                    };
+
+                    var prediction = _predictionService.Predict(features);
+                    var profile = employeeProfiles.FirstOrDefault(item => item.user_id == userEntry.Id);
+                    var roleLabel = profile == null
+                        ? "Unassigned"
+                        : $"{profile.department} - {profile.employee_role}";
+
+                    predictionRows.Add(new SuperAdminPredictionRow
+                    {
+                        Name = profile?.full_name ?? userEntry.FullName ?? email,
+                        RoleLabel = roleLabel,
+                        TotalRequests = totalRequests,
+                        TotalApproved = totalApproved,
+                        TotalRejected = totalRejected,
+                        Prediction = FormatPredictionLabel(prediction.Label),
+                        Confidence = prediction.Confidence
+                    });
+                }
+            }
 
             return new SuperAdminDashboardViewModel
             {
@@ -582,7 +727,10 @@ namespace IT15_SOWCS.Controllers
                 Heatmap = heatmap,
                 CorrelationPoints = points,
                 PredictiveActual = actual,
-                PredictiveProjected = projected
+                PredictiveProjected = projected,
+                PredictionPeriod = periodKey,
+                PredictionModelReady = _predictionService.IsReady,
+                PredictionRows = predictionRows
             };
         }
 
@@ -628,6 +776,17 @@ namespace IT15_SOWCS.Controllers
             }
 
             return "Stable";
+        }
+
+        private static string FormatPredictionLabel(string label)
+        {
+            var normalized = (label ?? string.Empty).Trim().ToLowerInvariant();
+            return normalized switch
+            {
+                "skill_gap" => "Skill Gap",
+                "reward_milestone" => "Reward Milestone",
+                _ => "Stable"
+            };
         }
 
         private static int[,] BuildHeatmap(List<WorkTask> tasks)

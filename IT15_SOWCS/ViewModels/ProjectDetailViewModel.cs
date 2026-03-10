@@ -7,6 +7,7 @@ namespace IT15_SOWCS.ViewModels
         public Projects Project { get; set; } = new();
         public List<Employee> TeamMembers { get; set; } = new();
         public List<WorkTask> Tasks { get; set; } = new();
+        public bool CanManageTasks { get; set; }
     }
 }
 

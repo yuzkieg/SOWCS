@@ -241,6 +241,15 @@
             @if (isSuperAdmin)
             {
                 <li class="nav-item">
+                    <a asp-controller="PredictionInsights" asp-action="PredictionInsights"
+                       class="nav-link @IsActive("PredictionInsights", "PredictionInsights")" title="Prediction Insights">
+                        <i class="bi bi-graph-up-arrow"></i> <span class="nav-text">Prediction Insights</span>
+                    </a>
+                </li>
+            }
+            @if (isSuperAdmin)
+            {
+                <li class="nav-item">
                     <a asp-controller="Archive" asp-action="Archive"
                        class="nav-link @IsActive("Archive", "Archive")" title="Archive">
                         <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>

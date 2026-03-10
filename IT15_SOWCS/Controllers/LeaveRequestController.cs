@@ -38,6 +38,27 @@ namespace IT15_SOWCS.Controllers
                 user.Role.ToLower() == "superadmin");
         }
 
+        private async Task<string?> GetEmployeeRoleByEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return null;
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(item => item.Email == email);
+            if (user == null)
+            {
+                return null;
+            }
+
+            var employeeRole = await _context.Employees
+                .Where(employee => employee.user_id == user.Id)
+                .Select(employee => employee.employee_role)
+                .FirstOrDefaultAsync();
+
+            return string.IsNullOrWhiteSpace(employeeRole) ? null : employeeRole.Trim();
+        }
+
         [HttpGet]
         public async Task<IActionResult> LeaveRequest(string? status)
         {
@@ -124,8 +145,21 @@ namespace IT15_SOWCS.Controllers
             };
 
             _context.LeaveRequests.Add(leave);
-            await _notificationService.AddForRoleAsync(
-                "manager",
+            var requesterRole = await GetEmployeeRoleByEmailAsync(employeeEmail);
+            if (string.IsNullOrWhiteSpace(requesterRole) ||
+                (!string.Equals(requesterRole, "hr manager", StringComparison.OrdinalIgnoreCase) &&
+                 !string.Equals(requesterRole, "hr", StringComparison.OrdinalIgnoreCase)))
+            {
+                await _notificationService.AddForRoleGroupAsync(
+                    "hr manager",
+                    "New Leave Request",
+                    $"{employeeName} submitted a {leave.leave_type} request for approval.",
+                    "LeaveApproval",
+                    "/Approvals/Approvals");
+            }
+
+            await _notificationService.AddForRoleGroupAsync(
+                "superadmin",
                 "New Leave Request",
                 $"{employeeName} submitted a {leave.leave_type} request for approval.",
                 "LeaveApproval",

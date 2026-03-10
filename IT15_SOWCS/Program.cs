@@ -21,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<LeaveBalanceService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddSingleton<ApprovalPredictionService>();
 builder.Services.AddMemoryCache();
 
 // Identity setup 
@@ -44,8 +45,8 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
-        options.ClientId = builder.Configuration["GoogleKeys:ClientId"];
-        options.ClientSecret = builder.Configuration["GoogleKeys:ClientSecret"];
+        options.ClientId = builder.Configuration["GoogleKeys:ClientId"] ?? string.Empty;
+        options.ClientSecret = builder.Configuration["GoogleKeys:ClientSecret"] ?? string.Empty;
         options.CallbackPath = "/signin-google";
 
     });
@@ -112,6 +113,26 @@ BEGIN
     );
     CREATE UNIQUE INDEX [IX_PendingInvitation_token] ON [PendingInvitation]([token]);
     CREATE INDEX [IX_PendingInvitation_email_accepted_at] ON [PendingInvitation]([email], [accepted_at]);
+END");
+
+    dbContext.Database.ExecuteSqlRaw(@"
+IF OBJECT_ID(N'[PredictionAction]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [PredictionAction] (
+        [action_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [employee_id] INT NOT NULL,
+        [employee_name] NVARCHAR(200) NOT NULL,
+        [prediction_label] NVARCHAR(50) NOT NULL,
+        [action_type] NVARCHAR(50) NOT NULL,
+        [action_notes] NVARCHAR(300) NULL,
+        [created_by] NVARCHAR(450) NULL,
+        [created_at] DATETIME2 NOT NULL,
+        [period_type] NVARCHAR(20) NOT NULL,
+        [period_start] DATETIME2 NOT NULL,
+        [period_end] DATETIME2 NOT NULL
+    );
+    CREATE INDEX [IX_PredictionAction_employee_id_created_at]
+    ON [PredictionAction]([employee_id], [created_at]);
 END");
 
     var superAdminUser = await userManager.FindByEmailAsync("yuzkiega@gmail.com");

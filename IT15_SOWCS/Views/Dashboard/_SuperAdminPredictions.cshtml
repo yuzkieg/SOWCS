@@ -1,0 +1,53 @@
+@model IT15_SOWCS.ViewModels.SuperAdminDashboardViewModel
+
+<header class="d-flex flex-wrap align-items-center gap-3">
+    <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Approval Prediction (Per User)</h5>
+    <div class="d-flex align-items-center gap-2 ms-auto">
+        <label class="text-muted small mb-0">Period</label>
+        <select id="predictionPeriodSelect" class="form-select form-select-sm">
+            <option value="month" selected="@(Model.PredictionPeriod == "month")">Month</option>
+            <option value="year" selected="@(Model.PredictionPeriod == "year")">Year</option>
+        </select>
+    </div>
+</header>
+
+@if (!Model.PredictionModelReady)
+{
+    <div class="alert alert-warning mt-3 mb-0">Prediction model not found. Place the ONNX file in Trained_Model/approval_prediction.onnx.</div>
+}
+else if (Model.PredictionRows.Count == 0)
+{
+    <div class="text-muted small mt-3">No prediction data available for this period.</div>
+}
+else
+{
+    <div class="table-responsive mt-3">
+        <table class="table sa-table mb-0">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Total</th>
+                    <th>Approved</th>
+                    <th>Rejected</th>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.PredictionRows.OrderByDescending(r => r.Confidence))
+                {
+                    <tr>
+                        <td>@row.Name</td>
+                        <td>@row.RoleLabel</td>
+                        <td>@row.TotalRequests</td>
+                        <td>@row.TotalApproved</td>
+                        <td>@row.TotalRejected</td>
+                        <td>@row.Prediction</td>
+                        <td>@row.Confidence.ToString("P0")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

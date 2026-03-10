@@ -62,6 +62,36 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    async function markAsUnread(notificationId) {
+        if (!notificationId) {
+            return;
+        }
+
+        try {
+            await fetch("/notifications/" + notificationId + "/unread", {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+        } catch (error) {
+            console.error("Unable to mark notification as unread.", error);
+        }
+    }
+
+    async function deleteNotification(notificationId) {
+        if (!notificationId) {
+            return;
+        }
+
+        try {
+            await fetch("/notifications/" + notificationId + "/delete", {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+        } catch (error) {
+            console.error("Unable to delete notification.", error);
+        }
+    }
+
     function render() {
         const filtered = activeTab === "unread"
             ? allNotifications.filter(item => !item.isRead)
@@ -78,12 +108,32 @@ document.addEventListener("DOMContentLoaded", function () {
             list.innerHTML = filtered.map(item => {
                 const itemClass = item.isRead ? "notification-item" : "notification-item unread";
                 const link = item.actionUrl ? ` data-url="${escapeHtml(item.actionUrl)}"` : "";
+                const toggleLabel = item.isRead ? "Mark as unread" : "Mark as read";
 
-                return `<button type="button" class="${itemClass}" data-id="${item.id}"${link}>
-                    <div class="notification-item-title">${escapeHtml(item.title)}</div>
-                    <div class="notification-item-message">${escapeHtml(item.message)}</div>
-                    <div class="notification-item-time">${formatRelativeTime(item.createdAt)}</div>
-                </button>`;
+                return `<div class="${itemClass}" data-id="${item.id}"${link} role="button" tabindex="0">
+                    <div class="notification-item-main">
+                        <div class="notification-item-title">${escapeHtml(item.title)}</div>
+                        <div class="notification-item-message">${escapeHtml(item.message)}</div>
+                        <div class="notification-item-time">${formatRelativeTime(item.createdAt)}</div>
+                    </div>
+                    <div class="notification-item-actions dropdown">
+                        <button type="button" class="btn notification-ellipsis-btn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification options">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <button type="button" class="dropdown-item notification-toggle-read" data-id="${item.id}">
+                                    ${toggleLabel}
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item notification-delete" data-id="${item.id}">
+                                    Delete
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>`;
             }).join("");
         }
 
@@ -142,6 +192,61 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     list.addEventListener("click", async function (event) {
+        const ellipsisButton = event.target.closest(".notification-ellipsis-btn");
+        if (ellipsisButton) {
+            const actionWrapper = ellipsisButton.closest(".notification-item-actions");
+            const dropdownMenu = actionWrapper ? actionWrapper.querySelector(".dropdown-menu") : null;
+            const container = list;
+
+            if (actionWrapper && dropdownMenu && container) {
+                const containerRect = container.getBoundingClientRect();
+                const buttonRect = ellipsisButton.getBoundingClientRect();
+                const menuHeight = dropdownMenu.offsetHeight || 120;
+                const spaceBelow = containerRect.bottom - buttonRect.bottom;
+                const spaceAbove = buttonRect.top - containerRect.top;
+
+                actionWrapper.classList.remove("drop-up");
+                if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    actionWrapper.classList.add("drop-up");
+                }
+            }
+        }
+
+        const toggleButton = event.target.closest(".notification-toggle-read");
+        if (toggleButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const notificationId = toggleButton.getAttribute("data-id");
+            const selected = allNotifications.find(item => String(item.id) === String(notificationId));
+            if (!selected) {
+                return;
+            }
+
+            selected.isRead = !selected.isRead;
+            render();
+            if (selected.isRead) {
+                await markAsRead(notificationId);
+            } else {
+                await markAsUnread(notificationId);
+            }
+            return;
+        }
+
+        const deleteButton = event.target.closest(".notification-delete");
+        if (deleteButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const notificationId = deleteButton.getAttribute("data-id");
+            allNotifications = allNotifications.filter(item => String(item.id) !== String(notificationId));
+            render();
+            await deleteNotification(notificationId);
+            return;
+        }
+
+        if (event.target.closest(".notification-item-actions") || event.target.closest(".dropdown-menu")) {
+            return;
+        }
+
         const targetItem = event.target.closest(".notification-item");
         if (!targetItem) {
             return;
