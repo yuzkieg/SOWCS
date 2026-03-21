@@ -47,19 +47,99 @@ namespace IT15_SOWCS.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
-                if (result.Succeeded)
+                var normalizedEmail = (model.Email ?? string.Empty).Trim().ToLowerInvariant();
+                var user = await userManager.FindByEmailAsync(normalizedEmail);
+                if (user == null)
                 {
-                    return RedirectToAction("Index", "Dashboard");
-                }
-                if (result.IsLockedOut)
-                {
-                    ViewData["InactiveEmail"] = model.Email?.Trim();
-                    ModelState.AddModelError("", "Your account has been inactive. Send a reactivation request below.");
+                    ModelState.AddModelError("", "Wrong email or password.");
                     return View(model);
                 }
 
-                ModelState.AddModelError("", "Wrong email or password.");
+                if (!user.LockoutEnabled)
+                {
+                    user.LockoutEnabled = true;
+                    await userManager.UpdateAsync(user);
+                }
+
+                if (!user.LockoutEnd.HasValue && user.AccessFailedCount >= 3)
+                {
+                    user.AccessFailedCount = 0;
+                    await userManager.UpdateAsync(user);
+                }
+
+                if (await userManager.IsLockedOutAsync(user))
+                {
+                    if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow.AddYears(50))
+                    {
+                        ViewData["InactiveEmail"] = normalizedEmail;
+                        return View(model);
+                    }
+
+                    var remainingSeconds = user.LockoutEnd.HasValue
+                        ? Math.Max(1, (int)Math.Ceiling((user.LockoutEnd.Value - DateTimeOffset.UtcNow).TotalSeconds))
+                        : 60;
+                    var remainingMinutes = Math.Max(1, (int)Math.Ceiling(remainingSeconds / 60.0));
+                    ViewData["LockoutSeconds"] = remainingSeconds;
+                    return View(model);
+                }
+
+                var passwordValid = await userManager.CheckPasswordAsync(user, model.Password);
+                if (!passwordValid)
+                {
+                    user.AccessFailedCount += 1;
+                    var failedCount = user.AccessFailedCount;
+                    var failedUpdate = await userManager.UpdateAsync(user);
+                    if (!failedUpdate.Succeeded)
+                    {
+                        ModelState.AddModelError("", "Unable to update login attempts. Please try again.");
+                        return View(model);
+                    }
+
+                    if (failedCount > 0 && failedCount % 3 == 0)
+                    {
+                        var lockoutStage = failedCount / 3;
+                        if (lockoutStage >= 4)
+                        {
+                            user.LockoutEnabled = true;
+                            await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
+
+                            var employeeRecords = await _context.Employees
+                                .Where(employee => employee.user_id == user.Id)
+                                .ToListAsync();
+                            if (employeeRecords.Count > 0)
+                            {
+                                foreach (var employee in employeeRecords)
+                                {
+                                    employee.is_active = false;
+                                }
+                                await _context.SaveChangesAsync();
+                            }
+
+                            ViewData["InactiveEmail"] = normalizedEmail;
+                            return View(model);
+                        }
+
+                        var lockoutMinutes = lockoutStage switch
+                        {
+                            1 => 1,
+                            2 => 3,
+                            _ => 5
+                        };
+
+                        user.LockoutEnabled = true;
+                        await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(lockoutMinutes));
+                        ViewData["LockoutSeconds"] = lockoutMinutes * 60;
+                        return View(model);
+                    }
+
+                    ModelState.AddModelError("", "Wrong email or password.");
+                    return View(model);
+                }
+
+                await userManager.ResetAccessFailedCountAsync(user);
+                await userManager.SetLockoutEndDateAsync(user, null);
+                await signInManager.SignInAsync(user, model.RememberMe);
+                return RedirectToAction("Index", "Dashboard");
             }
 
             return View(model);

@@ -6,13 +6,34 @@ namespace IT15_SOWCS.Services
     public class ApprovalPredictionService
     {
         private readonly InferenceSession? _session;
+        private readonly ILogger<ApprovalPredictionService> _logger;
 
-        public ApprovalPredictionService(IWebHostEnvironment environment)
+        public ApprovalPredictionService(IWebHostEnvironment environment, ILogger<ApprovalPredictionService> logger)
         {
-            var modelPath = Path.Combine(environment.ContentRootPath, "Trained_Model", "approval_prediction.onnx");
-            if (File.Exists(modelPath))
+            _logger = logger;
+
+            var candidatePaths = new List<string>
+            {
+                Path.Combine(environment.ContentRootPath, "Trained_Model", "approval_prediction.onnx"),
+                Path.Combine(AppContext.BaseDirectory, "Trained_Model", "approval_prediction.onnx")
+            };
+
+            if (!string.IsNullOrWhiteSpace(environment.WebRootPath))
+            {
+                candidatePaths.Add(Path.Combine(environment.WebRootPath, "Trained_Model", "approval_prediction.onnx"));
+            }
+
+            candidatePaths.Add(Path.Combine(environment.ContentRootPath, "wwwroot", "Trained_Model", "approval_prediction.onnx"));
+
+            var modelPath = candidatePaths.FirstOrDefault(File.Exists);
+            if (!string.IsNullOrWhiteSpace(modelPath))
             {
                 _session = new InferenceSession(modelPath);
+                _logger.LogInformation("Approval prediction model loaded from {ModelPath}", modelPath);
+            }
+            else
+            {
+                _logger.LogWarning("Approval prediction model not found. Checked paths: {Paths}", string.Join(" | ", candidatePaths));
             }
         }
 
