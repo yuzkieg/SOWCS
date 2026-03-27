@@ -101,7 +101,10 @@
                 }
                 @foreach (var user in Model.Users)
                 {
-                    var initials = string.Concat((user.FullName ?? user.Email ?? "U").Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0])).Take(2));
+                    var displayName = (user.Email != null && Model.EmployeeNamesByEmail.TryGetValue(user.Email, out var employeeName) && !string.IsNullOrWhiteSpace(employeeName))
+                        ? employeeName
+                        : (string.IsNullOrWhiteSpace(user.FullName) ? (user.Email ?? "User") : user.FullName);
+                    var initials = string.Concat(displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0])).Take(2));
                     var employeeRole = (user.Email != null && Model.EmployeeRolesByEmail.TryGetValue(user.Email, out var role)) ? role : "N/A";
                     var displaySystemRole = string.Equals(user.Role, "superadmin", StringComparison.OrdinalIgnoreCase)
                         ? "Super Admin"
@@ -125,7 +128,7 @@
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar-circle" style="width:36px; height:36px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">@initials</div>
                                 <div>
-                                    <div class="fw-bold" style="font-size: 0.9rem;">@(string.IsNullOrWhiteSpace(user.FullName) ? user.Email : user.FullName)</div>
+                                    <div class="fw-bold" style="font-size: 0.9rem;">@displayName</div>
                                     <div class="text-secondary" style="font-size: 0.8rem;">@user.Email</div>
                                 </div>
                             </div>

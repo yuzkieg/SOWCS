@@ -119,44 +119,11 @@
         </div>
     </section>
 
-    <section class="sa-panel mt-4">
-        <div id="predictionPanel">
-            @await Html.PartialAsync("_SuperAdminPredictions", Model)
-        </div>
-    </section>
+    
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const panel = document.getElementById("predictionPanel");
-        if (!panel) {
-            return;
-        }
-
-        function attachPredictionHandler() {
-            const select = document.getElementById("predictionPeriodSelect");
-            if (!select) {
-                return;
-            }
-
-            select.addEventListener("change", async function () {
-                const period = select.value === "year" ? "year" : "month";
-                const response = await fetch(`/Dashboard/SuperAdminPredictions?predictionPeriod=${period}`, {
-                    headers: { "X-Requested-With": "XMLHttpRequest" }
-                });
-
-                if (!response.ok) {
-                    return;
-                }
-
-                const html = await response.text();
-                panel.innerHTML = html;
-                attachPredictionHandler();
-            });
-        }
-
-        attachPredictionHandler();
-
         function showToast(message) {
             const toast = document.createElement("div");
             toast.className = "syncora-toast";

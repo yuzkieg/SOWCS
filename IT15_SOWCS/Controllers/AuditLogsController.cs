@@ -77,9 +77,33 @@ namespace IT15_SOWCS.Controllers
             }
 
             var logs = await query.OrderByDescending(log => log.timestamp).ToListAsync();
+            var emailKeys = logs
+                .Select(log => log.user_email)
+                .Where(email => !string.IsNullOrWhiteSpace(email))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            Dictionary<string, string> employeeNamesByEmail = new(StringComparer.OrdinalIgnoreCase);
+            if (emailKeys.Count > 0)
+            {
+                employeeNamesByEmail = await _context.Employees
+                    .Join(_context.Users,
+                        employee => employee.user_id,
+                        user => user.Id,
+                        (employee, user) => new { user.Email, employee.full_name })
+                    .Where(item => item.Email != null && emailKeys.Contains(item.Email))
+                    .ToDictionaryAsync(item => item.Email!, item => item.full_name, StringComparer.OrdinalIgnoreCase);
+            }
+
             foreach (var log in logs)
             {
                 log.description = NormalizeDescription(log);
+                if (!string.IsNullOrWhiteSpace(log.user_email) &&
+                    employeeNamesByEmail.TryGetValue(log.user_email, out var employeeName) &&
+                    !string.IsNullOrWhiteSpace(employeeName))
+                {
+                    log.user_name = employeeName;
+                }
             }
 
             var model = new AuditLogsPageViewModel
@@ -296,5 +320,4 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
 

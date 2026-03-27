@@ -58,32 +58,66 @@
                     <th>User</th>
                     <th>Action</th>
                     <th>Entity</th>
+                    <th>Severity</th>
+                    <th>IP Address</th>
                     <th>Description</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Logs.Count == 0)
                 {
-                    <tr><td colspan="5" class="text-center text-muted py-4">No logs found.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">No logs found.</td></tr>
                 }
                 @foreach (var log in Model.Logs)
                 {
-                    var isNegative = log.action == "reject" || log.action == "rejected";
-                    var badgeClass = isNegative ? "badge-reject" : "badge-approve";
+                    var actionLabel = (log.action ?? string.Empty).Trim().ToLowerInvariant();
+                    var actionBadgeClass = actionLabel switch
+                    {
+                        "login_failed" => "badge-action-warning",
+                        "rejected" => "badge-action-danger",
+                        "reject" => "badge-action-danger",
+                        "archive" => "badge-action-danger",
+                        "delete" => "badge-action-danger",
+                        "restore" => "badge-action-info",
+                        "update" => "badge-action-warning",
+                        "create" => "badge-action-success",
+                        "invite" => "badge-action-success",
+                        "upload" => "badge-action-success",
+                        "approved" => "badge-action-success",
+                        "approve" => "badge-action-success",
+                        _ => "badge-action-neutral"
+                    };
+                    var actionText = string.IsNullOrWhiteSpace(actionLabel)
+                        ? string.Empty
+                        : char.ToUpperInvariant(actionLabel[0]) + actionLabel.Substring(1);
+                    actionText = actionText.Replace('_', ' ');
+                    var severityLabel = (log.severity ?? "Informational").Trim();
+                    var severityClass = severityLabel.ToLowerInvariant() switch
+                    {
+                        "critical" => "badge-severity-critical",
+                        "major" => "badge-severity-major",
+                        "minor" => "badge-severity-minor",
+                        "warning" => "badge-severity-warning",
+                        _ => "badge-severity-info"
+                    };
+                    var displayName = string.IsNullOrWhiteSpace(log.user_name) ? "Unknown User" : log.user_name;
+                    var displayEmail = string.IsNullOrWhiteSpace(log.user_email) ? "Unknown" : log.user_email;
                     <tr>
                         <td class="timestamp-text">@log.timestamp.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
                         <td>
                             <div class="log-user-info">
-                                <span class="log-user-name">@log.user_name</span>
-                                <span class="log-user-email">@log.user_email</span>
+                                <span class="log-user-name">@displayName</span>
+                                <span class="log-user-email">@displayEmail</span>
                             </div>
                         </td>
                         <td>
-                            <span class="badge-action @badgeClass">
-                                <i class="bi @(isNegative ? "bi-x-circle" : "bi-check-circle")"></i> @log.action
+                            <span class="badge-action @actionBadgeClass">
+                                @actionText
                             </span>
                         </td>
                         <td>@log.entity</td>
+                        <td><span class="badge-action @severityClass">@severityLabel</span></td>
+                        <td>@log.ip_address</td>
                         <td>@log.description</td>
                     </tr>
                 }

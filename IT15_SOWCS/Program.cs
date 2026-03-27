@@ -135,6 +135,18 @@ BEGIN
     ON [PredictionAction]([employee_id], [created_at]);
 END");
 
+    dbContext.Database.ExecuteSqlRaw(@"
+IF COL_LENGTH('AuditLog', 'severity') IS NULL
+BEGIN
+    ALTER TABLE [AuditLog] ADD [severity] NVARCHAR(20) NOT NULL CONSTRAINT DF_AuditLog_severity DEFAULT('Informational');
+END");
+
+    dbContext.Database.ExecuteSqlRaw(@"
+IF COL_LENGTH('AuditLog', 'ip_address') IS NULL
+BEGIN
+    ALTER TABLE [AuditLog] ADD [ip_address] NVARCHAR(45) NOT NULL CONSTRAINT DF_AuditLog_ip_address DEFAULT('');
+END");
+
     var superAdminUser = await userManager.FindByEmailAsync("yuzkiega@gmail.com");
     if (superAdminUser != null && !string.Equals(superAdminUser.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
     {
