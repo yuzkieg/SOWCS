@@ -282,10 +282,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function showLoading() {
         overlay.classList.add("visible");
-        window.setTimeout(function () {
-            overlay.classList.remove("visible");
-        }, 10000);
     }
+
+    window.addEventListener("pageshow", function () {
+        overlay.classList.remove("visible");
+    });
 
     function isInternalNavigation(anchor) {
         const href = anchor.getAttribute("href");
@@ -299,6 +300,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             const url = new URL(anchor.href, window.location.origin);
+            const samePath = url.origin === window.location.origin &&
+                url.pathname === window.location.pathname &&
+                url.search === window.location.search;
+            if (samePath && url.hash) {
+                return false;
+            }
             return url.origin === window.location.origin;
         } catch {
             return false;
@@ -541,6 +548,64 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+    const navLinks = Array.from(document.querySelectorAll(".landing-nav-link[data-section]"));
+    if (navLinks.length === 0) {
+        return;
+    }
+
+    const sections = navLinks
+        .map(link => ({
+            id: link.getAttribute("data-section"),
+            link,
+            section: document.getElementById(link.getAttribute("data-section"))
+        }))
+        .filter(item => item.section);
+
+    if (sections.length === 0) {
+        return;
+    }
+
+    const ctaButton = document.querySelector(".landing-cta-button");
+    const offset = 130;
+    let ticking = false;
+
+    function updateActive() {
+        const current = window.scrollY + offset;
+        let activeId = null;
+
+        sections.forEach(item => {
+            const top = item.section.getBoundingClientRect().top + window.scrollY;
+            if (current >= top) {
+                activeId = item.id;
+            }
+        });
+
+        sections.forEach(item => {
+            item.link.classList.toggle("is-active", item.id === activeId);
+        });
+
+        if (ctaButton) {
+            ctaButton.classList.toggle("is-active", activeId === "contact");
+        }
+    }
+
+    function onScroll() {
+        if (ticking) {
+            return;
+        }
+        ticking = true;
+        window.requestAnimationFrame(function () {
+            updateActive();
+            ticking = false;
+        });
+    }
+
+    window.addEventListener("scroll", onScroll);
+    window.addEventListener("resize", updateActive);
+    updateActive();
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     const searchInputs = document.querySelectorAll("form[method='get'] input[name='search']");
     if (!searchInputs.length) {
         return;
@@ -745,4 +810,104 @@ document.addEventListener("DOMContentLoaded", function () {
         pendingLogoutForm.dataset.logoutConfirmed = "true";
         pendingLogoutForm.submit();
     });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const inactivityModalElement = document.getElementById("inactivityModal");
+    if (!inactivityModalElement) {
+        return;
+    }
+
+    const keepWorkingButton = document.getElementById("inactivityKeepWorkingBtn");
+    const logoutButton = document.getElementById("inactivityLogoutBtn");
+    const logoutForm = document.getElementById("inactivityLogoutForm");
+    const countdownLabel = document.getElementById("inactivityCountdown");
+    const inactivityModal = bootstrap.Modal.getOrCreateInstance(inactivityModalElement, {
+        backdrop: "static",
+        keyboard: false
+    });
+
+    const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
+    const COUNTDOWN_SECONDS = 60;
+    let inactivityTimer = null;
+    let countdownTimer = null;
+    let countdownRemaining = COUNTDOWN_SECONDS;
+    let modalVisible = false;
+
+    function resetTimer() {
+        if (inactivityTimer) {
+            clearTimeout(inactivityTimer);
+        }
+
+        inactivityTimer = setTimeout(function () {
+            modalVisible = true;
+            startCountdown();
+            inactivityModal.show();
+        }, INACTIVITY_LIMIT_MS);
+    }
+
+    function startCountdown() {
+        if (!countdownLabel) {
+            return;
+        }
+
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+
+        countdownRemaining = COUNTDOWN_SECONDS;
+        countdownLabel.textContent = countdownRemaining.toString();
+
+        countdownTimer = setInterval(function () {
+            countdownRemaining -= 1;
+            if (countdownRemaining <= 0) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+                if (logoutForm) {
+                    logoutForm.submit();
+                }
+                return;
+            }
+            countdownLabel.textContent = countdownRemaining.toString();
+        }, 1000);
+    }
+
+    function stopCountdown() {
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+        }
+    }
+
+    function handleActivity() {
+        if (!modalVisible) {
+            resetTimer();
+        }
+    }
+
+    ["mousemove", "keydown", "click", "scroll", "touchstart"].forEach(function (eventName) {
+        document.addEventListener(eventName, handleActivity, true);
+    });
+
+    if (keepWorkingButton) {
+        keepWorkingButton.addEventListener("click", function () {
+            modalVisible = false;
+            stopCountdown();
+            inactivityModal.hide();
+            resetTimer();
+        });
+    }
+
+    if (logoutButton && logoutForm) {
+        logoutButton.addEventListener("click", function () {
+            logoutForm.submit();
+        });
+    }
+
+    inactivityModalElement.addEventListener("hidden.bs.modal", function () {
+        modalVisible = false;
+        stopCountdown();
+    });
+
+    resetTimer();
 });

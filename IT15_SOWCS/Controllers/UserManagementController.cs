@@ -71,11 +71,20 @@ namespace IT15_SOWCS.Controllers
                 .Where(item => item.Email != null)
                 .ToDictionaryAsync(item => item.Email!, item => item.employee_role);
 
+            var employeeNamesByEmail = await _context.Employees
+                .Join(_context.Users,
+                    employee => employee.user_id,
+                    user => user.Id,
+                    (employee, user) => new { user.Email, employee.full_name })
+                .Where(item => item.Email != null)
+                .ToDictionaryAsync(item => item.Email!, item => item.full_name);
+
             var model = new UserManagementPageViewModel
             {
                 Users = users,
                 TotalUsersCount = await _context.Users.CountAsync(),
                 EmployeeRolesByEmail = employeeRolesByEmail,
+                EmployeeNamesByEmail = employeeNamesByEmail,
                 ActiveEmployeeUserIds = (await _context.Employees
                     .Where(employee => employee.is_active)
                     .Select(employee => employee.user_id)
@@ -415,3 +424,4 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
+

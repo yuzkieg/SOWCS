@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Globalization;
@@ -29,6 +30,15 @@ namespace IT15_SOWCS.Filters
                 return;
             }
 
+            if (string.Equals(descriptor.ControllerName, "Account", StringComparison.OrdinalIgnoreCase) &&
+                (string.Equals(descriptor.ActionName, "Login", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(descriptor.ActionName, "ExternalLogin", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(descriptor.ActionName, "ExternalLoginCallback", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(descriptor.ActionName, "Logout", StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
             var request = context.HttpContext.Request;
             var method = request.Method.ToUpperInvariant();
             var controller = descriptor.ControllerName;
@@ -38,14 +48,29 @@ namespace IT15_SOWCS.Filters
             var description = await ResolveDescriptionAsync(controller, actionName, actionLabel, context.ActionArguments, route, method, context.HttpContext.Response?.StatusCode ?? 0);
 
             var userEmail = context.HttpContext.User?.Identity?.Name ?? "anonymous@local";
+            var userName = userEmail;
+            if (!string.Equals(userEmail, "anonymous@local", StringComparison.OrdinalIgnoreCase))
+            {
+                var dbUser = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(item => item.Email == userEmail);
+                if (dbUser != null && !string.IsNullOrWhiteSpace(dbUser.FullName))
+                {
+                    userName = dbUser.FullName;
+                }
+            }
+            var ipAddress = ResolveClientIp(context.HttpContext);
+            var severity = ResolveSeverity(actionLabel, controller, actionName);
 
             _context.AuditLogs.Add(new AuditLogEntry
             {
                 timestamp = DateTime.UtcNow,
                 user_email = userEmail,
-                user_name = userEmail,
+                user_name = userName,
                 action = actionLabel,
                 entity = controller,
+                severity = severity,
+                ip_address = ipAddress,
                 description = description
             });
 
@@ -237,7 +262,7 @@ namespace IT15_SOWCS.Filters
             if (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
                 actionName.Equals("ExternalLogin", StringComparison.OrdinalIgnoreCase))
             {
-                return "Signed in with external login";
+                return "Signed in with Google";
             }
 
             if (controller.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
@@ -369,6 +394,61 @@ namespace IT15_SOWCS.Filters
             }
 
             return string.Concat(value.Select((ch, index) => index > 0 && char.IsUpper(ch) ? $" {ch}" : ch.ToString()));
+        }
+
+        private static string ResolveClientIp(HttpContext context)
+        {
+            var forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(forwarded))
+            {
+                return forwarded.Split(',')[0].Trim();
+            }
+
+            return context.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+        }
+
+        private static string ResolveSeverity(string actionLabel, string controller, string actionName)
+        {
+            var action = (actionLabel ?? string.Empty).Trim().ToLowerInvariant();
+            var entity = (controller ?? string.Empty).Trim().ToLowerInvariant();
+            var actionLower = (actionName ?? string.Empty).Trim().ToLowerInvariant();
+
+            if (action == "login_failed")
+            {
+                return "Warning";
+            }
+
+            if (action is "archive" or "delete")
+            {
+                return "Major";
+            }
+
+            if (action is "restore")
+            {
+                return "Major";
+            }
+
+            if (action is "approved" or "rejected")
+            {
+                return "Major";
+            }
+
+            if (action is "update")
+            {
+                return "Major";
+            }
+
+            if (action is "create" or "invite" or "upload")
+            {
+                return "Minor";
+            }
+
+            if (entity == "account" && (actionLower.Contains("login") || actionLower.Contains("logout")))
+            {
+                return "Informational";
+            }
+
+            return "Informational";
         }
     }
 }

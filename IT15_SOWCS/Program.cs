@@ -24,7 +24,6 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddSingleton<ApprovalPredictionService>();
 builder.Services.AddMemoryCache();
 
-// Identity setup 
 builder.Services.AddIdentity<Users, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -38,6 +37,8 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
     options.SignIn.RequireConfirmedEmail = false;
     options.SignIn.RequireConfirmedAccount = false;
     options.SignIn.RequireConfirmedPhoneNumber = false;
+
+    options.Lockout.AllowedForNewUsers = true;
 })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
@@ -61,14 +62,13 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var app = builder.Build();
-// Add this block here
+
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
                        Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
-// The rest of your existing middleware
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -135,6 +135,18 @@ BEGIN
     ON [PredictionAction]([employee_id], [created_at]);
 END");
 
+    dbContext.Database.ExecuteSqlRaw(@"
+IF COL_LENGTH('AuditLog', 'severity') IS NULL
+BEGIN
+    ALTER TABLE [AuditLog] ADD [severity] NVARCHAR(20) NOT NULL CONSTRAINT DF_AuditLog_severity DEFAULT('Informational');
+END");
+
+    dbContext.Database.ExecuteSqlRaw(@"
+IF COL_LENGTH('AuditLog', 'ip_address') IS NULL
+BEGIN
+    ALTER TABLE [AuditLog] ADD [ip_address] NVARCHAR(45) NOT NULL CONSTRAINT DF_AuditLog_ip_address DEFAULT('');
+END");
+
     var superAdminUser = await userManager.FindByEmailAsync("yuzkiega@gmail.com");
     if (superAdminUser != null && !string.Equals(superAdminUser.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
     {
@@ -142,6 +154,8 @@ END");
         superAdminUser.UpdatedDate = DateTime.UtcNow;
         await userManager.UpdateAsync(superAdminUser);
     }
+
+    await DemoDataSeeder.SeedAsync(dbContext, userManager);
 }
 
 if (!app.Environment.IsDevelopment())
@@ -155,7 +169,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();    
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

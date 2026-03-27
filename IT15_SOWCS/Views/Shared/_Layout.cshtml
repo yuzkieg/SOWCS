@@ -4,13 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Syncora</title>
+    <link rel="icon" type="image/png" href="~/images/SOWCS.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         :root {
             --syncora-dark: #292d34;
-            --syncora-blue: #7b68ee; 
+            --syncora-blue: #7b68ee;
         }
 
         body {
@@ -76,8 +80,8 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-md navbar-light bg-white border-bottom fixed-top">
-            <div class="container-fluid">
+        <nav class="navbar navbar-expand-md navbar-light bg-white border-bottom fixed-top landing-header">
+            <div class="container-fluid landing-header-inner">
                 <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
                     <img src="~/images/SOWCS.png" alt="Syncora Logo" />
                     <span>Syncora</span>
@@ -88,7 +92,7 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <div class="d-flex align-items-center ms-auto">
                         <partial name="_LoginPartial" />
-                        <a class="btn btn-syncora ms-3" href="#">Get Started</a>
+                        <a class="btn btn-syncora ms-3 landing-cta-button" data-section="contact" asp-controller="Home" asp-action="Index" asp-fragment="contact">Get Started</a>
                     </div>
                 </div>
             </div>
@@ -108,7 +112,7 @@
 
     <footer class="border-top text-muted">
         <div class="container text-center">
-            <p>&copy; 2026 - <strong>Syncora</strong> - Syncora Office Workflow & Collaboration System</p>
+            <p>&copy; 2026 <strong>Syncora</strong>. All rights reserved.</p>
         </div>
     </footer>
 

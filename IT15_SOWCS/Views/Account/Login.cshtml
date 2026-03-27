@@ -7,6 +7,9 @@
 
 <div class="account-container">
     <div class="account-box">
+        <a asp-controller="Home" asp-action="Index" class="account-back-link" aria-label="Back to home">
+            <i class="bi bi-arrow-left"></i>
+        </a>
         <div class="logo-wrapper">
             <div class="logo-circle">
                 <img src="~/images/SOWCS.png" alt="Syncora Logo" />
@@ -34,6 +37,12 @@
             {
                 <div class="alert alert-warning py-2">@inactiveNotice</div>
             }
+            @if (ViewData["LockoutSeconds"] is int lockoutSeconds && lockoutSeconds > 0)
+            {
+                <div class="alert alert-warning py-2" data-lockout-seconds="@lockoutSeconds">
+                    Too many failed attempts. Try again in <span id="loginLockoutCountdown">@lockoutSeconds</span> seconds.
+                </div>
+            }
 
             <div class="mb-3">
                 <label asp-for="Email" class="form-label">Email</label>
@@ -57,7 +66,7 @@
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 mt-2">Sign in</button>
+            <button type="submit" class="btn btn-primary w-100 mt-2" id="loginSubmitBtn">Sign in</button>
 
             <div class="d-flex justify-content-between mt-4">
                 <a asp-action="VerifyEmail" class="account-link text-muted-small">Forgot password?</a>
@@ -93,4 +102,36 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
     }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const lockoutBanner = document.querySelector("[data-lockout-seconds]");
+            const countdown = document.getElementById("loginLockoutCountdown");
+            const submitBtn = document.getElementById("loginSubmitBtn");
+            if (!lockoutBanner || !countdown) {
+                return;
+            }
+
+            let remaining = parseInt(lockoutBanner.getAttribute("data-lockout-seconds"), 10);
+            if (!Number.isFinite(remaining) || remaining <= 0) {
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+
+            const timer = setInterval(function () {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    lockoutBanner.remove();
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                    }
+                    return;
+                }
+                countdown.textContent = remaining.toString();
+            }, 1000);
+        });
+    </script>
 }

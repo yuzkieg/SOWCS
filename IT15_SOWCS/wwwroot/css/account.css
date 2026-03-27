@@ -41,6 +41,7 @@ html, body {
     padding: 2.5rem;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    position: relative;
 
 }
 
@@ -173,4 +174,25 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.account-back-link {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #1f2937;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.account-back-link:hover {
+    background: #e2e8f0;
+    color: #0f172a;
 }

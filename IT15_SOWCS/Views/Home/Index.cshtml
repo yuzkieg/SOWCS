@@ -1,7 +1,159 @@
-﻿@{
+@{
     ViewData["Title"] = "Syncora";
 }
 
-<div class="text-center">
+<style>
+    main.pb-3 { padding-bottom: 0 !important; }
+    footer {
+        margin-top: 0 !important;
+        padding: 0 !important;
+        border-top: 0 !important;
+        background: transparent !important;
+    }
+</style>
 
+<div class="landing-page">
+    <div class="landing-shell">
+        <section class="landing-hero">
+            <div>
+                <span class="landing-badge"><i class="bi bi-shield-check"></i>Office Workflow & Collaboration System</span>
+                <h1>Professional workflows for approvals, projects, and people operations.</h1>
+                <p>
+                    Syncora gives leaders and teams a single, auditable space to manage leave, documents,
+                    and project execution with clarity and accountability.
+                </p>
+                <div class="landing-actions">
+                    <a class="landing-btn-primary" asp-controller="Account" asp-action="Login">Sign In</a>
+                    <a class="landing-btn-secondary" href="#features">View Features</a>
+                </div>
+                <div class="landing-metrics">
+                    <div class="landing-metric-card">
+                        <h3>24/7</h3>
+                        <span>Audit-ready activity tracking</span>
+                    </div>
+                    <div class="landing-metric-card">
+                        <h3>4-in-1</h3>
+                        <span>HR, approvals, projects, documents</span>
+                    </div>
+                    <div class="landing-metric-card">
+                        <h3>+40%</h3>
+                        <span>Faster approvals turnaround</span>
+                    </div>
+                </div>
+            </div>
+            <div class="landing-panel">
+                <h4>What Leaders See</h4>
+                <ul>
+                    <li>
+                        <i class="bi bi-activity"></i>
+                        <div>
+                            <strong>Live operational pulse</strong>
+                            <div>Track leave, tasks, and project milestones in real time.</div>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="bi bi-diagram-3"></i>
+                        <div>
+                            <strong>Cross-team alignment</strong>
+                            <div>Keep managers and HR aligned with centralized approvals.</div>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="bi bi-journal-check"></i>
+                        <div>
+                            <strong>Structured governance</strong>
+                            <div>Every action is logged for audit and compliance readiness.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="features" class="landing-section">
+            <h2>Everything your office needs to move faster.</h2>
+            <div class="landing-features">
+                <div class="landing-feature-card">
+                    <h3>Unified approvals</h3>
+                    <p>Route leave and document requests through the right managers in minutes.</p>
+                </div>
+                <div class="landing-feature-card">
+                    <h3>Project clarity</h3>
+                    <p>Assign tasks, track progress, and see delivery health across teams.</p>
+                </div>
+                <div class="landing-feature-card">
+                    <h3>HR visibility</h3>
+                    <p>Maintain staff records and leave balances with confidence.</p>
+                </div>
+                <div class="landing-feature-card">
+                    <h3>Document control</h3>
+                    <p>Secure uploads, quick searches, and simple access governance.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="solutions" class="landing-section">
+            <h2>Solutions built for every role.</h2>
+            <div class="landing-features">
+                <div class="landing-feature-card">
+                    <h3>Executive oversight</h3>
+                    <p>Track approvals, risk, and productivity with audit-ready dashboards.</p>
+                </div>
+                <div class="landing-feature-card">
+                    <h3>HR operations</h3>
+                    <p>Keep employee records, leave balances, and reports accurate and current.</p>
+                </div>
+                <div class="landing-feature-card">
+                    <h3>Manager delivery</h3>
+                    <p>Assign tasks, approve requests, and keep teams aligned on priorities.</p>
+                </div>
+                <div class="landing-feature-card">
+                    <h3>Employee self-service</h3>
+                    <p>Submit requests, upload documents, and track task status in one view.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="landing-section">
+            <h2>Designed for accountability and clarity.</h2>
+            <p class="text-muted" style="max-width: 760px;">
+                Syncora unifies your core office workflows with role-based access, integrated notifications,
+                and system-wide audit trails. Built for teams that need consistent governance without slowing down.
+            </p>
+        </section>
+
+        <section class="landing-section">
+            <div class="landing-strip">
+                <div>
+                    <i class="bi bi-bell"></i>
+                    <div>
+                        <strong>Instant notifications</strong>
+                        <div>Gmail-integrated alerts keep teams responsive.</div>
+                    </div>
+                </div>
+                <div>
+                    <i class="bi bi-people"></i>
+                    <div>
+                        <strong>Role-based access</strong>
+                        <div>Admin, HR, manager, and employee views stay focused.</div>
+                    </div>
+                </div>
+                <div>
+                    <i class="bi bi-cloud-check"></i>
+                    <div>
+                        <strong>Google-powered identity</strong>
+                        <div>Secure sign-in and People API-backed profiles.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="landing-cta">
+            <h2>Ready to modernize your office workflow?</h2>
+            <p>Bring your approvals, tasks, and staff records into one professional platform.</p>
+            <div class="landing-actions">
+                <a class="landing-btn-primary" asp-controller="Account" asp-action="Login">Get Started</a>
+                <a class="landing-btn-secondary" href="mailto:admin@syncora.com">Contact Us</a>
+            </div>
+        </section>
+    </div>
 </div>

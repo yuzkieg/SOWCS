@@ -241,15 +241,6 @@
             @if (isSuperAdmin)
             {
                 <li class="nav-item">
-                    <a asp-controller="PredictionInsights" asp-action="PredictionInsights"
-                       class="nav-link @IsActive("PredictionInsights", "PredictionInsights")" title="Prediction Insights">
-                        <i class="bi bi-graph-up-arrow"></i> <span class="nav-text">Prediction Insights</span>
-                    </a>
-                </li>
-            }
-            @if (isSuperAdmin)
-            {
-                <li class="nav-item">
                     <a asp-controller="Archive" asp-action="Archive"
                        class="nav-link @IsActive("Archive", "Archive")" title="Archive">
                         <i class="bi bi-archive"></i> <span class="nav-text">Archive</span>
@@ -265,6 +256,27 @@
             <div class="user-info text-truncate nav-text">
                 <span class="user-name">@displayName</span>
                 <span class="user-role">@role</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="inactivityModal" tabindex="-1" aria-hidden="true" data-inactivity-modal="true">
+    <div class="modal-dialog modal-dialog-centered syncora-confirm-dialog">
+        <div class="modal-content border-0 shadow-lg syncora-confirm-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Still working?</h5>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="mb-2">You have been inactive for 5 minutes. Do you want to stay signed in?</p>
+                <p class="text-muted mb-3">You will be logged out in <span id="inactivityCountdown">60</span> seconds.</p>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-4" id="inactivityKeepWorkingBtn">Keep Working</button>
+                    <button type="button" class="btn btn-dark px-4" id="inactivityLogoutBtn">Logout</button>
+                </div>
+                <form id="inactivityLogoutForm" asp-controller="Account" asp-action="Logout" method="post" class="d-none">
+                    @Html.AntiForgeryToken()
+                </form>
             </div>
         </div>
     </div>

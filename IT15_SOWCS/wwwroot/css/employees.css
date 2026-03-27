@@ -26,7 +26,11 @@
     background: white;
     border-radius: 12px;
     border: 1px solid #f1f5f9;
-    overflow: hidden;
+    overflow: visible;
+}
+
+.emp-table-card .dropdown-menu {
+    z-index: 1100;
 }
 
 .table {
@@ -248,6 +252,7 @@
 
     .emp-table-card {
         overflow-x: auto;
+        overflow-y: visible;
     }
 
     .emp-table-card .table {

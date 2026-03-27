@@ -7,6 +7,7 @@ namespace IT15_SOWCS.ViewModels
         public List<Users> Users { get; set; } = new();
         public int TotalUsersCount { get; set; }
         public Dictionary<string, string> EmployeeRolesByEmail { get; set; } = new();
+        public Dictionary<string, string> EmployeeNamesByEmail { get; set; } = new();
         public HashSet<string> ActiveEmployeeUserIds { get; set; } = new();
         public int AdminCount { get; set; }
         public int ActiveEmployeeCount { get; set; }

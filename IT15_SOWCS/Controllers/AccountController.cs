@@ -17,19 +17,22 @@ namespace IT15_SOWCS.Controllers
         private readonly IMemoryCache memoryCache;
         private readonly EmailService emailService;
         private readonly AppDbContext _context;
+        private readonly NotificationService _notificationService;
 
         public AccountController(
             SignInManager<Users> signInManager,
             UserManager<Users> userManager,
             IMemoryCache memoryCache,
             EmailService emailService,
-            AppDbContext context)
+            AppDbContext context,
+            NotificationService notificationService)
         {
             this.signInManager = signInManager;
             this.userManager = userManager;
             this.memoryCache = memoryCache;
             this.emailService = emailService;
             _context = context;
+            _notificationService = notificationService;
         }
 
         public IActionResult Login(string? inactiveEmail = null)
@@ -47,19 +50,142 @@ namespace IT15_SOWCS.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
-                if (result.Succeeded)
+                var normalizedEmail = (model.Email ?? string.Empty).Trim().ToLowerInvariant();
+                var clientIp = ResolveClientIp(HttpContext);
+                var user = await userManager.FindByEmailAsync(normalizedEmail);
+                if (user == null)
                 {
-                    return RedirectToAction("Index", "Dashboard");
-                }
-                if (result.IsLockedOut)
-                {
-                    ViewData["InactiveEmail"] = model.Email?.Trim();
-                    ModelState.AddModelError("", "Your account has been inactive. Send a reactivation request below.");
+                    _context.AuditLogs.Add(new AuditLogEntry
+                    {
+                        timestamp = DateTime.UtcNow,
+                        user_email = normalizedEmail,
+                        user_name = normalizedEmail,
+                        action = "login_failed",
+                        entity = "Account",
+                        severity = "Warning",
+                        ip_address = clientIp,
+                        description = "Failed login attempt"
+                    });
+                    await _context.SaveChangesAsync();
+                    ModelState.AddModelError("", "Wrong email or password.");
                     return View(model);
                 }
 
-                ModelState.AddModelError("", "Wrong email or password.");
+                if (!user.LockoutEnabled)
+                {
+                    user.LockoutEnabled = true;
+                    await userManager.UpdateAsync(user);
+                }
+
+                if (!user.LockoutEnd.HasValue && user.AccessFailedCount >= 3)
+                {
+                    user.AccessFailedCount = 0;
+                    await userManager.UpdateAsync(user);
+                }
+
+                if (await userManager.IsLockedOutAsync(user))
+                {
+                    if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow.AddYears(50))
+                    {
+                        ViewData["InactiveEmail"] = normalizedEmail;
+                        return View(model);
+                    }
+
+                    var remainingSeconds = user.LockoutEnd.HasValue
+                        ? Math.Max(1, (int)Math.Ceiling((user.LockoutEnd.Value - DateTimeOffset.UtcNow).TotalSeconds))
+                        : 60;
+                    var remainingMinutes = Math.Max(1, (int)Math.Ceiling(remainingSeconds / 60.0));
+                    ViewData["LockoutSeconds"] = remainingSeconds;
+                    return View(model);
+                }
+
+                var passwordValid = await userManager.CheckPasswordAsync(user, model.Password);
+                if (!passwordValid)
+                {
+                    user.AccessFailedCount += 1;
+                    var failedCount = user.AccessFailedCount;
+                    var failedUpdate = await userManager.UpdateAsync(user);
+                    if (!failedUpdate.Succeeded)
+                    {
+                        ModelState.AddModelError("", "Unable to update login attempts. Please try again.");
+                        return View(model);
+                    }
+
+                    _context.AuditLogs.Add(new AuditLogEntry
+                    {
+                        timestamp = DateTime.UtcNow,
+                        user_email = normalizedEmail,
+                        user_name = string.IsNullOrWhiteSpace(user.FullName) ? normalizedEmail : user.FullName,
+                        action = "login_failed",
+                        entity = "Account",
+                        severity = "Warning",
+                        ip_address = clientIp,
+                        description = "Failed login attempt"
+                    });
+                    await _context.SaveChangesAsync();
+
+                    if (failedCount > 0 && failedCount % 3 == 0)
+                    {
+                        var lockoutStage = failedCount / 3;
+                        if (lockoutStage >= 3)
+                        {
+                            user.LockoutEnabled = true;
+                            await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
+
+                            var employeeRecords = await _context.Employees
+                                .Where(employee => employee.user_id == user.Id)
+                                .ToListAsync();
+                            if (employeeRecords.Count > 0)
+                            {
+                                foreach (var employee in employeeRecords)
+                                {
+                                    employee.is_active = false;
+                                }
+                                await _context.SaveChangesAsync();
+                            }
+
+                            var notice = $"Account {normalizedEmail} was automatically inactivated after repeated failed login attempts.";
+                            await _notificationService.AddForRoleGroupAsync(
+                                "superadmin",
+                                "Account Auto-Inactivated",
+                                notice,
+                                "Security",
+                                "/UserManagement/UserManagement");
+                            await _notificationService.SaveAsync();
+
+                            ViewData["InactiveEmail"] = normalizedEmail;
+                            return View(model);
+                        }
+
+                        var lockoutMinutes = lockoutStage == 1 ? 1 : 3;
+
+                        user.LockoutEnabled = true;
+                        await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(lockoutMinutes));
+                        ViewData["LockoutSeconds"] = lockoutMinutes * 60;
+                        return View(model);
+                    }
+
+                    ModelState.AddModelError("", "Wrong email or password.");
+                    return View(model);
+                }
+
+                await userManager.ResetAccessFailedCountAsync(user);
+                await userManager.SetLockoutEndDateAsync(user, null);
+                await signInManager.SignInAsync(user, model.RememberMe);
+
+                _context.AuditLogs.Add(new AuditLogEntry
+                {
+                    timestamp = DateTime.UtcNow,
+                    user_email = normalizedEmail,
+                    user_name = string.IsNullOrWhiteSpace(user.FullName) ? normalizedEmail : user.FullName,
+                    action = "login",
+                    entity = "Account",
+                    severity = "Informational",
+                    ip_address = clientIp,
+                    description = "Logged in"
+                });
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index", "Dashboard");
             }
 
             return View(model);
@@ -248,6 +374,10 @@ namespace IT15_SOWCS.Controllers
                 var safeRedirectUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
                     ? returnUrl
                     : Url.Action("Index", "Dashboard") ?? "/";
+                var loginEmail = info.Principal.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+                var fullName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
+                var displayName = string.IsNullOrWhiteSpace(fullName) ? loginEmail : fullName;
+                await AddAuditLogAsync(loginEmail, displayName, "login", "Signed in with Google", "Informational");
                 return LocalRedirect(safeRedirectUrl);
             }
             if (result.IsLockedOut)
@@ -316,6 +446,7 @@ namespace IT15_SOWCS.Controllers
             var finalRedirectUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
                 ? returnUrl
                 : Url.Action("Index", "Dashboard") ?? "/";
+            await AddAuditLogAsync(user.Email ?? email, string.IsNullOrWhiteSpace(user.FullName) ? email : user.FullName, "login", "Signed in with Google", "Informational");
             return LocalRedirect(finalRedirectUrl);
         }
 
@@ -452,10 +583,45 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            var email = User.Identity?.Name ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var dbUser = await userManager.FindByEmailAsync(email);
+                var displayName = dbUser != null && !string.IsNullOrWhiteSpace(dbUser.FullName) ? dbUser.FullName : email;
+                await AddAuditLogAsync(email, displayName, "logout", "Logged out", "Informational");
+            }
             await signInManager.SignOutAsync();
             return RedirectToAction("Login", "Account");
         }
 
         private static string GetVerificationCacheKey(string email) => $"verify-code:{email}";
+
+        private async Task AddAuditLogAsync(string email, string name, string action, string description, string severity)
+        {
+            var ipAddress = ResolveClientIp(HttpContext);
+            _context.AuditLogs.Add(new AuditLogEntry
+            {
+                timestamp = DateTime.UtcNow,
+                user_email = email,
+                user_name = string.IsNullOrWhiteSpace(name) ? email : name,
+                action = action,
+                entity = "Account",
+                severity = severity,
+                ip_address = ipAddress,
+                description = description
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        private static string ResolveClientIp(HttpContext context)
+        {
+            var forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(forwarded))
+            {
+                return forwarded.Split(',')[0].Trim();
+            }
+
+            return context.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+        }
     }
 }

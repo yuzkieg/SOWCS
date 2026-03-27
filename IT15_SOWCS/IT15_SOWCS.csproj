@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <Content Include=".gitignore.txt" />
+    <Content Include="Trained_Model\approval_prediction.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
