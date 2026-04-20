@@ -32,15 +32,40 @@ namespace IT15_SOWCS.Controllers
 
         [HttpGet]
         public async Task<IActionResult> AuditLogs(
+            [FromQuery(Name = "auditType")] string? auditType,
             string? search,
             [FromQuery(Name = "action")] string? actionFilter,
             [FromQuery(Name = "from")] DateTime? from,
             [FromQuery(Name = "to")] DateTime? to)
         {
+            var normalizedAuditType = string.Equals(auditType, "security", StringComparison.OrdinalIgnoreCase)
+                ? "security"
+                : "system";
+            var normalizedActionFilter = string.IsNullOrWhiteSpace(actionFilter)
+                ? null
+                : actionFilter.Trim().ToLowerInvariant();
+
+            if (normalizedAuditType == "system" &&
+                normalizedActionFilter is "login" or "logout" or "login_failed")
+            {
+                normalizedActionFilter = null;
+            }
+
+            if (normalizedAuditType == "security" &&
+                normalizedActionFilter is "approved" or "approve" or "rejected" or "reject" or
+                "upload" or "invite" or "create" or "update" or "archive" or "delete" or "restore")
+            {
+                normalizedActionFilter = null;
+            }
+
             var query = _context.AuditLogs
                 .Where(log => log.action == null || !EF.Functions.Like(log.action, "view"))
                 .Where(log => log.action == null || !EF.Functions.Like(log.action, "view%"))
                 .AsQueryable();
+
+            query = normalizedAuditType == "security"
+                ? query.Where(log => log.audit_type == "Security")
+                : query.Where(log => log.audit_type != "Security");
 
             if (from.HasValue)
             {
@@ -62,21 +87,22 @@ namespace IT15_SOWCS.Controllers
                     log.description.Contains(search));
             }
 
-            if (!string.IsNullOrWhiteSpace(actionFilter) && !actionFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(normalizedActionFilter) && !normalizedActionFilter.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
-                var normalizedAction = actionFilter.Trim().ToLowerInvariant();
-                var acceptedActions = normalizedAction switch
+                var acceptedActions = normalizedActionFilter switch
                 {
                     "approve" => new[] { "approve", "approved" },
                     "reject" => new[] { "reject", "rejected" },
                     "delete" => new[] { "delete", "archive" },
-                    _ => new[] { normalizedAction }
+                    _ => new[] { normalizedActionFilter }
                 };
 
                 query = query.Where(log => log.action != null && acceptedActions.Contains(log.action.ToLower()));
             }
 
             var logs = await query.OrderByDescending(log => log.timestamp).ToListAsync();
+            var systemCount = await _context.AuditLogs.CountAsync(log => log.audit_type != "Security");
+            var securityCount = await _context.AuditLogs.CountAsync(log => log.audit_type == "Security");
             var emailKeys = logs
                 .Select(log => log.user_email)
                 .Where(email => !string.IsNullOrWhiteSpace(email))
@@ -109,10 +135,13 @@ namespace IT15_SOWCS.Controllers
             var model = new AuditLogsPageViewModel
             {
                 Logs = logs,
+                AuditType = normalizedAuditType,
                 Search = search,
-                Action = actionFilter,
+                Action = normalizedActionFilter,
                 StartDate = from?.Date,
-                EndDate = to?.Date
+                EndDate = to?.Date,
+                SystemCount = systemCount,
+                SecurityCount = securityCount
             };
 
             return View("AuditLogs", model);
@@ -320,4 +349,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-

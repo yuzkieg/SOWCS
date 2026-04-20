@@ -7,6 +7,20 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var documentEncryptionKey = builder.Configuration["Security:DocumentEncryptionKey"];
+if (string.IsNullOrWhiteSpace(documentEncryptionKey))
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        documentEncryptionKey = "syncora-dev-document-key-change-before-production";
+    }
+    else
+    {
+        throw new InvalidOperationException("Missing configuration for Security:DocumentEncryptionKey.");
+    }
+}
+
+DocumentFieldEncryption.Configure(documentEncryptionKey);
 
 builder.Services.AddScoped<UserActionAuditFilter>();
 builder.Services.AddScoped<ModuleAccessFilter>();
@@ -146,6 +160,22 @@ IF COL_LENGTH('AuditLog', 'ip_address') IS NULL
 BEGIN
     ALTER TABLE [AuditLog] ADD [ip_address] NVARCHAR(45) NOT NULL CONSTRAINT DF_AuditLog_ip_address DEFAULT('');
 END");
+
+    dbContext.Database.ExecuteSqlRaw(@"
+IF COL_LENGTH('AuditLog', 'audit_type') IS NULL
+BEGIN
+    ALTER TABLE [AuditLog] ADD [audit_type] NVARCHAR(20) NOT NULL CONSTRAINT DF_AuditLog_audit_type DEFAULT('System');
+END");
+
+    dbContext.Database.ExecuteSqlRaw(@"
+UPDATE [AuditLog]
+SET [audit_type] = 'Security'
+WHERE LOWER(ISNULL([entity], '')) = 'account'
+   OR LOWER(ISNULL([action], '')) IN ('login', 'logout', 'login_failed')
+   OR LOWER(ISNULL([description], '')) LIKE '%google%'
+   OR LOWER(ISNULL([description], '')) LIKE '%failed login%'
+   OR LOWER(ISNULL([description], '')) LIKE '%logged in%'
+   OR LOWER(ISNULL([description], '')) LIKE '%logged out%'");
 
     var superAdminUser = await userManager.FindByEmailAsync("yuzkiega@gmail.com");
     if (superAdminUser != null && !string.Equals(superAdminUser.Role, "superadmin", StringComparison.OrdinalIgnoreCase))

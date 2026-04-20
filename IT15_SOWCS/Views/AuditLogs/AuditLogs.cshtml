@@ -7,8 +7,12 @@
 <div class="audit-container">
     <div class="audit-header d-flex justify-content-between align-items-start">
         <div>
-            <h2>Audit Logs</h2>
-            <p>Track all system activities and changes</p>
+            <h2>@(Model.AuditType == "security" ? "Security Audit" : "System Audit")</h2>
+            <p>
+                @(Model.AuditType == "security"
+                    ? "Track authentication activity, failed login attempts, and account security events"
+                    : "Track day-to-day module activity, data changes, and operational actions")
+            </p>
         </div>
     </div>
 
@@ -35,23 +39,40 @@
                 <i class="bi bi-search text-muted"></i>
                 <input type="text" name="search" placeholder="Search logs..." value="@Model.Search">
             </div>
+            <select class="form-select audit-type-filter shadow-sm" name="auditType" onchange="this.form.submit()">
+                <option value="system" selected="@(Model.AuditType == "system" ? "selected" : null)">
+                    System Audit
+                </option>
+                <option value="security" selected="@(Model.AuditType == "security" ? "selected" : null)">
+                    Security Audit
+                </option>
+            </select>
             <select class="form-select status-filter shadow-sm" name="action" onchange="this.form.submit()">
                 <option value="All" selected="@(string.IsNullOrWhiteSpace(Model.Action) || Model.Action == "All" ? "selected" : null)">All Actions</option>
-                <option value="approved" selected="@(Model.Action=="approved" || Model.Action=="approve" ? "selected" : null)">Approve</option>
-                <option value="rejected" selected="@(Model.Action=="rejected" || Model.Action=="reject" ? "selected" : null)">Reject</option>
-                <option value="upload" selected="@(Model.Action=="upload" ? "selected" : null)">Upload</option>
-                <option value="invite" selected="@(Model.Action=="invite" ? "selected" : null)">Invite</option>
-                <option value="create" selected="@(Model.Action=="create" ? "selected" : null)">Create</option>
-                <option value="update" selected="@(Model.Action=="update" ? "selected" : null)">Update</option>
-                <option value="archive" selected="@(Model.Action=="archive" || Model.Action=="delete" ? "selected" : null)">Archive</option>
-                <option value="restore" selected="@(Model.Action=="restore" ? "selected" : null)">Restore</option>
+                @if (Model.AuditType == "security")
+                {
+                    <option value="login" selected="@(Model.Action=="login" ? "selected" : null)">Login</option>
+                    <option value="logout" selected="@(Model.Action=="logout" ? "selected" : null)">Logout</option>
+                    <option value="login_failed" selected="@(Model.Action=="login_failed" ? "selected" : null)">Login Failed</option>
+                }
+                else
+                {
+                    <option value="approved" selected="@(Model.Action=="approved" || Model.Action=="approve" ? "selected" : null)">Approve</option>
+                    <option value="rejected" selected="@(Model.Action=="rejected" || Model.Action=="reject" ? "selected" : null)">Reject</option>
+                    <option value="upload" selected="@(Model.Action=="upload" ? "selected" : null)">Upload</option>
+                    <option value="invite" selected="@(Model.Action=="invite" ? "selected" : null)">Invite</option>
+                    <option value="create" selected="@(Model.Action=="create" ? "selected" : null)">Create</option>
+                    <option value="update" selected="@(Model.Action=="update" ? "selected" : null)">Update</option>
+                    <option value="archive" selected="@(Model.Action=="archive" || Model.Action=="delete" ? "selected" : null)">Archive</option>
+                    <option value="restore" selected="@(Model.Action=="restore" ? "selected" : null)">Restore</option>
+                }
             </select>
         </div>
     </form>
 
     <div class="audit-table-card">
         <div class="audit-table-scroll table-responsive">
-        <table class="table mb-0">
+        <table class="table mb-0 @(Model.AuditType == "security" ? "audit-table--security" : "audit-table--system")">
             <thead>
                 <tr>
                     <th>Timestamp</th>
@@ -59,14 +80,17 @@
                     <th>Action</th>
                     <th>Entity</th>
                     <th>Severity</th>
-                    <th>IP Address</th>
+                    @if (Model.AuditType == "security")
+                    {
+                        <th>IP Address</th>
+                    }
                     <th>Description</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Logs.Count == 0)
                 {
-                    <tr><td colspan="7" class="text-center text-muted py-4">No logs found.</td></tr>
+                    <tr><td colspan="@(Model.AuditType == "security" ? 7 : 6)" class="text-center text-muted py-4">No logs found.</td></tr>
                 }
                 @foreach (var log in Model.Logs)
                 {
@@ -117,7 +141,10 @@
                         </td>
                         <td>@log.entity</td>
                         <td><span class="badge-action @severityClass">@severityLabel</span></td>
-                        <td>@log.ip_address</td>
+                        @if (Model.AuditType == "security")
+                        {
+                            <td>@log.ip_address</td>
+                        }
                         <td>@log.description</td>
                     </tr>
                 }

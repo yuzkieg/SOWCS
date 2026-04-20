@@ -18,6 +18,8 @@ namespace IT15_SOWCS.Models
 
         public string entity { get; set; } = string.Empty;
 
+        public string audit_type { get; set; } = "System";
+
         public string severity { get; set; } = "Informational";
 
         public string ip_address { get; set; } = string.Empty;

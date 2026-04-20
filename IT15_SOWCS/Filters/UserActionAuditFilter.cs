@@ -69,6 +69,7 @@ namespace IT15_SOWCS.Filters
                 user_name = userName,
                 action = actionLabel,
                 entity = controller,
+                audit_type = "System",
                 severity = severity,
                 ip_address = ipAddress,
                 description = description
