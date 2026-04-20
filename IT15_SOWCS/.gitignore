@@ -1,0 +1,42 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.csproj.user
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# NuGet packages
+packages/
+*.nupkg
+
+# Secrets / configuration
+.env
+.env.*
+credentials.json
+secrets.json
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+appsettings.*.local.json
+appsettings.json
+
+# Uploaded files / local content
+wwwroot/uploads/
+uploads/
+
+# Logs / backups
+*.vsmdi
+*.dbmdl
+*.bak
+*.backup
+*.log
+
+# OS / editor noise
+.DS_Store
+Thumbs.db

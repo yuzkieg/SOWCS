@@ -62,6 +62,7 @@ namespace IT15_SOWCS.Controllers
                         user_name = normalizedEmail,
                         action = "login_failed",
                         entity = "Account",
+                        audit_type = "Security",
                         severity = "Warning",
                         ip_address = clientIp,
                         description = "Failed login attempt"
@@ -118,6 +119,7 @@ namespace IT15_SOWCS.Controllers
                         user_name = string.IsNullOrWhiteSpace(user.FullName) ? normalizedEmail : user.FullName,
                         action = "login_failed",
                         entity = "Account",
+                        audit_type = "Security",
                         severity = "Warning",
                         ip_address = clientIp,
                         description = "Failed login attempt"
@@ -180,6 +182,7 @@ namespace IT15_SOWCS.Controllers
                     user_name = string.IsNullOrWhiteSpace(user.FullName) ? normalizedEmail : user.FullName,
                     action = "login",
                     entity = "Account",
+                    audit_type = "Security",
                     severity = "Informational",
                     ip_address = clientIp,
                     description = "Logged in"
@@ -606,6 +609,7 @@ namespace IT15_SOWCS.Controllers
                 user_name = string.IsNullOrWhiteSpace(name) ? email : name,
                 action = action,
                 entity = "Account",
+                audit_type = "Security",
                 severity = severity,
                 ip_address = ipAddress,
                 description = description

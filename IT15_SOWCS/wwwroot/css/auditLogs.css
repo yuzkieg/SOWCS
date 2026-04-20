@@ -16,6 +16,18 @@
     margin-bottom: 2rem;
 }
 
+.audit-type-filter {
+    width: 220px;
+    min-width: 220px;
+    min-height: 42px;
+    border: 1px solid #d7dee8;
+    border-radius: 10px;
+    padding: 0.6rem 2rem 0.6rem 0.65rem;
+    color: #334155;
+    background-color: #ffffff;
+    font-size: 0.92rem;
+}
+
 .audit-controls {
     display: flex;
     gap: 1rem;
@@ -83,6 +95,9 @@
 }
 
 .audit-date-filter-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     color: #94a3b8;
     font-size: 0.95rem;
     white-space: nowrap;
@@ -167,44 +182,78 @@
     text-align: left;
 }
 
-.audit-table-scroll .table th:nth-child(1),
-.audit-table-scroll .table td:nth-child(1) {
+.audit-table-scroll .audit-table--security th:nth-child(1),
+.audit-table-scroll .audit-table--security td:nth-child(1) {
     width: 18%;
     padding-left: 0.5rem;
 }
 
-.audit-table-scroll .table th:nth-child(2),
-.audit-table-scroll .table td:nth-child(2) {
+.audit-table-scroll .audit-table--security th:nth-child(2),
+.audit-table-scroll .audit-table--security td:nth-child(2) {
     width: 22%;
 }
 
-.audit-table-scroll .table th:nth-child(3),
-.audit-table-scroll .table td:nth-child(3) {
+.audit-table-scroll .audit-table--security th:nth-child(3),
+.audit-table-scroll .audit-table--security td:nth-child(3) {
     width: 12%;
     white-space: nowrap;
 }
 
-.audit-table-scroll .table th:nth-child(4),
-.audit-table-scroll .table td:nth-child(4) {
+.audit-table-scroll .audit-table--security th:nth-child(4),
+.audit-table-scroll .audit-table--security td:nth-child(4) {
     width: 12%;
     white-space: nowrap;
 }
 
-.audit-table-scroll .table th:nth-child(5),
-.audit-table-scroll .table td:nth-child(5) {
+.audit-table-scroll .audit-table--security th:nth-child(5),
+.audit-table-scroll .audit-table--security td:nth-child(5) {
     width: 12%;
     white-space: nowrap;
 }
 
-.audit-table-scroll .table th:nth-child(6),
-.audit-table-scroll .table td:nth-child(6) {
+.audit-table-scroll .audit-table--security th:nth-child(6),
+.audit-table-scroll .audit-table--security td:nth-child(6) {
     width: 10%;
     white-space: nowrap;
 }
 
-.audit-table-scroll .table th:nth-child(7),
-.audit-table-scroll .table td:nth-child(7) {
+.audit-table-scroll .audit-table--security th:nth-child(7),
+.audit-table-scroll .audit-table--security td:nth-child(7) {
     width: 14%;
+}
+
+.audit-table-scroll .audit-table--system th:nth-child(1),
+.audit-table-scroll .audit-table--system td:nth-child(1) {
+    width: 18%;
+    padding-left: 0.5rem;
+}
+
+.audit-table-scroll .audit-table--system th:nth-child(2),
+.audit-table-scroll .audit-table--system td:nth-child(2) {
+    width: 22%;
+}
+
+.audit-table-scroll .audit-table--system th:nth-child(3),
+.audit-table-scroll .audit-table--system td:nth-child(3) {
+    width: 12%;
+    white-space: nowrap;
+}
+
+.audit-table-scroll .audit-table--system th:nth-child(4),
+.audit-table-scroll .audit-table--system td:nth-child(4) {
+    width: 13%;
+    white-space: nowrap;
+}
+
+.audit-table-scroll .audit-table--system th:nth-child(5),
+.audit-table-scroll .audit-table--system td:nth-child(5) {
+    width: 14%;
+    white-space: nowrap;
+}
+
+.audit-table-scroll .audit-table--system th:nth-child(6),
+.audit-table-scroll .audit-table--system td:nth-child(6) {
+    width: 21%;
 }
 
 .log-user-info .log-user-name {

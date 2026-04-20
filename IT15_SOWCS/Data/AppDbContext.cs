@@ -1,4 +1,5 @@
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -122,6 +123,24 @@ namespace IT15_SOWCS.Data
 
             builder.Entity<PendingInvitation>()
                 .HasIndex(invitation => new { invitation.email, invitation.accepted_at });
+
+            builder.Entity<DocumentRecord>()
+                .Property(document => document.file_path)
+                .HasConversion(
+                    value => DocumentFieldEncryption.Encrypt(value),
+                    value => DocumentFieldEncryption.Decrypt(value));
+
+            builder.Entity<DocumentRecord>()
+                .Property(document => document.review_notes)
+                .HasConversion(
+                    value => DocumentFieldEncryption.Encrypt(value),
+                    value => DocumentFieldEncryption.Decrypt(value));
+
+            builder.Entity<DocumentRecord>()
+                .Property(document => document.reviewed_by)
+                .HasConversion(
+                    value => DocumentFieldEncryption.Encrypt(value),
+                    value => DocumentFieldEncryption.Decrypt(value));
         }
     }
 }

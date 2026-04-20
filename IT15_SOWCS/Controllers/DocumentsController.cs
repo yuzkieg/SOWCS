@@ -11,6 +11,7 @@ namespace IT15_SOWCS.Controllers
 {
     public class DocumentsController : Controller
     {
+        private const long MaxDocumentUploadBytes = 10 * 1024 * 1024;
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly NotificationService _notificationService;
@@ -142,12 +143,20 @@ namespace IT15_SOWCS.Controllers
         }
 
         [HttpPost]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxDocumentUploadBytes)]
+        [RequestSizeLimit(MaxDocumentUploadBytes)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(IFormFile uploadedFile, string? category, string? title, string? description, bool visibleToAllEmployees = false)
         {
             if (uploadedFile == null || uploadedFile.Length == 0)
             {
                 TempData["DocumentsError"] = "Please select a valid file.";
+                return RedirectToAction(nameof(Documents));
+            }
+
+            if (!TryValidateUploadedFile(uploadedFile, out var uploadError))
+            {
+                TempData["DocumentsError"] = uploadError;
                 return RedirectToAction(nameof(Documents));
             }
 
@@ -197,6 +206,8 @@ namespace IT15_SOWCS.Controllers
         }
 
         [HttpPost]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxDocumentUploadBytes)]
+        [RequestSizeLimit(MaxDocumentUploadBytes)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Update(int documentId, string title, string category, IFormFile? uploadedFile)
         {
@@ -208,6 +219,12 @@ namespace IT15_SOWCS.Controllers
 
             if (uploadedFile != null && uploadedFile.Length > 0)
             {
+                if (!TryValidateUploadedFile(uploadedFile, out var uploadError))
+                {
+                    TempData["DocumentsError"] = uploadError;
+                    return RedirectToAction(nameof(Documents));
+                }
+
                 var uploadsDirectory = Path.Combine(_environment.WebRootPath, "uploads");
                 Directory.CreateDirectory(uploadsDirectory);
 
@@ -297,6 +314,18 @@ namespace IT15_SOWCS.Controllers
             TempData["SuccessMessage"] = "Document archived successfully.";
 
             return RedirectToAction(nameof(Documents));
+        }
+
+        private static bool TryValidateUploadedFile(IFormFile uploadedFile, out string errorMessage)
+        {
+            if (uploadedFile.Length > MaxDocumentUploadBytes)
+            {
+                errorMessage = $"File size exceeds the 10 MB limit. Selected file: {uploadedFile.FileName}.";
+                return false;
+            }
+
+            errorMessage = string.Empty;
+            return true;
         }
 
         private string? ResolveDocumentPath(DocumentRecord document)
@@ -413,5 +442,4 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
 
