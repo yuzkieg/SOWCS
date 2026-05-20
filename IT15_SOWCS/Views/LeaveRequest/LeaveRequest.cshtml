@@ -134,8 +134,8 @@
                     <form asp-action="Create" method="post" id="leaveForm">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Leave Type</label>
-                            <select class="form-select custom-input" name="leaveType" required>
+                            <label class="form-label fw-semibold" for="leaveType">Leave Type</label>
+                            <select class="form-select custom-input" id="leaveType" name="leaveType" required>
                                 <option>Annual Leave</option>
                                 <option>Sick Leave</option>
                                 <option>Unpaid Leave</option>
@@ -145,7 +145,7 @@
 
                         <div class="row g-3 mb-3">
                             <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold">Start Date</label>
+                                <label class="form-label fw-semibold" for="leaveStartDate">Start Date</label>
                                 <input type="date"
                                        class="form-control custom-input"
                                        id="leaveStartDate"
@@ -154,7 +154,7 @@
                                        required>
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold">End Date</label>
+                                <label class="form-label fw-semibold" for="leaveEndDate">End Date</label>
                                 <input type="date"
                                        class="form-control custom-input"
                                        id="leaveEndDate"
@@ -165,8 +165,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-semibold">Reason (Optional)</label>
+                            <label class="form-label fw-semibold" for="leaveReason">Reason (Optional)</label>
                             <textarea class="form-control custom-input"
+                                      id="leaveReason"
                                       rows="4"
                                       name="reason"
                                       placeholder="Brief description of your leave reason"></textarea>

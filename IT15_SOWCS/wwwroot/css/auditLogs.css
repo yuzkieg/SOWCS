@@ -195,14 +195,12 @@
 
 .audit-table-scroll .audit-table--security th:nth-child(3),
 .audit-table-scroll .audit-table--security td:nth-child(3) {
-    width: 12%;
-    white-space: nowrap;
+    width: 16%;
 }
 
 .audit-table-scroll .audit-table--security th:nth-child(4),
 .audit-table-scroll .audit-table--security td:nth-child(4) {
-    width: 12%;
-    white-space: nowrap;
+    width: 10%;
 }
 
 .audit-table-scroll .audit-table--security th:nth-child(5),
@@ -213,7 +211,7 @@
 
 .audit-table-scroll .audit-table--security th:nth-child(6),
 .audit-table-scroll .audit-table--security td:nth-child(6) {
-    width: 10%;
+    width: 8%;
     white-space: nowrap;
 }
 
@@ -235,25 +233,29 @@
 
 .audit-table-scroll .audit-table--system th:nth-child(3),
 .audit-table-scroll .audit-table--system td:nth-child(3) {
-    width: 12%;
-    white-space: nowrap;
+    width: 16%;
 }
 
 .audit-table-scroll .audit-table--system th:nth-child(4),
 .audit-table-scroll .audit-table--system td:nth-child(4) {
-    width: 13%;
-    white-space: nowrap;
+    width: 11%;
 }
 
 .audit-table-scroll .audit-table--system th:nth-child(5),
 .audit-table-scroll .audit-table--system td:nth-child(5) {
-    width: 14%;
+    width: 12%;
     white-space: nowrap;
 }
 
 .audit-table-scroll .audit-table--system th:nth-child(6),
 .audit-table-scroll .audit-table--system td:nth-child(6) {
     width: 21%;
+}
+
+.audit-action-cell,
+.audit-entity-cell {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .log-user-info .log-user-name {
@@ -269,13 +271,16 @@
 }
 
 .badge-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    display: inline-block;
     padding: 4px 10px;
     border-radius: 6px;
     font-weight: 500;
     font-size: 0.8rem;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+    vertical-align: top;
 }
 
 .badge-approve {

@@ -399,12 +399,6 @@ namespace IT15_SOWCS.Filters
 
         private static string ResolveClientIp(HttpContext context)
         {
-            var forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(forwarded))
-            {
-                return forwarded.Split(',')[0].Trim();
-            }
-
             return context.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
         }
 

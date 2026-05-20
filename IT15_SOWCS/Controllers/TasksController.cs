@@ -10,6 +10,7 @@ namespace IT15_SOWCS.Controllers
 {
     public class TasksController : Controller
     {
+        private const string TasksErrorKey = "TasksError";
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
 
@@ -83,6 +84,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Tasks(string? search, string? status, string? priority)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Tasks));
+            }
+
             var query = _context.Tasks
                 .Include(task => task.Employee)
                 .Include(task => task.Project)
@@ -143,6 +149,12 @@ namespace IT15_SOWCS.Controllers
             DateTime dueDate,
             int? redirectProjectId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[TasksErrorKey] = "Unable to process the task creation request.";
+                return RedirectToAction(nameof(Tasks));
+            }
+
             if (await IsEmployeeAsync())
             {
                 return Forbid();
@@ -153,13 +165,13 @@ namespace IT15_SOWCS.Controllers
 
             if (employee == null || project == null || string.IsNullOrWhiteSpace(title))
             {
-                TempData["TasksError"] = "Invalid task data.";
+                TempData[TasksErrorKey] = "Invalid task data.";
                 return RedirectToAction(nameof(Tasks));
             }
 
             if (!IsAssignableTeamRole(employee.employee_role))
             {
-                TempData["TasksError"] = "Only Project Manager or Employee can be assigned to tasks.";
+                TempData[TasksErrorKey] = "Only Project Manager or Employee can be assigned to tasks.";
                 if (redirectProjectId.HasValue)
                 {
                     return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
@@ -170,7 +182,7 @@ namespace IT15_SOWCS.Controllers
 
             if (dueDate.Date < DateTime.Today)
             {
-                TempData["TasksError"] = "Due date cannot be in the past.";
+                TempData[TasksErrorKey] = "Due date cannot be in the past.";
                 if (redirectProjectId.HasValue)
                 {
                     return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
@@ -223,6 +235,12 @@ namespace IT15_SOWCS.Controllers
             int? employeeId,
             int? redirectProjectId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[TasksErrorKey] = "Unable to process the task update request.";
+                return RedirectToAction(nameof(Tasks));
+            }
+
             var task = await _context.Tasks.FindAsync(taskId);
             if (task == null)
             {
@@ -247,7 +265,7 @@ namespace IT15_SOWCS.Controllers
                 {
                     if (!IsAssignableTeamRole(employee.employee_role))
                     {
-                        TempData["TasksError"] = "Only Project Manager or Employee can be assigned to tasks.";
+                        TempData[TasksErrorKey] = "Only Project Manager or Employee can be assigned to tasks.";
                         if (redirectProjectId.HasValue)
                         {
                             return RedirectToAction("Detail", "Projects", new { id = redirectProjectId.Value });
@@ -285,8 +303,23 @@ namespace IT15_SOWCS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Move(int taskId, string status, int? redirectProjectId)
+        public async Task<IActionResult> Move(
+            int taskId,
+            string status,
+            int? redirectProjectId,
+            [FromHeader(Name = "X-Requested-With")] string? requestedWith)
         {
+            if (!ModelState.IsValid)
+            {
+                if (string.Equals(requestedWith, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { success = false, message = "Unable to process the task move request." });
+                }
+
+                TempData[TasksErrorKey] = "Unable to process the task move request.";
+                return RedirectToAction(nameof(Tasks));
+            }
+
             var task = await _context.Tasks.FindAsync(taskId);
             if (task == null)
             {
@@ -299,7 +332,7 @@ namespace IT15_SOWCS.Controllers
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = $"Task moved to {status}.";
 
-            if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(requestedWith, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
             {
                 return Json(new
                 {
@@ -321,6 +354,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int taskId, int? redirectProjectId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[TasksErrorKey] = "Unable to process the task deletion request.";
+                return RedirectToAction(nameof(Tasks));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();
@@ -357,5 +396,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
-

@@ -10,6 +10,7 @@ namespace IT15_SOWCS.Controllers
 {
     public class LeaveRequestController : Controller
     {
+        private const string LeaveErrorKey = "LeaveError";
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
         private readonly LeaveBalanceService _leaveBalanceService;
@@ -62,6 +63,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> LeaveRequest(string? status)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(LeaveRequest));
+            }
+
             var currentEmail = User.Identity?.Name;
             Employee? employee = null;
             if (!string.IsNullOrWhiteSpace(currentEmail))
@@ -92,22 +98,28 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string leaveType, DateTime startDate, DateTime endDate, string? reason)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[LeaveErrorKey] = "Unable to process the leave request.";
+                return RedirectToAction(nameof(LeaveRequest));
+            }
+
             if (startDate.Date < DateTime.Today || endDate.Date < DateTime.Today)
             {
-                TempData["LeaveError"] = "Leave dates cannot be in the past.";
+                TempData[LeaveErrorKey] = "Leave dates cannot be in the past.";
                 return RedirectToAction(nameof(LeaveRequest));
             }
 
             if (endDate < startDate)
             {
-                TempData["LeaveError"] = "End date cannot be earlier than start date.";
+                TempData[LeaveErrorKey] = "End date cannot be earlier than start date.";
                 return RedirectToAction(nameof(LeaveRequest));
             }
 
             var employeeEmail = User.Identity?.Name ?? await _context.Users.Select(user => user.Email).FirstOrDefaultAsync();
             if (string.IsNullOrWhiteSpace(employeeEmail))
             {
-                TempData["LeaveError"] = "No employee account available.";
+                TempData[LeaveErrorKey] = "No employee account available.";
                 return RedirectToAction(nameof(LeaveRequest));
             }
 
@@ -126,7 +138,7 @@ namespace IT15_SOWCS.Controllers
                     var available = LeaveBalanceService.GetAvailableBalance(employee, leaveBalanceType.Value);
                     if (available < requestedDays)
                     {
-                        TempData["LeaveError"] = $"Insufficient {leaveType} balance. Available: {available:0} day(s), requested: {requestedDays:0} day(s).";
+                        TempData[LeaveErrorKey] = $"Insufficient {leaveType} balance. Available: {available:0} day(s), requested: {requestedDays:0} day(s).";
                         return RedirectToAction(nameof(LeaveRequest));
                     }
                 }
@@ -172,6 +184,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Update(int leaveRequestId, DateTime startDate, DateTime endDate, string? reason)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[LeaveErrorKey] = "Unable to process the leave request update.";
+                return RedirectToAction(nameof(LeaveRequest));
+            }
+
             var leave = await _context.LeaveRequests.FindAsync(leaveRequestId);
             if (leave == null)
             {
@@ -180,19 +198,19 @@ namespace IT15_SOWCS.Controllers
 
             if (leave.status != "Pending")
             {
-                TempData["LeaveError"] = "Only pending requests can be edited.";
+                TempData[LeaveErrorKey] = "Only pending requests can be edited.";
                 return RedirectToAction(nameof(LeaveRequest));
             }
 
             if (startDate.Date < DateTime.Today || endDate.Date < DateTime.Today)
             {
-                TempData["LeaveError"] = "Leave dates cannot be in the past.";
+                TempData[LeaveErrorKey] = "Leave dates cannot be in the past.";
                 return RedirectToAction(nameof(LeaveRequest));
             }
 
             if (endDate.Date < startDate.Date)
             {
-                TempData["LeaveError"] = "End date cannot be earlier than start date.";
+                TempData[LeaveErrorKey] = "End date cannot be earlier than start date.";
                 return RedirectToAction(nameof(LeaveRequest));
             }
 
@@ -209,6 +227,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int leaveRequestId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[LeaveErrorKey] = "Unable to process the leave request deletion.";
+                return RedirectToAction(nameof(LeaveRequest));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();
@@ -257,5 +281,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
-

@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -28,7 +29,7 @@ namespace IT15_SOWCS.Filters
             }
 
             var controller = (context.RouteData.Values["controller"]?.ToString() ?? string.Empty).ToLowerInvariant();
-            if (controller == "account" || controller == "home")
+            if (IsPublicController(controller))
             {
                 await next();
                 return;
@@ -50,6 +51,27 @@ namespace IT15_SOWCS.Filters
                 return;
             }
 
+            if (PasswordPolicyService.IsPasswordExpired(user) &&
+                !string.Equals(controller, "profile", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Result = new RedirectToActionResult("Profile", "Profile", new
+                {
+                    passwordExpired = true
+                });
+                return;
+            }
+
+            if (!user.TwoFactorEnabled &&
+                await MfaPolicyService.IsMfaRequiredAsync(user, _context) &&
+                !string.Equals(controller, "profile", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Result = new RedirectToActionResult("Profile", "Profile", new
+                {
+                    requireMfaSetup = true
+                });
+                return;
+            }
+
             var isSuperAdmin = string.Equals(user.Role, "superadmin", StringComparison.OrdinalIgnoreCase);
             if (isSuperAdmin)
             {
@@ -57,33 +79,8 @@ namespace IT15_SOWCS.Filters
                 return;
             }
 
-            var isAdmin = string.Equals(user.Role, "admin", StringComparison.OrdinalIgnoreCase);
-            var employeeRole = await _context.Employees
-                .Where(employee => employee.user_id == user.Id)
-                .Select(employee => employee.employee_role)
-                .FirstOrDefaultAsync() ?? string.Empty;
-
-            var normalizedEmployeeRole = employeeRole.Trim().ToLowerInvariant();
-            var isHrManager = normalizedEmployeeRole == "hr" || normalizedEmployeeRole == "hr manager";
-            var isProjectManager = normalizedEmployeeRole == "manager" || normalizedEmployeeRole == "project manager";
-
-            var isAllowed = controller switch
-            {
-                "usermanagement" => isAdmin,
-                "auditlogs" => isAdmin,
-                "archive" => false,
-                "employees" => isAdmin || isHrManager,
-                "reports" => isAdmin || isHrManager || isProjectManager,
-                "approvals" => isAdmin || isHrManager || isProjectManager,
-                "dashboard" => true,
-                "projects" => true,
-                "tasks" => true,
-                "documents" => true,
-                "leaverequest" => true,
-                "profile" => true,
-                "notifications" => true,
-                _ => true
-            };
+            var accessContext = await BuildAccessContextAsync(user);
+            var isAllowed = IsAllowed(controller, accessContext);
 
             if (!isAllowed)
             {
@@ -94,6 +91,47 @@ namespace IT15_SOWCS.Filters
             await next();
 
         }
+
+        private static bool IsPublicController(string controller)
+        {
+            return controller == "account" || controller == "home";
+        }
+
+        private async Task<AccessContext> BuildAccessContextAsync(Users user)
+        {
+            var employeeRole = await _context.Employees
+                .Where(employee => employee.user_id == user.Id)
+                .Select(employee => employee.employee_role)
+                .FirstOrDefaultAsync() ?? string.Empty;
+
+            var normalizedEmployeeRole = employeeRole.Trim().ToLowerInvariant();
+            return new AccessContext(
+                string.Equals(user.Role, "admin", StringComparison.OrdinalIgnoreCase),
+                normalizedEmployeeRole == "hr" || normalizedEmployeeRole == "hr manager",
+                normalizedEmployeeRole == "manager" || normalizedEmployeeRole == "project manager");
+        }
+
+        private static bool IsAllowed(string controller, AccessContext accessContext)
+        {
+            return controller switch
+            {
+                "usermanagement" => accessContext.IsAdmin,
+                "auditlogs" => accessContext.IsAdmin,
+                "archive" => false,
+                "employees" => accessContext.IsAdmin || accessContext.IsHrManager,
+                "reports" => accessContext.IsAdmin || accessContext.IsHrManager || accessContext.IsProjectManager,
+                "approvals" => accessContext.IsAdmin || accessContext.IsHrManager || accessContext.IsProjectManager,
+                "dashboard" => true,
+                "projects" => true,
+                "tasks" => true,
+                "documents" => true,
+                "leaverequest" => true,
+                "profile" => true,
+                "notifications" => true,
+                _ => true
+            };
+        }
+
+        private sealed record AccessContext(bool IsAdmin, bool IsHrManager, bool IsProjectManager);
     }
 }
-

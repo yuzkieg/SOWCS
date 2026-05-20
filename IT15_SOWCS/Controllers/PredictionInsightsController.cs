@@ -29,6 +29,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> PredictionInsights(string? period, string? tab)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(PredictionInsights));
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (!string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
             {
@@ -47,6 +52,11 @@ namespace IT15_SOWCS.Controllers
             string actionType,
             string periodType)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false });
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (!string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
             {
@@ -228,5 +238,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
-

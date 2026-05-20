@@ -9,6 +9,7 @@ namespace IT15_SOWCS.Controllers
 {
     public class ApprovalsController : Controller
     {
+        private const string SuccessMessageKey = "SuccessMessage";
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
         private readonly LeaveBalanceService _leaveBalanceService;
@@ -123,6 +124,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateLeaveStatus(int id, string status, string? notes)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[SuccessMessageKey] = "Unable to process the leave request update.";
+                return RedirectToAction(nameof(Approvals));
+            }
+
             var approvalScope = await GetApprovalScopeAsync();
             if (approvalScope == ApprovalScope.DocumentsOnly)
             {
@@ -147,7 +154,7 @@ namespace IT15_SOWCS.Controllers
                         var available = LeaveBalanceService.GetAvailableBalance(employee, leaveBalanceType.Value);
                         if (available < requestedDays)
                         {
-                            TempData["SuccessMessage"] = $"Insufficient {leave.leave_type} balance for approval. Available: {available:0} day(s), requested: {requestedDays:0} day(s).";
+                            TempData[SuccessMessageKey] = $"Insufficient {leave.leave_type} balance for approval. Available: {available:0} day(s), requested: {requestedDays:0} day(s).";
                             return RedirectToAction(nameof(Approvals));
                         }
                     }
@@ -182,7 +189,7 @@ namespace IT15_SOWCS.Controllers
                 await _leaveBalanceService.RecomputeBalanceForEmployeeAsync(leave.employee_email);
             }
 
-            TempData["SuccessMessage"] = status == "Approved"
+            TempData[SuccessMessageKey] = status == "Approved"
                 ? "Leave request approved."
                 : "Leave request rejected.";
 
@@ -193,6 +200,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateDocumentStatus(int id, string status, string? notes)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[SuccessMessageKey] = "Unable to process the document update.";
+                return RedirectToAction(nameof(Approvals));
+            }
+
             var approvalScope = await GetApprovalScopeAsync();
             if (approvalScope == ApprovalScope.LeaveOnly)
             {
@@ -217,7 +230,7 @@ namespace IT15_SOWCS.Controllers
                 "Document",
                 "/Documents/Documents");
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = status == "Approved"
+            TempData[SuccessMessageKey] = status == "Approved"
                 ? "Document approved."
                 : "Document rejected.";
 
@@ -225,5 +238,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
-

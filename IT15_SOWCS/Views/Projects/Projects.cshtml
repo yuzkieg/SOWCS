@@ -141,17 +141,17 @@
                                         <input type="hidden" name="progress" value="@progressPercent" />
 
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Project Name</label>
-                                            <input type="text" name="name" class="form-control custom-input" value="@project.name" required />
+                                            <label class="form-label fw-semibold" for="projectName-@project.project_id">Project Name</label>
+                                            <input type="text" id="projectName-@project.project_id" name="name" class="form-control custom-input" value="@project.name" required />
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label fw-semibold">Description</label>
-                                            <textarea name="description" class="form-control custom-input" rows="3">@project.description</textarea>
+                                            <label class="form-label fw-semibold" for="projectDescription-@project.project_id">Description</label>
+                                            <textarea name="description" id="projectDescription-@project.project_id" class="form-control custom-input" rows="3">@project.description</textarea>
                                         </div>
                                         <div class="row g-3 mb-3">
                                             <div class="col-6">
-                                                <label class="form-label fw-semibold">Status</label>
-                                                <select class="form-select custom-input" name="status">
+                                                <label class="form-label fw-semibold" for="projectStatus-@project.project_id">Status</label>
+                                                <select class="form-select custom-input" id="projectStatus-@project.project_id" name="status">
                                                     <option value="Planning" selected="@(project.status == "Planning")">Planning</option>
                                                     <option value="Active" selected="@(project.status == "Active")">Active</option>
                                                     <option value="On Hold" selected="@(project.status == "On Hold")">On Hold</option>
@@ -159,8 +159,8 @@
                                                 </select>
                                             </div>
                                             <div class="col-6">
-                                                <label class="form-label fw-semibold">Priority</label>
-                                                <select class="form-select custom-input" name="priority">
+                                                <label class="form-label fw-semibold" for="projectPriority-@project.project_id">Priority</label>
+                                                <select class="form-select custom-input" id="projectPriority-@project.project_id" name="priority">
                                                     <option value="low" selected="@(string.Equals(project.priority, "low", StringComparison.OrdinalIgnoreCase))">low - No rush</option>
                                                     <option value="medium" selected="@(string.Equals(project.priority, "medium", StringComparison.OrdinalIgnoreCase))">medium - Normal pace</option>
                                                     <option value="high" selected="@(string.Equals(project.priority, "high", StringComparison.OrdinalIgnoreCase))">high - Top priority</option>
@@ -170,7 +170,7 @@
                                         </div>
 
                                         <div class="mb-4">
-                                            <label class="form-label fw-semibold">Team Members</label>
+                                            <div class="form-label fw-semibold">Team Members</div>
                                             <div class="team-members-checklist">
                                                 @foreach (var employee in Model.Employees)
                                                 {
@@ -239,19 +239,19 @@
                     <form asp-action="Create" method="post" id="createProjectForm">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Project Name</label>
-                            <input type="text" name="name" class="form-control custom-input" placeholder="e.g. Website Redesign" required>
+                            <label class="form-label fw-semibold" for="createProjectName">Project Name</label>
+                            <input type="text" id="createProjectName" name="name" class="form-control custom-input" placeholder="e.g. Website Redesign" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Description</label>
-                            <textarea name="description" class="form-control custom-input" rows="3" placeholder="Briefly describe the project goals..."></textarea>
+                            <label class="form-label fw-semibold" for="createProjectDescription">Description</label>
+                            <textarea name="description" id="createProjectDescription" class="form-control custom-input" rows="3" placeholder="Briefly describe the project goals..."></textarea>
                         </div>
 
                         <div class="row g-3 mb-3">
                             <div class="col-6">
-                                <label class="form-label fw-semibold">Status</label>
-                                <select class="form-select custom-input" name="status">
+                                <label class="form-label fw-semibold" for="createProjectStatus">Status</label>
+                                <select class="form-select custom-input" id="createProjectStatus" name="status">
                                     <option selected>Planning</option>
                                     <option>Active</option>
                                     <option>On Hold</option>
@@ -259,8 +259,8 @@
                                 </select>
                             </div>
                             <div class="col-6">
-                                <label class="form-label fw-semibold">Priority</label>
-                                <select class="form-select custom-input" name="priority">
+                                <label class="form-label fw-semibold" for="createProjectPriority">Priority</label>
+                                <select class="form-select custom-input" id="createProjectPriority" name="priority">
                                     <option value="low">low - No rush</option>
                                     <option value="medium" selected>medium - Normal pace</option>
                                     <option value="high">high - Top priority</option>
@@ -270,7 +270,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-semibold">Team Members</label>
+                            <div class="form-label fw-semibold">Team Members</div>
                             <div class="team-members-checklist">
                                 @foreach (var employee in Model.Employees)
                                 {

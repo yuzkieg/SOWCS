@@ -134,12 +134,12 @@
                                 <span class="log-user-email">@displayEmail</span>
                             </div>
                         </td>
-                        <td>
+                        <td class="audit-action-cell">
                             <span class="badge-action @actionBadgeClass">
                                 @actionText
                             </span>
                         </td>
-                        <td>@log.entity</td>
+                        <td class="audit-entity-cell">@log.entity</td>
                         <td><span class="badge-action @severityClass">@severityLabel</span></td>
                         @if (Model.AuditType == "security")
                         {

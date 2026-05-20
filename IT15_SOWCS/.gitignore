@@ -10,6 +10,9 @@
 # Build results
 [Bb]in/
 [Oo]bj/
+.sonarqube/
+.scannerwork/
+sonar-project.properties
 
 # NuGet packages
 packages/

@@ -9,7 +9,7 @@
     <div class="account-box">
         <h2 class="text-center">Verify your email</h2>
         <p class="text-center text-muted-small mb-4">
-            @if (Model.IsCodeStep)
+            @if (Model.IsCodeStep.GetValueOrDefault())
             {
                 <text>Enter the 6-digit code we sent to your email.</text>
             }
@@ -24,8 +24,8 @@
             <input asp-for="IsCodeStep" type="hidden" />
 
             <div class="mb-4">
-                <label asp-for="Email" class="form-label"></label>
-                @if (Model.IsCodeStep)
+                <label asp-for="Email" class="form-label">Email</label>
+                @if (Model.IsCodeStep.GetValueOrDefault())
                 {
                     <input asp-for="Email" class="form-control" readonly />
                 }
@@ -36,17 +36,17 @@
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
-            @if (Model.IsCodeStep)
+            @if (Model.IsCodeStep.GetValueOrDefault())
             {
                 <div class="mb-4">
-                    <label asp-for="VerificationCode" class="form-label"></label>
+                    <label asp-for="VerificationCode" class="form-label">Verification Code</label>
                     <input asp-for="VerificationCode" class="form-control" placeholder="123456" maxlength="6" />
                     <span asp-validation-for="VerificationCode" class="text-danger"></span>
                 </div>
             }
 
             <button type="submit" class="btn btn-primary w-100">
-                @(Model.IsCodeStep ? "Verify code" : "Send verification code")
+                @(Model.IsCodeStep.GetValueOrDefault() ? "Verify code" : "Send verification code")
             </button>
 
             <div class="text-center mt-3">

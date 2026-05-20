@@ -1,0 +1,119 @@
+@model IT15_SOWCS.ViewModels.MfaSetupViewModel
+@{
+    Layout = "_ProfileLayout";
+    ViewData["Title"] = "MFA Settings";
+}
+
+<div class="profile-container">
+    <div class="card contact-info-card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1">Multi-Factor Authentication</h4>
+                    <p class="text-muted mb-0">Use Google Authenticator, Microsoft Authenticator, or Authy to generate your 6-digit sign-in codes.</p>
+                </div>
+                <a asp-action="Profile" class="btn btn-outline-secondary">Back to Profile</a>
+            </div>
+
+            @if (Model.IsRequired && !Model.IsEnabled)
+            {
+                <div class="alert alert-warning">
+                    MFA is required for your role. Set it up now to continue using the system.
+                </div>
+            }
+
+            <div class="mb-4">
+                <span class="badge @(Model.IsEnabled ? "bg-success" : "bg-secondary")">
+                    @(Model.IsEnabled ? "Enabled" : "Not Enabled")
+                </span>
+                @if (Model.IsEnabled)
+                {
+                    <span class="ms-2 text-muted">Recovery codes left: @Model.RecoveryCodesLeft</span>
+                }
+            </div>
+
+            @if (Model.RecoveryCodes.Any())
+            {
+                <div class="alert alert-warning">
+                    <div class="fw-semibold mb-2">Save these recovery codes now.</div>
+                    <div class="small mb-2">Each code can only be used once if you lose access to your authenticator app.</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var code in Model.RecoveryCodes)
+                        {
+                            <code class="p-2 border rounded bg-light">@code</code>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="border rounded-3 p-4 h-100">
+                        <h5 class="fw-bold mb-3">Set up your authenticator app</h5>
+                        <ol class="ps-3 mb-3">
+                            <li>Open your authenticator app on your phone.</li>
+                            <li>Add a new account and choose manual setup.</li>
+                            <li>Enter this setup key: <code>@Model.SharedKey</code></li>
+                            <li>Use the app to generate a 6-digit code, then confirm it below.</li>
+                        </ol>
+
+                        <details class="mb-3">
+                            <summary class="fw-semibold">Advanced setup URI</summary>
+                            <div class="mt-2">
+                                <code class="small text-break">@Model.AuthenticatorUri</code>
+                            </div>
+                        </details>
+
+                        <form asp-action="EnableMfa" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label asp-for="VerificationCode" class="form-label fw-semibold">Verification Code</label>
+                                <input asp-for="VerificationCode" class="form-control profile-input" autocomplete="one-time-code" placeholder="123456" />
+                                <span asp-validation-for="VerificationCode" class="text-danger"></span>
+                            </div>
+                            <button type="submit" class="btn btn-save-password">@(Model.IsEnabled ? "Verify Again" : "Enable MFA")</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="border rounded-3 p-4 h-100">
+                        <h5 class="fw-bold mb-3">Recovery and Device Access</h5>
+                        <p class="text-muted">Keep recovery codes in a safe place so you can still sign in if your phone is unavailable.</p>
+
+                        @if (Model.IsEnabled)
+                        {
+                            <form asp-action="RegenerateRecoveryCodes" method="post" class="mb-3">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-primary w-100">Regenerate Recovery Codes</button>
+                            </form>
+
+                            <form asp-action="ResetAuthenticator" method="post" class="mb-3">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-warning w-100">Reset Authenticator Key</button>
+                            </form>
+
+                            @if (!Model.IsRequired)
+                            {
+                                <form asp-action="DisableMfa" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger w-100">Disable MFA</button>
+                                </form>
+                            }
+                        }
+                        else
+                        {
+                            <p class="mb-0 text-muted">MFA will be active after you confirm your first authenticator code.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
+    }
+}
