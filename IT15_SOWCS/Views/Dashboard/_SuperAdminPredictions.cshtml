@@ -3,7 +3,7 @@
 <header class="d-flex flex-wrap align-items-center gap-3">
     <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Approval Prediction (Per User)</h5>
     <div class="d-flex align-items-center gap-2 ms-auto">
-        <label class="text-muted small mb-0">Period</label>
+        <label class="text-muted small mb-0" for="predictionPeriodSelect">Period</label>
         <select id="predictionPeriodSelect" class="form-select form-select-sm">
             <option value="month" selected="@(Model.PredictionPeriod == "month")">Month</option>
             <option value="year" selected="@(Model.PredictionPeriod == "year")">Year</option>

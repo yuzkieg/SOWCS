@@ -1,5 +1,6 @@
 using IT15_SOWCS.Data;
 using IT15_SOWCS.Models;
+using IT15_SOWCS.Services;
 using IT15_SOWCS.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ namespace IT15_SOWCS.Controllers
 {
     public class ArchiveController : Controller
     {
+        private const string ArchiveErrorKey = "ArchiveError";
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
 
@@ -28,6 +30,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Archive(string? search, string? type)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Archive));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();
@@ -82,6 +89,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Restore(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ArchiveErrorKey] = "Unable to process the restore request.";
+                return RedirectToAction(nameof(Archive));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();
@@ -95,7 +108,7 @@ namespace IT15_SOWCS.Controllers
 
             if (string.IsNullOrWhiteSpace(item.serialized_data))
             {
-                TempData["ArchiveError"] = "Archived item has no snapshot data and cannot be restored.";
+                TempData[ArchiveErrorKey] = "Archived item has no snapshot data and cannot be restored.";
                 return RedirectToAction(nameof(Archive));
             }
 
@@ -212,10 +225,11 @@ namespace IT15_SOWCS.Controllers
                                     CreatedDate = DateTime.UtcNow,
                                     UpdatedDate = DateTime.UtcNow
                                 };
+                                PasswordPolicyService.StampPasswordChanged(restoredUser);
                                 var result = await _userManager.CreateAsync(restoredUser, "TempPass123!");
                                 if (!result.Succeeded)
                                 {
-                                    TempData["ArchiveError"] = string.Join(" ", result.Errors.Select(error => error.Description));
+                                    TempData[ArchiveErrorKey] = string.Join(" ", result.Errors.Select(error => error.Description));
                                     return RedirectToAction(nameof(Archive));
                                 }
                             }
@@ -225,7 +239,7 @@ namespace IT15_SOWCS.Controllers
             }
             catch
             {
-                TempData["ArchiveError"] = "Restore failed due to invalid archived snapshot.";
+                TempData[ArchiveErrorKey] = "Restore failed due to invalid archived snapshot.";
                 return RedirectToAction(nameof(Archive));
             }
 
@@ -239,6 +253,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ArchiveErrorKey] = "Unable to process the delete request.";
+                return RedirectToAction(nameof(Archive));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();

@@ -25,6 +25,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Reports(string? tab, DateTime? from, DateTime? to)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Reports));
+            }
+
             var model = await BuildModelAsync(tab, from, to, previewOnly: true);
             return View(model);
         }
@@ -32,6 +37,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> ExportPdf(string? tab, DateTime? from, DateTime? to, bool all = false)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Reports));
+            }
+
             var model = await BuildModelAsync(tab, from, to, previewOnly: false);
             var generatedByEmail = User.Identity?.Name ?? "system@local";
             var generatedByUser = await _context.Users
@@ -585,5 +595,4 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
 

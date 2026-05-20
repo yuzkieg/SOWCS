@@ -13,6 +13,7 @@ namespace IT15_SOWCS.Controllers
     [Authorize]
     public class UserManagementController : Controller
     {
+        private const string UserManagementErrorKey = "UserManagementError";
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
         private readonly EmailService _emailService;
@@ -47,6 +48,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> UserManagement(string? search, string? filter = "all")
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(UserManagement));
+            }
+
             if (!await IsAdminOrSuperAdminAsync())
             {
                 return RedirectToAction("AccessDenied", "Account");
@@ -107,6 +113,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> InviteUser(string email, string role)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[UserManagementErrorKey] = "Unable to process the invitation request.";
+                return RedirectToAction(nameof(UserManagement));
+            }
+
             if (!await IsAdminOrSuperAdminAsync())
             {
                 return RedirectToAction("AccessDenied", "Account");
@@ -114,7 +126,7 @@ namespace IT15_SOWCS.Controllers
 
             if (string.IsNullOrWhiteSpace(email))
             {
-                TempData["UserManagementError"] = "Email is required.";
+                TempData[UserManagementErrorKey] = "Email is required.";
                 return RedirectToAction(nameof(UserManagement));
             }
 
@@ -122,14 +134,14 @@ namespace IT15_SOWCS.Controllers
             var normalizedRole = string.IsNullOrWhiteSpace(role) ? "user" : role.Trim().ToLowerInvariant();
             if (normalizedRole != "user" && normalizedRole != "admin")
             {
-                TempData["UserManagementError"] = "Invalid role selected.";
+                TempData[UserManagementErrorKey] = "Invalid role selected.";
                 return RedirectToAction(nameof(UserManagement));
             }
 
             var existing = await _userManager.FindByEmailAsync(normalizedEmail);
             if (existing != null)
             {
-                TempData["UserManagementError"] = "User already exists.";
+                TempData[UserManagementErrorKey] = "User already exists.";
                 return RedirectToAction(nameof(UserManagement));
             }
 
@@ -139,7 +151,7 @@ namespace IT15_SOWCS.Controllers
                 invitation.expires_at > DateTime.UtcNow);
             if (hasPendingInvite)
             {
-                TempData["UserManagementError"] = "A pending invitation already exists for this email.";
+                TempData[UserManagementErrorKey] = "A pending invitation already exists for this email.";
                 return RedirectToAction(nameof(UserManagement));
             }
 
@@ -186,6 +198,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateRole(string userId, string role)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Unable to process the role update request." });
+            }
+
             if (!await IsAdminOrSuperAdminAsync())
             {
                 return Forbid();
@@ -241,6 +258,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(string userId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[UserManagementErrorKey] = "Unable to process the user deletion request.";
+                return RedirectToAction(nameof(UserManagement));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();
@@ -254,7 +277,7 @@ namespace IT15_SOWCS.Controllers
 
             if (string.Equals(user.Email, User.Identity?.Name, StringComparison.OrdinalIgnoreCase))
             {
-                TempData["UserManagementError"] = "You cannot delete your currently logged-in user.";
+                TempData[UserManagementErrorKey] = "You cannot delete your currently logged-in user.";
                 return RedirectToAction(nameof(UserManagement));
             }
 
@@ -334,7 +357,7 @@ namespace IT15_SOWCS.Controllers
                 var deactivateResult = await _userManager.UpdateAsync(user);
                 if (!deactivateResult.Succeeded)
                 {
-                    TempData["UserManagementError"] = string.Join(" ", deactivateResult.Errors.Select(error => error.Description));
+                    TempData[UserManagementErrorKey] = string.Join(" ", deactivateResult.Errors.Select(error => error.Description));
                     return RedirectToAction(nameof(UserManagement));
                 }
 
@@ -345,7 +368,7 @@ namespace IT15_SOWCS.Controllers
             var deleteResult = await _userManager.DeleteAsync(user);
             if (!deleteResult.Succeeded)
             {
-                TempData["UserManagementError"] = string.Join(" ", deleteResult.Errors.Select(error => error.Description));
+                TempData[UserManagementErrorKey] = string.Join(" ", deleteResult.Errors.Select(error => error.Description));
             }
             else
             {
@@ -359,6 +382,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(string userId, bool isActive)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Unable to process the status update request." });
+            }
+
             if (!await IsAdminOrSuperAdminAsync())
             {
                 return Forbid();
@@ -424,4 +452,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using IT15_SOWCS.Validation;
 
 namespace IT15_SOWCS.ViewModels
 {
@@ -13,13 +14,13 @@ namespace IT15_SOWCS.ViewModels
 
         [Required(ErrorMessage = "Password is required.")]
         [DataType(DataType.Password)]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 8)]
-        [Compare("ConfirmPassword", ErrorMessage = "The password and confirmation password do not match.")]
+        [PasswordComplexity]
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Confirm Password is required.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm Password")]    
+        [Display(Name = "Confirm Password")]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

@@ -10,6 +10,7 @@ namespace IT15_SOWCS.Controllers
 {
     public class EmployeesController : Controller
     {
+        private const string EmployeesErrorKey = "EmployeesError";
         private readonly AppDbContext _context;
         private readonly LeaveBalanceService _leaveBalanceService;
 
@@ -36,6 +37,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Employees(string? search, string? department)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Employees));
+            }
+
             await _leaveBalanceService.RecomputeAllBalancesAsync();
 
             var query = _context.Employees.Include(employee => employee.User).AsQueryable();
@@ -74,10 +80,16 @@ namespace IT15_SOWCS.Controllers
             string employeeRole,
             DateTime? hireDate)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[EmployeesErrorKey] = "Unable to process the employee creation request.";
+                return RedirectToAction(nameof(Employees));
+            }
+
             var user = await _context.Users.FirstOrDefaultAsync(item => item.Id == userId);
             if (user == null)
             {
-                TempData["EmployeesError"] = "Selected user does not exist.";
+                TempData[EmployeesErrorKey] = "Selected user does not exist.";
                 return RedirectToAction(nameof(Employees));
             }
 
@@ -115,6 +127,12 @@ namespace IT15_SOWCS.Controllers
             int personalLeave,
             bool isActive)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[EmployeesErrorKey] = "Unable to process the employee update request.";
+                return RedirectToAction(nameof(Employees));
+            }
+
             var employee = await _context.Employees.FindAsync(employeeId);
             if (employee == null)
             {
@@ -144,6 +162,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int employeeId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[EmployeesErrorKey] = "Unable to process the employee deletion request.";
+                return RedirectToAction(nameof(Employees));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();

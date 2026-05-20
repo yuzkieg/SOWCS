@@ -144,20 +144,21 @@
                                     <input type="hidden" name="documentId" value="@doc.document_id" />
 
                                     <div class="mb-3">
-                                        <label class="form-label">Title</label>
-                                        <input type="text" class="form-control" name="title" value="@doc.title" required />
+                                        <label class="form-label" for="editTitle-@doc.document_id">Title</label>
+                                        <input type="text" class="form-control" id="editTitle-@doc.document_id" name="title" value="@doc.title" required />
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Category</label>
-                                        <select class="form-select" name="category">
+                                        <label class="form-label" for="editCategory-@doc.document_id">Category</label>
+                                        <select class="form-select" id="editCategory-@doc.document_id" name="category">
                                             <option value="Other" selected="@(doc.category == "Other" ? "selected" : null)">Other</option>
                                             <option value="Policy" selected="@(doc.category == "Policy" ? "selected" : null)">Policy</option>
                                             <option value="Template" selected="@(doc.category == "Template" ? "selected" : null)">Template</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Replace Document (Optional)</label>
+                                        <label class="form-label" for="editFile-@doc.document_id">Replace Document (Optional)</label>
                                         <input type="file"
+                                               id="editFile-@doc.document_id"
                                                class="form-control"
                                                name="uploadedFile"
                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.png" />
@@ -188,24 +189,25 @@
                 <form asp-action="Upload" asp-controller="Documents" method="post" enctype="multipart/form-data" id="uploadDocumentForm">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
-                        <label class="form-label">Title</label>
-                        <input type="text" class="form-control" name="title" placeholder="Document title" />
+                        <label class="form-label" for="uploadTitle">Title</label>
+                        <input type="text" class="form-control" id="uploadTitle" name="title" placeholder="Document title" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" name="description" rows="3" placeholder="Optional description"></textarea>
+                        <label class="form-label" for="uploadDescription">Description</label>
+                        <textarea class="form-control" id="uploadDescription" name="description" rows="3" placeholder="Optional description"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <select class="form-select" name="category">
+                        <label class="form-label" for="uploadCategory">Category</label>
+                        <select class="form-select" id="uploadCategory" name="category">
                             <option value="Other" selected>Other</option>
                             <option value="Policy">Policy</option>
                             <option value="Template">Template</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">File</label>
+                        <label class="form-label" for="uploadFile">File</label>
                         <input type="file"
+                               id="uploadFile"
                                class="form-control"
                                name="uploadedFile"
                                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.png"

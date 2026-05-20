@@ -13,26 +13,42 @@
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <div class="mb-3">
-                <label asp-for="FullName" class="form-label"></label>
+                <label asp-for="FullName" class="form-label">Full Name</label>
                 <input asp-for="FullName" class="form-control" />
                 <span asp-validation-for="FullName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
+                <label asp-for="Email" class="form-label">Email</label>
                 <input asp-for="Email" class="form-control" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
+                <label asp-for="Password" class="form-label">Password</label>
                 <input asp-for="Password" class="form-control" />
+                <div class="password-rule-list @(ViewData.ModelState[nameof(Model.Password)]?.Errors.Count > 0 ? "is-visible" : string.Empty)"
+                     data-password-checklist
+                     data-password-input="Password"
+                     data-confirm-input="ConfirmPassword">
+                    <div class="password-rule-item" data-rule="length">At least 12 characters</div>
+                    <div class="password-rule-item" data-rule="uppercase">An uppercase letter</div>
+                    <div class="password-rule-item" data-rule="lowercase">A lowercase letter</div>
+                    <div class="password-rule-item" data-rule="number">A number</div>
+                    <div class="password-rule-item" data-rule="special">A special character</div>
+                </div>
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
             <div class="mb-4">
-                <label asp-for="ConfirmPassword" class="form-label"></label>
+                <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
                 <input asp-for="ConfirmPassword" class="form-control" />
+                <div class="password-rule-list password-match-list @(ViewData.ModelState[nameof(Model.ConfirmPassword)]?.Errors.Count > 0 ? "is-visible" : string.Empty)"
+                     data-password-match-checklist
+                     data-password-input="Password"
+                     data-confirm-input="ConfirmPassword">
+                    <div class="password-rule-item" data-rule="match">Passwords match</div>
+                </div>
                 <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
             </div>
 

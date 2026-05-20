@@ -12,6 +12,6 @@ namespace IT15_SOWCS.ViewModels
         [StringLength(6, MinimumLength = 6, ErrorMessage = "Code must be 6 digits.")]
         public string? VerificationCode { get; set; }
 
-        public bool IsCodeStep { get; set; }
+        public bool? IsCodeStep { get; set; }
     }
 }

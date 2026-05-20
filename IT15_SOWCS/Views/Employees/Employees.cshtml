@@ -135,8 +135,8 @@
 
                         <div class="row g-3">
                             <div class="col-6">
-                                <label class="modal-label">Department</label>
-                                <select class="form-select" name="department">
+                                <label class="modal-label" for="department-@employee.employee_id">Department</label>
+                                <select class="form-select" id="department-@employee.employee_id" name="department">
                                     @foreach (var dept in departmentOptions)
                                     {
                                         <option value="@dept" selected="@(employee.department == dept ? "selected" : null)">@dept</option>
@@ -144,8 +144,8 @@
                                 </select>
                             </div>
                             <div class="col-6">
-                                <label class="modal-label">Role</label>
-                                <select class="form-select" name="employeeRole">
+                                <label class="modal-label" for="employeeRole-@employee.employee_id">Role</label>
+                                <select class="form-select" id="employeeRole-@employee.employee_id" name="employeeRole">
                                     @foreach (var role in roleOptions)
                                     {
                                         <option value="@role" selected="@(employee.employee_role == role ? "selected" : null)">@role</option>
@@ -153,17 +153,17 @@
                                 </select>
                             </div>
                             <div class="col-6">
-                                <label class="modal-label">Position</label>
-                                <input class="form-control" name="position" value="@employee.position" />
+                                <label class="modal-label" for="position-@employee.employee_id">Position</label>
+                                <input class="form-control" id="position-@employee.employee_id" name="position" value="@employee.position" />
                             </div>
                             <div class="col-6">
-                                <label class="modal-label">Phone</label>
-                                <input class="form-control" name="contactNumber" value="@employee.contact_number" />
+                                <label class="modal-label" for="contactNumber-@employee.employee_id">Phone</label>
+                                <input class="form-control" id="contactNumber-@employee.employee_id" name="contactNumber" value="@employee.contact_number" />
                             </div>
                         </div>
 
                         <hr class="my-3" />
-                        <label class="modal-label d-block mb-2">Leave Balances</label>
+                        <div class="modal-label d-block mb-2">Leave Balances</div>
                         <div class="row g-3">
                             <div class="col-4">
                                 <span class="text-muted-small">Annual</span>
@@ -245,8 +245,8 @@
                 <form asp-action="Create" method="post">
                     @Html.AntiForgeryToken()
                     <div class="mb-2">
-                        <label class="form-label small">User Account</label>
-                        <select class="form-select" name="userId" required>
+                        <label class="form-label small" for="createEmployeeUserId">User Account</label>
+                        <select class="form-select" id="createEmployeeUserId" name="userId" required>
                             @foreach (var user in Model.Users)
                             {
                                 <option value="@user.Id">@user.Email</option>
@@ -255,12 +255,12 @@
                     </div>
                     <div class="row g-2">
                         <div class="col-6">
-                            <label class="form-label small">Full Name</label>
-                            <input class="form-control" name="fullName" required />
+                            <label class="form-label small" for="createEmployeeFullName">Full Name</label>
+                            <input class="form-control" id="createEmployeeFullName" name="fullName" required />
                         </div>
                         <div class="col-6">
-                            <label class="form-label small">Department</label>
-                            <select class="form-select" name="department" required>
+                            <label class="form-label small" for="createEmployeeDepartment">Department</label>
+                            <select class="form-select" id="createEmployeeDepartment" name="department" required>
                                 @foreach (var dept in departmentOptions)
                                 {
                                     <option value="@dept">@dept</option>
@@ -268,16 +268,16 @@
                             </select>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small">Position</label>
-                            <input class="form-control" name="position" required />
+                            <label class="form-label small" for="createEmployeePosition">Position</label>
+                            <input class="form-control" id="createEmployeePosition" name="position" required />
                         </div>
                         <div class="col-6">
-                            <label class="form-label small">Contact</label>
-                            <input class="form-control" name="contactNumber" required />
+                            <label class="form-label small" for="createEmployeeContactNumber">Contact</label>
+                            <input class="form-control" id="createEmployeeContactNumber" name="contactNumber" required />
                         </div>
                         <div class="col-6">
-                            <label class="form-label small">Role</label>
-                            <select class="form-select" name="employeeRole" required>
+                            <label class="form-label small" for="createEmployeeRole">Role</label>
+                            <select class="form-select" id="createEmployeeRole" name="employeeRole" required>
                                 @foreach (var role in roleOptions)
                                 {
                                     <option value="@role" selected="@(role == "Employee" ? "selected" : null)">@role</option>
@@ -285,8 +285,8 @@
                             </select>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small">Hire Date</label>
-                            <input type="date" class="form-control" name="hireDate" />
+                            <label class="form-label small" for="createEmployeeHireDate">Hire Date</label>
+                            <input type="date" class="form-control" id="createEmployeeHireDate" name="hireDate" />
                         </div>
                     </div>
                     <div class="modal-footer border-0 px-0 pb-0 pt-3">

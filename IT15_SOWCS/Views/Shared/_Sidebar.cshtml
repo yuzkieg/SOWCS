@@ -131,15 +131,15 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a asp-controller="Employees" asp-action="Employees"
-                   class="nav-link @IsActive("Employees", "Employees")" title="Employees">
-                    <i class="bi bi-people"></i> <span class="nav-text">Employees</span>
-                </a>
-            </li>
-            <li class="nav-item">
                 <a asp-controller="Reports" asp-action="Reports"
                    class="nav-link @IsActive("Reports", "Reports")" title="Reports">
                     <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Employees" asp-action="Employees"
+                   class="nav-link @IsActive("Employees", "Employees")" title="Employees">
+                    <i class="bi bi-people"></i> <span class="nav-text">Employees</span>
                 </a>
             </li>
         }
@@ -215,6 +215,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a asp-controller="Reports" asp-action="Reports"
+                   class="nav-link @IsActive("Reports", "Reports")" title="Reports">
+                    <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a asp-controller="Employees" asp-action="Employees"
                    class="nav-link @IsActive("Employees", "Employees")" title="Employees">
                     <i class="bi bi-people"></i> <span class="nav-text">Employees</span>
@@ -230,12 +236,6 @@
                 <a asp-controller="AuditLogs" asp-action="AuditLogs"
                    class="nav-link @IsActive("AuditLogs", "AuditLogs")" title="Audit Logs">
                     <i class="bi bi-file-earmark-bar-graph"></i> <span class="nav-text">Audit Logs</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a asp-controller="Reports" asp-action="Reports"
-                   class="nav-link @IsActive("Reports", "Reports")" title="Reports">
-                    <i class="bi bi-file-earmark-pdf"></i> <span class="nav-text">Reports</span>
                 </a>
             </li>
             @if (isSuperAdmin)

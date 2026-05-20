@@ -12,6 +12,7 @@ namespace IT15_SOWCS.Controllers
     public class DocumentsController : Controller
     {
         private const long MaxDocumentUploadBytes = 10 * 1024 * 1024;
+        private const string DocumentsErrorKey = "DocumentsError";
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly NotificationService _notificationService;
@@ -62,6 +63,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Documents(string? search, string? category)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Documents));
+            }
+
             var query = _context.Documents.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -89,6 +95,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Preview(int documentId)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Documents));
+            }
+
             var document = await _context.Documents.FindAsync(documentId);
             if (document == null)
             {
@@ -117,6 +128,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Download(int documentId)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Documents));
+            }
+
             var document = await _context.Documents.FindAsync(documentId);
             if (document == null)
             {
@@ -148,15 +164,21 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(IFormFile uploadedFile, string? category, string? title, string? description, bool visibleToAllEmployees = false)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[DocumentsErrorKey] = "Unable to process the document upload.";
+                return RedirectToAction(nameof(Documents));
+            }
+
             if (uploadedFile == null || uploadedFile.Length == 0)
             {
-                TempData["DocumentsError"] = "Please select a valid file.";
+                TempData[DocumentsErrorKey] = "Please select a valid file.";
                 return RedirectToAction(nameof(Documents));
             }
 
             if (!TryValidateUploadedFile(uploadedFile, out var uploadError))
             {
-                TempData["DocumentsError"] = uploadError;
+                TempData[DocumentsErrorKey] = uploadError;
                 return RedirectToAction(nameof(Documents));
             }
 
@@ -211,6 +233,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Update(int documentId, string title, string category, IFormFile? uploadedFile)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[DocumentsErrorKey] = "Unable to process the document update.";
+                return RedirectToAction(nameof(Documents));
+            }
+
             var document = await _context.Documents.FindAsync(documentId);
             if (document == null)
             {
@@ -221,7 +249,7 @@ namespace IT15_SOWCS.Controllers
             {
                 if (!TryValidateUploadedFile(uploadedFile, out var uploadError))
                 {
-                    TempData["DocumentsError"] = uploadError;
+                    TempData[DocumentsErrorKey] = uploadError;
                     return RedirectToAction(nameof(Documents));
                 }
 
@@ -284,6 +312,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int documentId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[DocumentsErrorKey] = "Unable to process the document deletion.";
+                return RedirectToAction(nameof(Documents));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();
@@ -442,4 +476,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-

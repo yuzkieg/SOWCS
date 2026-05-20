@@ -9,5 +9,6 @@ namespace IT15_SOWCS.ViewModels
         public bool HasPassword { get; set; }
         public bool OpenSetPasswordModal { get; set; }
         public string? ResetToken { get; set; }
+        public bool IsMfaRequired { get; set; }
     }
 }

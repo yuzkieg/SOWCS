@@ -8,6 +8,7 @@ namespace IT15_SOWCS.Models
         public string Role { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? LastPasswordChangedDateUtc { get; set; }
 
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
         public ICollection<Employee> ManagedEmployees { get; set; } = new List<Employee>();

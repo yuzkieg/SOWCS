@@ -1,0 +1,60 @@
+@model IT15_SOWCS.ViewModels.MfaVerificationViewModel
+@{
+    ViewData["Title"] = "Verify MFA";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="account-container">
+    <div class="account-box">
+        <div class="logo-wrapper">
+            <div class="logo-circle">
+                <img src="~/images/SOWCS.png" alt="Syncora Logo" />
+            </div>
+        </div>
+
+        <h2 class="text-center">Verify your sign-in</h2>
+        <p class="text-center text-muted-small mb-4">Enter the code from your authenticator app for <strong>@Model.MaskedEmail</strong>.</p>
+
+        <form asp-action="VerifyMfa" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Code" class="form-label">Authenticator Code</label>
+                <input asp-for="Code" class="form-control" autocomplete="one-time-code" placeholder="123456" />
+                <span asp-validation-for="Code" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="RememberMachine" class="form-check-input" />
+                <label asp-for="RememberMachine" class="form-check-label"></label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Verify Code</button>
+
+            <hr class="my-4" />
+
+            <div class="mb-3">
+                <div class="form-check mb-2">
+                    <input asp-for="UseRecoveryCode" class="form-check-input" id="useRecoveryCodeToggle" />
+                    <label asp-for="UseRecoveryCode" class="form-check-label">Use a recovery code instead</label>
+                </div>
+                <input asp-for="RecoveryCode" class="form-control" id="recoveryCodeInput" placeholder="Enter recovery code" />
+                <span asp-validation-for="RecoveryCode" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-outline-secondary w-100">Verify Recovery Code</button>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a asp-action="Login" class="account-link text-muted-small">Back to login</a>
+                <a asp-controller="Profile" asp-action="MfaSettings" class="account-link fw-bold">MFA setup help</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
+    }
+}

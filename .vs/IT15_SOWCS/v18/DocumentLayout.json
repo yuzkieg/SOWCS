@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\degar\\source\\repos\\yuzkieg\\SOWCS\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E238E50C-6B4F-4360-8F2A-440C4847618D}|IT15_SOWCS\\IT15_SOWCS.csproj|c:\\users\\degar\\source\\repos\\yuzkieg\\sowcs\\it15_sowcs\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{E238E50C-6B4F-4360-8F2A-440C4847618D}|IT15_SOWCS\\IT15_SOWCS.csproj|solutionrelative:it15_sowcs\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\degar\\source\\repos\\yuzkieg\\SOWCS\\IT15_SOWCS\\appsettings.json",
+              "RelativeDocumentMoniker": "IT15_SOWCS\\appsettings.json",
+              "ToolTip": "C:\\Users\\degar\\source\\repos\\yuzkieg\\SOWCS\\IT15_SOWCS\\appsettings.json",
+              "RelativeToolTip": "IT15_SOWCS\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-03-06T16:47:25.027Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

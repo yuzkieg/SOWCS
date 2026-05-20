@@ -10,6 +10,7 @@ namespace IT15_SOWCS.Controllers
 {
     public class ProjectsController : Controller
     {
+        private const string ProjectsErrorKey = "ProjectsError";
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
 
@@ -77,6 +78,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Projects(string? search, string? status)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Projects));
+            }
+
             var query = _context.Projects.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -135,6 +141,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> Detail(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Projects));
+            }
+
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
             {
@@ -183,6 +194,12 @@ namespace IT15_SOWCS.Controllers
             string priority,
             string[]? teamMembers)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ProjectsErrorKey] = "Unable to process the project creation request.";
+                return RedirectToAction(nameof(Projects));
+            }
+
             if (await IsEmployeeAsync())
             {
                 return Forbid();
@@ -190,14 +207,14 @@ namespace IT15_SOWCS.Controllers
 
             if (string.IsNullOrWhiteSpace(name))
             {
-                TempData["ProjectsError"] = "Project name is required.";
+                TempData[ProjectsErrorKey] = "Project name is required.";
                 return RedirectToAction(nameof(Projects));
             }
 
             var managerEmail = User.Identity?.Name ?? await _context.Users.Select(user => user.Email).FirstOrDefaultAsync();
             if (string.IsNullOrWhiteSpace(managerEmail))
             {
-                TempData["ProjectsError"] = "No manager account available. Create a user first.";
+                TempData[ProjectsErrorKey] = "No manager account available. Create a user first.";
                 return RedirectToAction(nameof(Projects));
             }
 
@@ -289,6 +306,12 @@ namespace IT15_SOWCS.Controllers
             int progress,
             string[]? teamMembers)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ProjectsErrorKey] = "Unable to process the project update request.";
+                return RedirectToAction(nameof(Projects));
+            }
+
             if (await IsEmployeeAsync())
             {
                 return Forbid();
@@ -337,6 +360,12 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int projectId)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ProjectsErrorKey] = "Unable to process the project deletion request.";
+                return RedirectToAction(nameof(Projects));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();
@@ -418,5 +447,3 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
-

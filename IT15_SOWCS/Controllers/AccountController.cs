@@ -7,11 +7,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace IT15_SOWCS.Controllers
 {
     public class AccountController : Controller
     {
+        private const string ErrorTempDataKey = "Error";
+        private const string PasswordExpiredMessage = "Your password has expired. Please change it before using the rest of the system.";
+        private const string PendingMfaLoginTempDataKey = "PendingMfaLogin";
         private readonly SignInManager<Users> signInManager;
         private readonly UserManager<Users> userManager;
         private readonly IMemoryCache memoryCache;
@@ -37,6 +41,11 @@ namespace IT15_SOWCS.Controllers
 
         public IActionResult Login(string? inactiveEmail = null)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
             if (!string.IsNullOrWhiteSpace(inactiveEmail))
             {
                 ViewData["InactiveEmail"] = inactiveEmail.Trim().ToLowerInvariant();
@@ -173,7 +182,24 @@ namespace IT15_SOWCS.Controllers
 
                 await userManager.ResetAccessFailedCountAsync(user);
                 await userManager.SetLockoutEndDateAsync(user, null);
-                await signInManager.SignInAsync(user, model.RememberMe);
+
+                if (await ShouldChallengeForMfaAsync(user))
+                {
+                    SetPendingMfaLogin(new PendingMfaLoginState
+                    {
+                        UserId = user.Id,
+                        RememberMe = model.RememberMe ?? false,
+                        ReturnUrl = Url.Action("Index", "Dashboard"),
+                        LoginProvider = "password"
+                    });
+                    return RedirectToAction(nameof(VerifyMfa));
+                }
+
+                await signInManager.SignInAsync(user, model.RememberMe ?? false);
+                if (PasswordPolicyService.IsPasswordExpired(user))
+                {
+                    return RedirectExpiredPasswordUser();
+                }
 
                 _context.AuditLogs.Add(new AuditLogEntry
                 {
@@ -210,6 +236,7 @@ namespace IT15_SOWCS.Controllers
                     Email = model.Email,
                     FullName = model.FullName
                 };
+                PasswordPolicyService.StampPasswordChanged(user);
 
                 var result = await userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
@@ -229,6 +256,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public IActionResult VerifyEmail(string? email = null)
         {
+            if (!ModelState.IsValid)
+            {
+                return View(new VerifyViewModel());
+            }
+
             return View(new VerifyViewModel
             {
                 Email = email ?? string.Empty,
@@ -267,7 +299,7 @@ namespace IT15_SOWCS.Controllers
                 return RedirectToAction("ChangePassword", "Account", new { username = normalizedEmail, token });
             }
 
-            if (!model.IsCodeStep)
+            if (!model.IsCodeStep.GetValueOrDefault())
             {
                 var code = Random.Shared.Next(100000, 999999).ToString();
                 memoryCache.Set(GetVerificationCacheKey(normalizedEmail), code, TimeSpan.FromMinutes(10));
@@ -298,6 +330,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public IActionResult ChangePassword(string username, string token)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("VerifyEmail", "Account");
+            }
+
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(token))
             {
                 return RedirectToAction("VerifyEmail", "Account");
@@ -337,6 +374,8 @@ namespace IT15_SOWCS.Controllers
                 return View(model);
             }
 
+            PasswordPolicyService.StampPasswordChanged(user);
+            await userManager.UpdateAsync(user);
             TempData["SuccessMessage"] = "Password changed successfully.";
             return RedirectToAction("Login", "Account");
         }
@@ -344,6 +383,11 @@ namespace IT15_SOWCS.Controllers
         [HttpPost]
         public IActionResult ExternalLogin(string provider, string? returnUrl = null)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
             if (string.IsNullOrEmpty(returnUrl))
             {
                 returnUrl = Url.Action("Index", "Dashboard");
@@ -356,16 +400,22 @@ namespace IT15_SOWCS.Controllers
 
         public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ErrorTempDataKey] = "Unable to complete the external login request.";
+                return RedirectToAction(nameof(Login));
+            }
+
             if (remoteError != null)
             {
-                TempData["Error"] = $"Error from external provider: {remoteError}";
+                TempData[ErrorTempDataKey] = $"Error from external provider: {remoteError}";
                 return RedirectToAction(nameof(Login));
             }
 
             var info = await signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
-                TempData["Error"] = "Error loading external login information.";
+                TempData[ErrorTempDataKey] = "Error loading external login information.";
                 return RedirectToAction(nameof(Login));
             }
 
@@ -374,6 +424,27 @@ namespace IT15_SOWCS.Controllers
             if (result.Succeeded)
             {
                 await signInManager.UpdateExternalAuthenticationTokensAsync(info);
+                var signedInUser = await userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                if (signedInUser != null && PasswordPolicyService.IsPasswordExpired(signedInUser))
+                {
+                    return RedirectExpiredPasswordUser();
+                }
+
+                if (signedInUser != null && await ShouldChallengeForMfaAsync(signedInUser))
+                {
+                    await signInManager.SignOutAsync();
+                    SetPendingMfaLogin(new PendingMfaLoginState
+                    {
+                        UserId = signedInUser.Id,
+                        RememberMe = false,
+                        ReturnUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                            ? returnUrl
+                            : Url.Action("Index", "Dashboard"),
+                        LoginProvider = info.LoginProvider
+                    });
+                    return RedirectToAction(nameof(VerifyMfa));
+                }
+
                 var safeRedirectUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
                     ? returnUrl
                     : Url.Action("Index", "Dashboard") ?? "/";
@@ -390,14 +461,14 @@ namespace IT15_SOWCS.Controllers
                 {
                     TempData["InactiveEmail"] = lockedEmail.Trim().ToLowerInvariant();
                 }
-                TempData["Error"] = "Your account has been inactive. Send a reactivation request below.";
+                TempData[ErrorTempDataKey] = "Your account has been inactive. Send a reactivation request below.";
                 return RedirectToAction(nameof(Login));
             }
 
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
             if (email == null)
             {
-                TempData["Error"] = "Email not provided by Google.";
+                TempData[ErrorTempDataKey] = "Email not provided by Google.";
                 return RedirectToAction(nameof(Login));
             }
 
@@ -440,12 +511,32 @@ namespace IT15_SOWCS.Controllers
             else if (await userManager.IsLockedOutAsync(user))
             {
                 TempData["InactiveEmail"] = email.Trim().ToLowerInvariant();
-                TempData["Error"] = "Your account has been inactive. Send a reactivation request below.";
+                TempData[ErrorTempDataKey] = "Your account has been inactive. Send a reactivation request below.";
                 return RedirectToAction(nameof(Login));
             }
 
             await signInManager.SignInAsync(user, isPersistent: false);
             await signInManager.UpdateExternalAuthenticationTokensAsync(info);
+            if (PasswordPolicyService.IsPasswordExpired(user))
+            {
+                return RedirectExpiredPasswordUser();
+            }
+
+            if (await ShouldChallengeForMfaAsync(user))
+            {
+                await signInManager.SignOutAsync();
+                SetPendingMfaLogin(new PendingMfaLoginState
+                {
+                    UserId = user.Id,
+                    RememberMe = false,
+                    ReturnUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                        ? returnUrl
+                        : Url.Action("Index", "Dashboard"),
+                    LoginProvider = info.LoginProvider
+                });
+                return RedirectToAction(nameof(VerifyMfa));
+            }
+
             var finalRedirectUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
                 ? returnUrl
                 : Url.Action("Index", "Dashboard") ?? "/";
@@ -456,10 +547,16 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> AcceptInvitation(string token)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ErrorTempDataKey] = "Invalid invitation link.";
+                return RedirectToAction(nameof(Login));
+            }
+
             var normalizedToken = (token ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(normalizedToken))
             {
-                TempData["Error"] = "Invalid invitation link.";
+                TempData[ErrorTempDataKey] = "Invalid invitation link.";
                 return RedirectToAction(nameof(Login));
             }
 
@@ -467,7 +564,7 @@ namespace IT15_SOWCS.Controllers
                 .FirstOrDefaultAsync(item => item.token == normalizedToken && item.accepted_at == null);
             if (invitation == null || invitation.expires_at < DateTime.UtcNow)
             {
-                TempData["Error"] = "Invitation link is invalid or expired.";
+                TempData[ErrorTempDataKey] = "Invitation link is invalid or expired.";
                 return RedirectToAction(nameof(Login));
             }
 
@@ -483,6 +580,13 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AcceptInvitation(string token, RegisterViewModel model)
         {
+            if (!ModelState.IsValid && string.IsNullOrWhiteSpace((token ?? string.Empty).Trim()))
+            {
+                ModelState.AddModelError("", "Invalid invitation token.");
+                ViewData["InviteToken"] = string.Empty;
+                return View(model);
+            }
+
             var normalizedToken = (token ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(normalizedToken))
             {
@@ -528,6 +632,7 @@ namespace IT15_SOWCS.Controllers
                 CreatedDate = DateTime.UtcNow,
                 UpdatedDate = DateTime.UtcNow
             };
+            PasswordPolicyService.StampPasswordChanged(user);
 
             var createResult = await userManager.CreateAsync(user, model.Password);
             if (!createResult.Succeeded)
@@ -553,10 +658,16 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestReactivation(string email, string message)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ErrorTempDataKey] = "Unable to process the reactivation request.";
+                return RedirectToAction(nameof(Login));
+            }
+
             var normalizedEmail = (email ?? string.Empty).Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(normalizedEmail))
             {
-                TempData["Error"] = "Email is required.";
+                TempData[ErrorTempDataKey] = "Email is required.";
                 return RedirectToAction(nameof(Login));
             }
 
@@ -582,6 +693,142 @@ namespace IT15_SOWCS.Controllers
             return View();
         }
 
+        [HttpGet]
+        public async Task<IActionResult> VerifyMfa()
+        {
+            var pendingState = GetPendingMfaLogin();
+            if (pendingState == null)
+            {
+                TempData[ErrorTempDataKey] = "Your MFA verification session has expired. Please sign in again.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var user = await userManager.FindByIdAsync(pendingState.UserId);
+            if (user == null)
+            {
+                ClearPendingMfaLogin();
+                TempData[ErrorTempDataKey] = "Unable to continue MFA verification. Please sign in again.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            KeepPendingMfaLogin();
+            return View(new MfaVerificationViewModel
+            {
+                MaskedEmail = MaskEmail(user.Email)
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyMfa(MfaVerificationViewModel model)
+        {
+            var pendingState = GetPendingMfaLogin();
+            if (pendingState == null)
+            {
+                TempData[ErrorTempDataKey] = "Your MFA verification session has expired. Please sign in again.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var user = await userManager.FindByIdAsync(pendingState.UserId);
+            if (user == null)
+            {
+                ClearPendingMfaLogin();
+                TempData[ErrorTempDataKey] = "Unable to continue MFA verification. Please sign in again.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var verificationSucceeded = false;
+            var usedRecoveryCode = false;
+
+            if (model.UseRecoveryCode)
+            {
+                var recoveryCode = (model.RecoveryCode ?? string.Empty).Replace(" ", string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(recoveryCode))
+                {
+                    ModelState.AddModelError(nameof(MfaVerificationViewModel.RecoveryCode), "Recovery code is required.");
+                }
+                else
+                {
+                    var recoveryResult = await userManager.RedeemTwoFactorRecoveryCodeAsync(user, recoveryCode);
+                    verificationSucceeded = recoveryResult.Succeeded;
+                    usedRecoveryCode = verificationSucceeded;
+                }
+            }
+            else
+            {
+                var verificationCode = NormalizeAuthenticatorCode(model.Code);
+                if (string.IsNullOrWhiteSpace(verificationCode))
+                {
+                    ModelState.AddModelError(nameof(MfaVerificationViewModel.Code), "Authenticator code is required.");
+                }
+                else
+                {
+                    verificationSucceeded = await userManager.VerifyTwoFactorTokenAsync(
+                        user,
+                        userManager.Options.Tokens.AuthenticatorTokenProvider,
+                        verificationCode);
+                }
+            }
+
+            if (!verificationSucceeded)
+            {
+                await AddAuditLogAsync(
+                    user.Email ?? string.Empty,
+                    string.IsNullOrWhiteSpace(user.FullName) ? (user.Email ?? string.Empty) : user.FullName,
+                    "mfa_failed",
+                    model.UseRecoveryCode ? "Failed recovery code verification" : "Failed authenticator code verification",
+                    "Warning");
+                ModelState.AddModelError("", model.UseRecoveryCode ? "Invalid recovery code." : "Invalid authenticator code.");
+                KeepPendingMfaLogin();
+                model.MaskedEmail = MaskEmail(user.Email);
+                return View(model);
+            }
+
+            await signInManager.SignInAsync(user, pendingState.RememberMe);
+            if (model.RememberMachine && !usedRecoveryCode)
+            {
+                await signInManager.RememberTwoFactorClientAsync(user);
+            }
+
+            ClearPendingMfaLogin();
+
+            if (PasswordPolicyService.IsPasswordExpired(user))
+            {
+                return RedirectExpiredPasswordUser();
+            }
+
+            var displayName = string.IsNullOrWhiteSpace(user.FullName) ? (user.Email ?? string.Empty) : user.FullName;
+            await AddAuditLogAsync(
+                user.Email ?? string.Empty,
+                displayName,
+                "login",
+                pendingState.LoginProvider == "password"
+                    ? "Logged in with password and MFA"
+                    : $"Signed in with {pendingState.LoginProvider} and MFA",
+                "Informational");
+
+            if (usedRecoveryCode)
+            {
+                await AddAuditLogAsync(
+                    user.Email ?? string.Empty,
+                    displayName,
+                    "mfa_recovery_code_used",
+                    "Used an MFA recovery code during sign-in",
+                    "Warning");
+            }
+
+            var redirectUrl = !string.IsNullOrWhiteSpace(pendingState.ReturnUrl) && Url.IsLocalUrl(pendingState.ReturnUrl)
+                ? pendingState.ReturnUrl
+                : Url.Action("Index", "Dashboard") ?? "/";
+            return LocalRedirect(redirectUrl);
+        }
+
+        private RedirectToActionResult RedirectExpiredPasswordUser()
+        {
+            TempData["ProfileError"] = PasswordExpiredMessage;
+            return RedirectToAction("Profile", "Profile", new { passwordExpired = true });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -598,6 +845,66 @@ namespace IT15_SOWCS.Controllers
         }
 
         private static string GetVerificationCacheKey(string email) => $"verify-code:{email}";
+
+        private static string NormalizeAuthenticatorCode(string? code)
+        {
+            return (code ?? string.Empty).Replace(" ", string.Empty).Replace("-", string.Empty).Trim();
+        }
+
+        private async Task<bool> ShouldChallengeForMfaAsync(Users user)
+        {
+            return user.TwoFactorEnabled && !await signInManager.IsTwoFactorClientRememberedAsync(user);
+        }
+
+        private void SetPendingMfaLogin(PendingMfaLoginState state)
+        {
+            TempData[PendingMfaLoginTempDataKey] = JsonSerializer.Serialize(state);
+        }
+
+        private PendingMfaLoginState? GetPendingMfaLogin()
+        {
+            var raw = TempData.Peek(PendingMfaLoginTempDataKey)?.ToString();
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return null;
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<PendingMfaLoginState>(raw);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void KeepPendingMfaLogin()
+        {
+            TempData.Keep(PendingMfaLoginTempDataKey);
+        }
+
+        private void ClearPendingMfaLogin()
+        {
+            TempData.Remove(PendingMfaLoginTempDataKey);
+        }
+
+        private static string MaskEmail(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+            {
+                return "your account";
+            }
+
+            var parts = email.Split('@', 2);
+            var local = parts[0];
+            if (local.Length <= 2)
+            {
+                return $"{local[0]}*@{parts[1]}";
+            }
+
+            return $"{local[0]}***{local[^1]}@{parts[1]}";
+        }
 
         private async Task AddAuditLogAsync(string email, string name, string action, string description, string severity)
         {
@@ -619,13 +926,15 @@ namespace IT15_SOWCS.Controllers
 
         private static string ResolveClientIp(HttpContext context)
         {
-            var forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(forwarded))
-            {
-                return forwarded.Split(',')[0].Trim();
-            }
-
             return context.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+        }
+
+        private sealed class PendingMfaLoginState
+        {
+            public string UserId { get; set; } = string.Empty;
+            public bool RememberMe { get; set; }
+            public string? ReturnUrl { get; set; }
+            public string LoginProvider { get; set; } = "password";
         }
     }
 }

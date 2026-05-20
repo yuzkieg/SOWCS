@@ -38,6 +38,11 @@ namespace IT15_SOWCS.Controllers
             [FromQuery(Name = "from")] DateTime? from,
             [FromQuery(Name = "to")] DateTime? to)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(AuditLogs));
+            }
+
             var normalizedAuditType = string.Equals(auditType, "security", StringComparison.OrdinalIgnoreCase)
                 ? "security"
                 : "system";
@@ -151,6 +156,11 @@ namespace IT15_SOWCS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(AuditLogs));
+            }
+
             if (!await IsSuperAdminAsync())
             {
                 return Forbid();

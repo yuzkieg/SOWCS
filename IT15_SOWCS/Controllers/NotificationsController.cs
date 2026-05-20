@@ -69,6 +69,11 @@ namespace IT15_SOWCS.Controllers
         [HttpPost("{id:int}/read")]
         public async Task<IActionResult> MarkRead(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false });
+            }
+
             var email = User.Identity?.Name;
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -90,6 +95,11 @@ namespace IT15_SOWCS.Controllers
         [HttpPost("{id:int}/unread")]
         public async Task<IActionResult> MarkUnread(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false });
+            }
+
             var email = User.Identity?.Name;
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -111,6 +121,11 @@ namespace IT15_SOWCS.Controllers
         [HttpPost("{id:int}/delete")]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false });
+            }
+
             var email = User.Identity?.Name;
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -130,5 +145,4 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
 

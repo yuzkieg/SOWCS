@@ -208,16 +208,16 @@
                 <form asp-action="InviteUser" method="post" id="inviteUserForm">
                     @Html.AntiForgeryToken()
                     <div class="mb-4">
-                        <label class="form-label fw-semibold mb-2">Email Address</label>
+                        <label class="form-label fw-semibold mb-2" for="inviteUserEmail">Email Address</label>
                         <div class="input-group-custom">
                             <i class="bi bi-envelope"></i>
-                            <input type="email" class="form-control" name="email" placeholder="user@company.com" required>
+                            <input type="email" id="inviteUserEmail" class="form-control" name="email" placeholder="user@company.com" required>
                         </div>
                     </div>
 
                     <div class="mb-2">
-                        <label class="form-label fw-semibold mb-2">Role</label>
-                        <select class="form-select custom-select" name="role">
+                        <label class="form-label fw-semibold mb-2" for="inviteUserRole">Role</label>
+                        <select class="form-select custom-select" id="inviteUserRole" name="role">
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                         </select>

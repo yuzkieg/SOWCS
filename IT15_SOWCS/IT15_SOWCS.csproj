@@ -1,13 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <UserSecretsId>a7c3ce90-75b9-416b-a271-0161a98ff18a</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include=".gitignore.txt" />
     <Content Include="Trained_Model\approval_prediction.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>

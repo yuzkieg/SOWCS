@@ -31,6 +31,11 @@ namespace IT15_SOWCS.Controllers
 
         public async Task<IActionResult> Index(string? predictionPeriod)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
             {
@@ -75,6 +80,11 @@ namespace IT15_SOWCS.Controllers
         [HttpGet]
         public async Task<IActionResult> SuperAdminPredictions(string? predictionPeriod)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (!string.Equals(user?.Role, "superadmin", StringComparison.OrdinalIgnoreCase))
             {
@@ -810,5 +820,4 @@ namespace IT15_SOWCS.Controllers
         }
     }
 }
-
 

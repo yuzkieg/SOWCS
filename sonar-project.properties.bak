@@ -1,0 +1,6 @@
+sonar.projectKey=SOWCS
+sonar.projectName=SOWCS
+sonar.sources=.
+sonar.sourceEncoding=UTF-8
+sonar.host.url=http://localhost:9000
+sonar.token=sqp_f6d52a9ee9fb1b44d50414c16164aec80364e3f6

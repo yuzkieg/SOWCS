@@ -15,11 +15,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function escapeHtml(value) {
         return (value || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/\"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll("\"", "&quot;")
+            .replaceAll("'", "&#039;");
     }
 
     function formatRelativeTime(value) {
@@ -911,3 +911,157 @@ document.addEventListener("DOMContentLoaded", function () {
 
     resetTimer();
 });
+
+(function (globalScope) {
+    function getUnmetPasswordRequirements(value = "") {
+        const password = value;
+        const unmet = [];
+
+        if (password.length < 12) {
+            unmet.push("at least 12 characters");
+        }
+        if (!/[A-Z]/.test(password)) {
+            unmet.push("an uppercase letter");
+        }
+        if (!/[a-z]/.test(password)) {
+            unmet.push("a lowercase letter");
+        }
+        if (!/\d/.test(password)) {
+            unmet.push("a number");
+        }
+        if (!/[^A-Za-z0-9]/.test(password)) {
+            unmet.push("a special character");
+        }
+
+        return unmet;
+    }
+
+    function buildPasswordComplexityMessage(unmetRequirements) {
+        if (!unmetRequirements.length) {
+            return "";
+        }
+        if (unmetRequirements.length === 1) {
+            return "Password must contain " + unmetRequirements[0] + ".";
+        }
+        if (unmetRequirements.length === 2) {
+            return "Password must contain " + unmetRequirements[0] + " and " + unmetRequirements[1] + ".";
+        }
+
+        return "Password must contain "
+            + unmetRequirements.slice(0, -1).join(", ")
+            + ", and "
+            + unmetRequirements[unmetRequirements.length - 1]
+            + ".";
+    }
+
+    globalScope.initializePasswordComplexityValidation = function () {
+        if (!globalScope.jQuery?.validator || globalScope.jQuery.validator.methods.passwordcomplexity) {
+            return;
+        }
+
+        globalScope.jQuery.validator.addMethod("passwordcomplexity", function (value, element) {
+            if (this.optional(element)) {
+                return true;
+            }
+
+            const unmetRequirements = getUnmetPasswordRequirements(value);
+            const message = buildPasswordComplexityMessage(unmetRequirements);
+            const validator = globalScope.jQuery(element.form).data("validator");
+
+            globalScope.jQuery(element).data("passwordcomplexityMessage", message);
+
+            if (validator?.settings) {
+                validator.settings.messages[element.name] = validator.settings.messages[element.name] || {};
+                validator.settings.messages[element.name].passwordcomplexity = message;
+            }
+
+            return unmetRequirements.length === 0;
+        }, function (_params, element) {
+            return globalScope.jQuery(element).data("passwordcomplexityMessage")
+                || "Password does not meet the required complexity rules.";
+        });
+
+        globalScope.jQuery.validator.unobtrusive.adapters.addBool("passwordcomplexity");
+    };
+
+    function updateRequirementItem(item, isMet) {
+        if (!item) {
+            return;
+        }
+        item.classList.toggle("is-met", !!isMet);
+    }
+
+    function wirePasswordChecklist(container) {
+        const passwordInput = document.getElementById(container.dataset.passwordInput);
+        const confirmInput = document.getElementById(container.dataset.confirmInput);
+        if (!passwordInput) {
+            return;
+        }
+
+        const ruleItems = {
+            length: container.querySelector('[data-rule="length"]'),
+            uppercase: container.querySelector('[data-rule="uppercase"]'),
+            lowercase: container.querySelector('[data-rule="lowercase"]'),
+            number: container.querySelector('[data-rule="number"]'),
+            special: container.querySelector('[data-rule="special"]')
+        };
+
+        function showChecklist() {
+            container.classList.add("is-visible");
+        }
+
+        function updateChecklist() {
+            const value = passwordInput.value || "";
+            updateRequirementItem(ruleItems.length, value.length >= 12);
+            updateRequirementItem(ruleItems.uppercase, /[A-Z]/.test(value));
+            updateRequirementItem(ruleItems.lowercase, /[a-z]/.test(value));
+            updateRequirementItem(ruleItems.number, /\d/.test(value));
+            updateRequirementItem(ruleItems.special, /[^A-Za-z0-9]/.test(value));
+        }
+
+        passwordInput.addEventListener("focus", showChecklist);
+        passwordInput.addEventListener("input", function () {
+            showChecklist();
+            updateChecklist();
+            if (confirmInput) {
+                confirmInput.dispatchEvent(new Event("input"));
+            }
+        });
+
+        updateChecklist();
+    }
+
+    function wirePasswordMatchChecklist(container) {
+        const passwordInput = document.getElementById(container.dataset.passwordInput);
+        const confirmInput = document.getElementById(container.dataset.confirmInput);
+        const matchItem = container.querySelector('[data-rule="match"]');
+        if (!passwordInput || !confirmInput || !matchItem) {
+            return;
+        }
+
+        function showChecklist() {
+            container.classList.add("is-visible");
+        }
+
+        function updateChecklist() {
+            const passwordValue = passwordInput.value || "";
+            const confirmValue = confirmInput.value || "";
+            updateRequirementItem(matchItem, passwordValue.length > 0 && confirmValue.length > 0 && passwordValue === confirmValue);
+        }
+
+        passwordInput.addEventListener("focus", showChecklist);
+        confirmInput.addEventListener("focus", showChecklist);
+        confirmInput.addEventListener("input", function () {
+            showChecklist();
+            updateChecklist();
+        });
+        passwordInput.addEventListener("input", updateChecklist);
+
+        updateChecklist();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("[data-password-checklist]").forEach(wirePasswordChecklist);
+        document.querySelectorAll("[data-password-match-checklist]").forEach(wirePasswordMatchChecklist);
+    });
+})(globalThis);

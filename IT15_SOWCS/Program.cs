@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 var documentEncryptionKey = builder.Configuration["Security:DocumentEncryptionKey"];
+var seedUserSecret = builder.Configuration["Security:SeedUserSecret"];
 if (string.IsNullOrWhiteSpace(documentEncryptionKey))
 {
     if (builder.Environment.IsDevelopment())
@@ -18,6 +19,11 @@ if (string.IsNullOrWhiteSpace(documentEncryptionKey))
     {
         throw new InvalidOperationException("Missing configuration for Security:DocumentEncryptionKey.");
     }
+}
+
+if (string.IsNullOrWhiteSpace(seedUserSecret))
+{
+    throw new InvalidOperationException("Missing configuration for Security:SeedUserSecret.");
 }
 
 DocumentFieldEncryption.Configure(documentEncryptionKey);
@@ -43,8 +49,8 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 12;
 
     options.User.RequireUniqueEmail = true;
 
@@ -95,7 +101,7 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Users>>();
 
-    dbContext.Database.ExecuteSqlRaw(@"
+    await dbContext.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[NotificationItem]', N'U') IS NULL
 BEGIN
     CREATE TABLE [NotificationItem] (
@@ -112,7 +118,7 @@ BEGIN
     ON [NotificationItem]([recipient_email], [is_read], [created_at]);
 END");
 
-    dbContext.Database.ExecuteSqlRaw(@"
+    await dbContext.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[PendingInvitation]', N'U') IS NULL
 BEGIN
     CREATE TABLE [PendingInvitation] (
@@ -129,7 +135,7 @@ BEGIN
     CREATE INDEX [IX_PendingInvitation_email_accepted_at] ON [PendingInvitation]([email], [accepted_at]);
 END");
 
-    dbContext.Database.ExecuteSqlRaw(@"
+    await dbContext.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[PredictionAction]', N'U') IS NULL
 BEGIN
     CREATE TABLE [PredictionAction] (
@@ -149,25 +155,37 @@ BEGIN
     ON [PredictionAction]([employee_id], [created_at]);
 END");
 
-    dbContext.Database.ExecuteSqlRaw(@"
+    await dbContext.Database.ExecuteSqlRawAsync(@"
 IF COL_LENGTH('AuditLog', 'severity') IS NULL
 BEGIN
     ALTER TABLE [AuditLog] ADD [severity] NVARCHAR(20) NOT NULL CONSTRAINT DF_AuditLog_severity DEFAULT('Informational');
 END");
 
-    dbContext.Database.ExecuteSqlRaw(@"
+    await dbContext.Database.ExecuteSqlRawAsync(@"
 IF COL_LENGTH('AuditLog', 'ip_address') IS NULL
 BEGIN
     ALTER TABLE [AuditLog] ADD [ip_address] NVARCHAR(45) NOT NULL CONSTRAINT DF_AuditLog_ip_address DEFAULT('');
 END");
 
-    dbContext.Database.ExecuteSqlRaw(@"
+    await dbContext.Database.ExecuteSqlRawAsync(@"
 IF COL_LENGTH('AuditLog', 'audit_type') IS NULL
 BEGIN
     ALTER TABLE [AuditLog] ADD [audit_type] NVARCHAR(20) NOT NULL CONSTRAINT DF_AuditLog_audit_type DEFAULT('System');
 END");
 
-    dbContext.Database.ExecuteSqlRaw(@"
+    await dbContext.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH('AspNetUsers', 'LastPasswordChangedDateUtc') IS NULL
+BEGIN
+    ALTER TABLE [AspNetUsers] ADD [LastPasswordChangedDateUtc] DATETIME2 NULL;
+END");
+
+    await dbContext.Database.ExecuteSqlRawAsync(@"
+UPDATE [AspNetUsers]
+SET [LastPasswordChangedDateUtc] = COALESCE([UpdatedDate], [CreatedDate], SYSUTCDATETIME())
+WHERE [PasswordHash] IS NOT NULL
+  AND [LastPasswordChangedDateUtc] IS NULL");
+
+    await dbContext.Database.ExecuteSqlRawAsync(@"
 UPDATE [AuditLog]
 SET [audit_type] = 'Security'
 WHERE LOWER(ISNULL([entity], '')) = 'account'
@@ -185,7 +203,7 @@ WHERE LOWER(ISNULL([entity], '')) = 'account'
         await userManager.UpdateAsync(superAdminUser);
     }
 
-    await DemoDataSeeder.SeedAsync(dbContext, userManager);
+    await DemoDataSeeder.SeedAsync(dbContext, userManager, seedUserSecret);
 }
 
 if (!app.Environment.IsDevelopment())
@@ -206,4 +224,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.Run();
+await app.RunAsync();

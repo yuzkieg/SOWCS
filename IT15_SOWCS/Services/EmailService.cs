@@ -143,7 +143,6 @@ namespace IT15_SOWCS.Services
             var smtpPassword = _configuration["EmailSettings:Password"];
             var fromEmail = _configuration["EmailSettings:FromEmail"] ?? smtpUser;
             var fromName = _configuration["EmailSettings:FromName"] ?? "Syncora";
-            var enableSsl = bool.TryParse(_configuration["EmailSettings:EnableSsl"], out var parsedSsl) ? parsedSsl : true;
 
             if (string.IsNullOrWhiteSpace(toEmail) ||
                 string.IsNullOrWhiteSpace(smtpHost) ||
@@ -168,7 +167,7 @@ namespace IT15_SOWCS.Services
             using var client = new SmtpClient(smtpHost, smtpPort)
             {
                 Credentials = new NetworkCredential(smtpUser, smtpPassword),
-                EnableSsl = enableSsl
+                EnableSsl = true
             };
 
             try
